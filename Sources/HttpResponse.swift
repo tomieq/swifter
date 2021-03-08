@@ -22,7 +22,7 @@ public protocol HttpResponseBodyWriter {
 
 public enum HttpResponseBody {
 
-    case json(Any)
+    case json(Encodable)
     case html(String)
     case htmlBody(String)
     case text(String)
@@ -33,13 +33,10 @@ public enum HttpResponseBody {
         do {
             switch self {
             case .json(let object):
-              guard JSONSerialization.isValidJSONObject(object) else {
-                throw SerializationError.invalidObject
-              }
-              let data = try JSONSerialization.data(withJSONObject: object)
-              return (data.count, {
-                try $0.write(data)
-              })
+                let data = object.toJson() ?? Data()
+                return (data.count, {
+                    try $0.write(data)
+                })
             case .text(let body):
                 let data = [UInt8](body.utf8)
                 return (data.count, {
@@ -182,4 +179,14 @@ public enum HttpResponse {
 
 func == (inLeft: HttpResponse, inRight: HttpResponse) -> Bool {
     return inLeft.statusCode == inRight.statusCode
+}
+
+fileprivate extension Encodable {
+    func toJson() -> Data? {
+        do {
+            return try JSONEncoder().encode(self)
+        } catch {
+            return nil
+        }
+    }
 }

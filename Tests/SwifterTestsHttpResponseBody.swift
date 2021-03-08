@@ -19,16 +19,16 @@ class SwifterTestsHttpResponseBody: XCTestCase {
     }
 
     func testNSDictionaryAsJSONPayload() {
-        verify(input: ["key": "value"] as NSDictionary, output: "{\"key\":\"value\"}")
-        verify(input: ["key": ["value1", "value2", "value3"]] as NSDictionary, output: "{\"key\":[\"value1\",\"value2\",\"value3\"]}")
+        verify(input: ["key": "value"], output: "{\"key\":\"value\"}")
+        verify(input: ["key": ["value1", "value2", "value3"]], output: "{\"key\":[\"value1\",\"value2\",\"value3\"]}")
     }
 
     func testNSArrayAsJSONPayload() {
-        verify(input: ["key", "value"] as NSArray, output: "[\"key\",\"value\"]")
-        verify(input: ["value1", "value2", "value3"] as NSArray, output: "[\"value1\",\"value2\",\"value3\"]")
+        verify(input: ["key", "value"], output: "[\"key\",\"value\"]")
+        verify(input: ["value1", "value2", "value3"], output: "[\"value1\",\"value2\",\"value3\"]")
     }
 
-    private func verify(input: Any, output expectedOutput: String, line: UInt = #line) {
+    private func verify(input: Encodable, output expectedOutput: String, line: UInt = #line) {
         let response: HttpResponseBody = .json(input)
 
         guard let writer = response.content().1 else {
