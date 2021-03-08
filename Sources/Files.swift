@@ -19,8 +19,8 @@ public func shareFile(_ path: String) -> ((HttpRequest) -> HttpResponse) {
     }
 }
 
-public func shareFilesFromDirectory(_ directoryPath: String, defaults: [String] = ["index.html", "default.html"]) -> ((HttpRequest) -> HttpResponse) {
-    return { request in
+public func shareFilesFromDirectory(_ directoryPath: String, defaults: [String] = ["index.html", "default.html"]) -> ((HttpRequest, HttpResponseHeaders) -> HttpResponse) {
+    return { request, responseHeaders in
         guard let fileRelativePath = request.params.first else {
             return .notFound
         }
@@ -54,8 +54,8 @@ public func shareFilesFromDirectory(_ directoryPath: String, defaults: [String] 
     }
 }
 
-public func directoryBrowser(_ dir: String) -> ((HttpRequest) -> HttpResponse) {
-    return { request in
+public func directoryBrowser(_ dir: String) -> ((HttpRequest, HttpResponseHeaders) -> HttpResponse) {
+    return { request, responseHeaders in
         guard let (_, value) = request.params.first else {
             return HttpResponse.notFound
         }
@@ -82,7 +82,7 @@ public func directoryBrowser(_ dir: String) -> ((HttpRequest) -> HttpResponse) {
                             }
                         }
                     }
-                    }(request)
+                    }(request, responseHeaders)
             } else {
                 guard let file = try? filePath.openForReading() else {
                     return .notFound

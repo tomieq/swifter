@@ -25,7 +25,7 @@ class SwifterTestsHttpRouter: XCTestCase {
 
     func testHttpRouterSlashRoot() {
 
-        router.register(nil, path: "/", handler: { _ in
+        router.register(nil, path: "/", handler: { _, _ in
             return .ok(.htmlBody("OK"))
         })
 
@@ -34,7 +34,7 @@ class SwifterTestsHttpRouter: XCTestCase {
 
     func testHttpRouterSimplePathSegments() {
 
-        router.register(nil, path: "/a/b/c/d", handler: { _ in
+        router.register(nil, path: "/a/b/c/d", handler: { _, _ in
             return .ok(.htmlBody("OK"))
         })
 
@@ -47,7 +47,7 @@ class SwifterTestsHttpRouter: XCTestCase {
 
     func testHttpRouterSinglePathSegmentWildcard() {
 
-        router.register(nil, path: "/a/*/c/d", handler: { _ in
+        router.register(nil, path: "/a/*/c/d", handler: { _, _ in
             return .ok(.htmlBody("OK"))
         })
 
@@ -61,7 +61,7 @@ class SwifterTestsHttpRouter: XCTestCase {
 
     func testHttpRouterVariables() {
 
-        router.register(nil, path: "/a/:arg1/:arg2/b/c/d/:arg3", handler: { _ in
+        router.register(nil, path: "/a/:arg1/:arg2/b/c/d/:arg3", handler: { _, _ in
             return .ok(.htmlBody("OK"))
         })
 
@@ -75,7 +75,7 @@ class SwifterTestsHttpRouter: XCTestCase {
 
     func testHttpRouterMultiplePathSegmentWildcards() {
 
-        router.register(nil, path: "/a/**/e/f/g", handler: { _ in
+        router.register(nil, path: "/a/**/e/f/g", handler: { _, _ in
             return .ok(.htmlBody("OK"))
         })
 
@@ -87,11 +87,11 @@ class SwifterTestsHttpRouter: XCTestCase {
 
     func testHttpRouterEmptyTail() {
 
-        router.register(nil, path: "/a/b/", handler: { _ in
+        router.register(nil, path: "/a/b/", handler: { _, _ in
             return .ok(.htmlBody("OK"))
         })
 
-        router.register(nil, path: "/a/b/:var", handler: { _ in
+        router.register(nil, path: "/a/b/:var", handler: { _, _ in
             return .ok(.htmlBody("OK"))
         })
 
@@ -107,7 +107,7 @@ class SwifterTestsHttpRouter: XCTestCase {
 
     func testHttpRouterPercentEncodedPathSegments() {
 
-        router.register(nil, path: "/a/<>/^", handler: { _ in
+        router.register(nil, path: "/a/<>/^", handler: { _, _ in
             return .ok(.htmlBody("OK"))
         })
 
@@ -122,7 +122,7 @@ class SwifterTestsHttpRouter: XCTestCase {
 
         let staticRouteExpectation = expectation(description: "Static Route")
         var foundStaticRoute = false
-        router.register("GET", path: "a/b") { _ in
+        router.register("GET", path: "a/b") { _, _ in
             foundStaticRoute = true
             staticRouteExpectation.fulfill()
             return HttpResponse.accepted
@@ -130,7 +130,7 @@ class SwifterTestsHttpRouter: XCTestCase {
 
         let variableRouteExpectation = expectation(description: "Variable Route")
         var foundVariableRoute = false
-        router.register("GET", path: "a/:id/c") { _ in
+        router.register("GET", path: "a/:id/c") { _, _ in
             foundVariableRoute = true
             variableRouteExpectation.fulfill()
             return HttpResponse.accepted
@@ -139,12 +139,12 @@ class SwifterTestsHttpRouter: XCTestCase {
         let staticRouteResult = router.route("GET", path: "a/b")
         let staticRouterHandler = staticRouteResult?.1
         XCTAssertNotNil(staticRouteResult)
-        _ = staticRouterHandler?(request)
+        _ = staticRouterHandler?(request, HttpResponseHeaders())
 
         let variableRouteResult = router.route("GET", path: "a/b/c")
         let variableRouterHandler = variableRouteResult?.1
         XCTAssertNotNil(variableRouteResult)
-        _ = variableRouterHandler?(request)
+        _ = variableRouterHandler?(request, HttpResponseHeaders())
 
         waitForExpectations(timeout: 10, handler: nil)
         XCTAssertTrue(foundStaticRoute)
@@ -157,7 +157,7 @@ class SwifterTestsHttpRouter: XCTestCase {
 
         let firstVariableRouteExpectation = expectation(description: "First Variable Route")
         var foundFirstVariableRoute = false
-        router.register("GET", path: "a/:id") { _ in
+        router.register("GET", path: "a/:id") { _, _ in
             foundFirstVariableRoute = true
             firstVariableRouteExpectation.fulfill()
             return HttpResponse.accepted
@@ -165,7 +165,7 @@ class SwifterTestsHttpRouter: XCTestCase {
 
         let secondVariableRouteExpectation = expectation(description: "Second Variable Route")
         var foundSecondVariableRoute = false
-        router.register("GET", path: "a/:id/c") { _ in
+        router.register("GET", path: "a/:id/c") { _, _ in
             foundSecondVariableRoute = true
             secondVariableRouteExpectation.fulfill()
             return HttpResponse.accepted
@@ -174,12 +174,12 @@ class SwifterTestsHttpRouter: XCTestCase {
         let firstRouteResult = router.route("GET", path: "a/b")
         let firstRouterHandler = firstRouteResult?.1
         XCTAssertNotNil(firstRouteResult)
-        _ = firstRouterHandler?(request)
+        _ = firstRouterHandler?(request, HttpResponseHeaders())
 
         let secondRouteResult = router.route("GET", path: "a/b/c")
         let secondRouterHandler = secondRouteResult?.1
         XCTAssertNotNil(secondRouteResult)
-        _ = secondRouterHandler?(request)
+        _ = secondRouterHandler?(request, HttpResponseHeaders())
 
         waitForExpectations(timeout: 10, handler: nil)
         XCTAssertTrue(foundFirstVariableRoute)
@@ -192,7 +192,7 @@ class SwifterTestsHttpRouter: XCTestCase {
 
         let firstVariableRouteExpectation = expectation(description: "First Variable Route")
         var foundFirstVariableRoute = false
-        router.register("GET", path: "/a/:id") { _ in
+        router.register("GET", path: "/a/:id") { _, _ in
             foundFirstVariableRoute = true
             firstVariableRouteExpectation.fulfill()
             return HttpResponse.accepted
@@ -200,7 +200,7 @@ class SwifterTestsHttpRouter: XCTestCase {
 
         let secondVariableRouteExpectation = expectation(description: "Second Variable Route")
         var foundSecondVariableRoute = false
-        router.register("GET", path: "/a") { _ in
+        router.register("GET", path: "/a") { _, _ in
             foundSecondVariableRoute = true
             secondVariableRouteExpectation.fulfill()
             return HttpResponse.accepted
@@ -208,7 +208,7 @@ class SwifterTestsHttpRouter: XCTestCase {
 
         let thirdVariableRouteExpectation = expectation(description: "Third Variable Route")
         var foundThirdVariableRoute = false
-        router.register("GET", path: "/a/:id/b") { _ in
+        router.register("GET", path: "/a/:id/b") { _, _ in
             foundThirdVariableRoute = true
             thirdVariableRouteExpectation.fulfill()
             return HttpResponse.accepted
@@ -217,17 +217,17 @@ class SwifterTestsHttpRouter: XCTestCase {
         let firstRouteResult = router.route("GET", path: "/a")
         let firstRouterHandler = firstRouteResult?.1
         XCTAssertNotNil(firstRouteResult)
-        _ = firstRouterHandler?(request)
+        _ = firstRouterHandler?(request, HttpResponseHeaders())
 
         let secondRouteResult = router.route("GET", path: "/a/b")
         let secondRouterHandler = secondRouteResult?.1
         XCTAssertNotNil(secondRouteResult)
-        _ = secondRouterHandler?(request)
+        _ = secondRouterHandler?(request, HttpResponseHeaders())
 
         let thirdRouteResult = router.route("GET", path: "/a/b/b")
         let thirdRouterHandler = thirdRouteResult?.1
         XCTAssertNotNil(thirdRouteResult)
-        _ = thirdRouterHandler?(request)
+        _ = thirdRouterHandler?(request, HttpResponseHeaders())
 
         waitForExpectations(timeout: 10, handler: nil)
         XCTAssertTrue(foundFirstVariableRoute)
@@ -241,7 +241,7 @@ class SwifterTestsHttpRouter: XCTestCase {
 
         let firstVariableRouteExpectation = expectation(description: "First Variable Route")
         var foundFirstVariableRoute = false
-        router.register("GET", path: "/a/b/c/d/e") { _ in
+        router.register("GET", path: "/a/b/c/d/e") { _, _ in
             foundFirstVariableRoute = true
             firstVariableRouteExpectation.fulfill()
             return HttpResponse.accepted
@@ -249,7 +249,7 @@ class SwifterTestsHttpRouter: XCTestCase {
 
         let secondVariableRouteExpectation = expectation(description: "Second Variable Route")
         var foundSecondVariableRoute = false
-        router.register("GET", path: "/a/:id/f/g") { _ in
+        router.register("GET", path: "/a/:id/f/g") { _, _ in
             foundSecondVariableRoute = true
             secondVariableRouteExpectation.fulfill()
             return HttpResponse.accepted
@@ -258,12 +258,12 @@ class SwifterTestsHttpRouter: XCTestCase {
         let firstRouteResult = router.route("GET", path: "/a/b/c/d/e")
         let firstRouterHandler = firstRouteResult?.1
         XCTAssertNotNil(firstRouteResult)
-        _ = firstRouterHandler?(request)
+        _ = firstRouterHandler?(request, HttpResponseHeaders())
 
         let secondRouteResult = router.route("GET", path: "/a/b/f/g")
         let secondRouterHandler = secondRouteResult?.1
         XCTAssertNotNil(secondRouteResult)
-        _ = secondRouterHandler?(request)
+        _ = secondRouterHandler?(request, HttpResponseHeaders())
 
         waitForExpectations(timeout: 10, handler: nil)
         XCTAssertTrue(foundFirstVariableRoute)
