@@ -18,6 +18,9 @@ All notable changes to this project will be documented in this file. Changes not
 
 # [Unreleased]
 
+## Added
+- Add new case to the responses (`noContent`)  by [@tomieq](https://github.com/tomieq)
+
 # [1.5.0]
 
 ## Added
