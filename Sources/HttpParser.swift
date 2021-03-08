@@ -29,6 +29,14 @@ public class HttpParser {
         request.path = urlComponents?.path ?? ""
         request.queryParams = urlComponents?.queryItems?.map { ($0.name, $0.value ?? "") } ?? []
         request.headers = try readHeaders(socket)
+        request.headers["cookie"]?.split(";")
+            .map{ $0.trimmingCharacters(in: .whitespaces) }
+            .map { $0.split("=") }
+            .forEach { data in
+                if data.count > 1 {
+                    request.cookies[data[0]] = data[1]
+                }
+            }
         if let contentLength = request.headers["content-length"], let contentLengthValue = Int(contentLength) {
             // Prevent a buffer overflow and runtime error trying to create an `UnsafeMutableBufferPointer` with
             // a negative length

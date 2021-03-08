@@ -13,6 +13,7 @@ public class HttpRequest {
     public var queryParams: [(String, String)] = []
     public var method: String = ""
     public var headers: [String: String] = [:]
+    public var cookies: [String: String] = [:]
     public var body: [UInt8] = []
     public var address: String? = ""
     public var params: [String: String] = [:]
