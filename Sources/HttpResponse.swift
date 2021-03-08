@@ -84,6 +84,8 @@ public enum HttpResponse {
     case noContent
     case tooManyRequests
     case internalServerError
+    case notImplemented
+    case badGateway, serviceUnavailable
     case raw(Int, String, ((HttpResponseBodyWriter) throws -> Void)? )
 
     public var statusCode: Int {
@@ -92,7 +94,7 @@ public enum HttpResponse {
         case .ok                      : return 200
         case .created                 : return 201
         case .accepted                : return 202
-        case .noContent                : return 204
+        case .noContent               : return 204
         case .movedPermanently        : return 301
         case .movedTemporarily        : return 307
         case .badRequest              : return 400
@@ -102,6 +104,9 @@ public enum HttpResponse {
         case .notAcceptable           : return 406
         case .tooManyRequests         : return 429
         case .internalServerError     : return 500
+        case .notImplemented          : return 501
+        case .badGateway              : return 502
+        case .serviceUnavailable      : return 503
         case .raw(let code, _, _)  : return code
         }
     }
@@ -122,6 +127,9 @@ public enum HttpResponse {
         case .notAcceptable            : return "Not Acceptable"
         case .tooManyRequests          : return "Too Many Requests"
         case .internalServerError      : return "Internal Server Error"
+        case .notImplemented           : return "Not Implemented"
+        case .badGateway               : return "Bad Gateway"
+        case .serviceUnavailable       : return "Service Unavailable"
         case .raw(_, let phrase, _) : return phrase
         }
     }
