@@ -41,7 +41,7 @@ open class HttpServer: HttpServerIO {
     public var DELETE, PATCH, HEAD, POST, GET, PUT: MethodRoute
     public var delete, patch, head, post, get, put: MethodRoute
 
-    public subscript(path: String) -> ((HttpRequest) -> HttpResponse)? {
+    public subscript(path: String) -> ((HttpRequest, HttpResponseHeaders) -> HttpResponse)? {
         set {
             router.register(nil, path: path, handler: newValue)
         }
@@ -52,14 +52,14 @@ open class HttpServer: HttpServerIO {
         return router.routes()
     }
 
-    public var notFoundHandler: ((HttpRequest) -> HttpResponse)?
+    public var notFoundHandler: ((HttpRequest, HttpResponseHeaders) -> HttpResponse)?
 
-    public var middleware = [(HttpRequest) -> HttpResponse?]()
+    public var middleware = [(HttpRequest, HttpResponseHeaders) -> HttpResponse?]()
 
-    override open func dispatch(_ request: HttpRequest) -> ([String: String], (HttpRequest) -> HttpResponse) {
+    override open func dispatch(_ request: HttpRequest, _ responseHeaders: HttpResponseHeaders) -> ([String: String], (HttpRequest, HttpResponseHeaders) -> HttpResponse) {
         for layer in middleware {
-            if let response = layer(request) {
-                return ([:], { _ in response })
+            if let response = layer(request, responseHeaders) {
+                return ([:], { (_, _) in response })
             }
         }
         if let result = router.route(request.method, path: request.path) {
@@ -68,13 +68,13 @@ open class HttpServer: HttpServerIO {
         if let notFoundHandler = self.notFoundHandler {
             return ([:], notFoundHandler)
         }
-        return super.dispatch(request)
+        return super.dispatch(request, responseHeaders)
     }
 
     public struct MethodRoute {
         public let method: String
         public let router: HttpRouter
-        public subscript(path: String) -> ((HttpRequest) -> HttpResponse)? {
+        public subscript(path: String) -> ((HttpRequest, HttpResponseHeaders) -> HttpResponse)? {
             set {
                 router.register(method, path: path, handler: newValue)
             }

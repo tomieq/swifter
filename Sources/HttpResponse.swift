@@ -129,7 +129,7 @@ public enum HttpResponse {
         }
     }
 
-    public func headers() -> HttpResponseHeaders{
+    public func autoHeaders() -> HttpResponseHeaders{
         let headers = HttpResponseHeaders().addHeader("Server", "Swifter \(HttpServer.VERSION)")
         switch self {
         case .switchProtocols(let switchHeaders, _):
@@ -141,7 +141,7 @@ public enum HttpResponse {
             case .json: headers.addHeader("Content-Type", "application/json")
             case .html: headers.addHeader("Content-Type", "text/html")
             case .data(_, let contentType): headers.addHeader("Content-Type", contentType ?? "")
-            default:break
+            default: break
             }
         case .movedPermanently(let location):
             headers.addHeader("Location", location)

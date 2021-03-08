@@ -111,22 +111,23 @@ open class HttpServerIO {
         self.state = .stopped
     }
 
-    open func dispatch(_ request: HttpRequest) -> ([String: String], (HttpRequest) -> HttpResponse) {
-        return ([:], { _ in HttpResponse.notFound })
+    open func dispatch(_ request: HttpRequest, _ responseHeaders: HttpResponseHeaders) -> ([String: String], (HttpRequest, HttpResponseHeaders) -> HttpResponse) {
+        return ([:], { _, _ in HttpResponse.notFound })
     }
 
     private func handleConnection(_ socket: Socket) {
         let parser = HttpParser()
         while self.operating, let request = try? parser.readHttpRequest(socket) {
             let request = request
+            let responseHeaders = HttpResponseHeaders()
             request.address = try? socket.peername()
-            let (params, handler) = self.dispatch(request)
+            let (params, handler) = self.dispatch(request, responseHeaders)
             request.params = params
-            let response = handler(request)
+            let response = handler(request, responseHeaders)
             var keepConnection = parser.supportsKeepAlive(request.headers)
             do {
                 if self.operating {
-                    keepConnection = try self.respond(socket, response: response, keepAlive: keepConnection)
+                    keepConnection = try self.respond(socket, response: response, customHeaders: responseHeaders, keepAlive: keepConnection)
                 }
             } catch {
                 print("Failed to send response: \(error)")
@@ -166,7 +167,7 @@ open class HttpServerIO {
         }
     }
 
-    private func respond(_ socket: Socket, response: HttpResponse, keepAlive: Bool) throws -> Bool {
+    private func respond(_ socket: Socket, response: HttpResponse, customHeaders: HttpResponseHeaders, keepAlive: Bool) throws -> Bool {
         guard self.operating else { return false }
 
         // Some web-socket clients (like Jetfire) expects to have header section in a single packet.
@@ -186,8 +187,16 @@ open class HttpServerIO {
             responseHeader.append("Connection: keep-alive\r\n")
         }
 
-        response.headers().raw.forEach { header in
+        // combine auto-headers and overwitten by handler
+        var sendHeaders = [String]()
+        customHeaders.raw.forEach { header in
             responseHeader.append("\(header.name): \(header.value)\r\n")
+            sendHeaders.append(header.name.lowercased())
+        }
+        response.autoHeaders().raw.forEach { header in
+            if !sendHeaders.contains(header.name.lowercased()) {
+                responseHeader.append("\(header.name): \(header.value)\r\n")
+            }
         }
 
         responseHeader.append("\r\n")

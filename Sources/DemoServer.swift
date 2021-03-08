@@ -30,9 +30,9 @@ public func demoServer(_ publicDir: String) -> HttpServer {
         }
     }
 
-    server["/magic"] = { .ok(.htmlBody("You asked for " + $0.path)) }
+    server["/magic"] = { request, _ in .ok(.htmlBody("You asked for " + request.path)) }
 
-    server["/test/:param1/:param2"] = { request in
+    server["/test/:param1/:param2"] = { request, responseHeaders in
         scopes {
             html {
                 body {
@@ -68,7 +68,7 @@ public func demoServer(_ publicDir: String) -> HttpServer {
                     }
                 }
             }
-        }(request)
+        }(request, responseHeaders)
     }
 
     server.GET["/upload"] = scopes {
@@ -92,7 +92,7 @@ public func demoServer(_ publicDir: String) -> HttpServer {
         }
     }
 
-    server.POST["/upload"] = { request in
+    server.POST["/upload"] = { request, responseHeaders in
         var response = ""
         for multipart in request.parseMultiPartFormData() {
             guard let name = multipart.name, let fileName = multipart.fileName else { continue }
@@ -134,7 +134,7 @@ public func demoServer(_ publicDir: String) -> HttpServer {
         }
     }
 
-    server.POST["/login"] = { request in
+    server.POST["/login"] = { request, _ in
         let formFields = request.parseUrlencodedForm()
         return HttpResponse.ok(.htmlBody(formFields.map({ "\($0.0) = \($0.1)" }).joined(separator: "<br>")))
     }
@@ -150,29 +150,29 @@ public func demoServer(_ publicDir: String) -> HttpServer {
         }
     }
 
-    server["/raw"] = { _ in
+    server["/raw"] = { _, _ in
         return HttpResponse.raw(200, "OK", HttpResponseHeaders().addHeader("XXX-Custom-Header", "value"), { try $0.write([UInt8]("test".utf8)) })
     }
 
-    server["/redirect/permanently"] = { _ in
+    server["/redirect/permanently"] = { _, _ in
         return .movedPermanently("http://www.google.com")
     }
 
-    server["/redirect/temporarily"] = { _ in
+    server["/redirect/temporarily"] = { _, _ in
         return .movedTemporarily("http://www.google.com")
     }
 
-    server["/long"] = { _ in
+    server["/long"] = { _, _ in
         var longResponse = ""
         for index in 0..<1000 { longResponse += "(\(index)),->" }
         return .ok(.htmlBody(longResponse))
     }
 
-    server["/wildcard/*/test/*/:param"] = { request in
+    server["/wildcard/*/test/*/:param"] = { request, _ in
         return .ok(.htmlBody(request.path))
     }
 
-    server["/stream"] = { _ in
+    server["/stream"] = { _, _ in
         return HttpResponse.raw(200, "OK", nil, { writer in
             for index in 0...100 {
                 try writer.write([UInt8]("[chunk \(index)]".utf8))
@@ -192,11 +192,11 @@ public func demoServer(_ publicDir: String) -> HttpServer {
         // Client disconnected
     })
 
-    server.notFoundHandler = { _ in
+    server.notFoundHandler = { _, _ in
         return .movedPermanently("https://github.com/404")
     }
 
-    server.middleware.append { request in
+    server.middleware.append { request, _ in
         print("Middleware: \(request.address ?? "unknown address") -> \(request.method) -> \(request.path)")
         return nil
     }
