@@ -160,12 +160,12 @@ class SwifterTestsHttpParser: XCTestCase {
         var resp = try? parser.readHttpRequest(TestSocket("GET /open?link=https://www.youtube.com/watch?v=D2cUBG4PnOA HTTP/1.0\nContent-Length: 10\n\n1234567890"))
 
         XCTAssertEqual(resp?.queryParams.filter({ $0.0 == "link"}).first?.1, "https://www.youtube.com/watch?v=D2cUBG4PnOA")
-        XCTAssertEqual(resp?.method, "GET", "Parser should extract HTTP method name from the status line.")
+        XCTAssertEqual(resp?.method, .GET, "Parser should extract HTTP method name from the status line.")
         XCTAssertEqual(resp?.path, "/open", "Parser should extract HTTP path value from the status line.")
         XCTAssertEqual(resp?.headers["content-length"], "10", "Parser should extract Content-Length header value.")
 
         resp = try? parser.readHttpRequest(TestSocket("POST / HTTP/1.0\nContent-Length: 10\n\n1234567890"))
-        XCTAssertEqual(resp?.method, "POST", "Parser should extract HTTP method name from the status line.")
+        XCTAssertEqual(resp?.method, .POST, "Parser should extract HTTP method name from the status line.")
 
         resp = try? parser.readHttpRequest(TestSocket("GET / HTTP/1.0\nHeader1: 1:1:34\nHeader2: 12345\nContent-Length: 0\n\n"))
         XCTAssertEqual(resp?.headers["header1"], "1:1:34", "Parser should properly extract header name and value in case the value has ':' character.")
@@ -181,7 +181,7 @@ class SwifterTestsHttpParser: XCTestCase {
         XCTAssertEqual(queryPairs.first?.1, "1")
         XCTAssertEqual(queryPairs.last?.0, "subscript_query[]")
         XCTAssertEqual(queryPairs.last?.1, "2")
-        XCTAssertEqual(resp?.method, "GET", "Parser should extract HTTP method name from the status line.")
+        XCTAssertEqual(resp?.method, .GET, "Parser should extract HTTP method name from the status line.")
         XCTAssertEqual(resp?.path, "/some/path", "Parser should extract HTTP path value from the status line.")
         XCTAssertEqual(resp?.headers["content-length"], "10", "Parser should extract Content-Length header value.")
 

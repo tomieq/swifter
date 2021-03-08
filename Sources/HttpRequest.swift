@@ -11,7 +11,7 @@ public class HttpRequest {
 
     public var path: String = ""
     public var queryParams: [(String, String)] = []
-    public var method: String = ""
+    public var method: HttpMethod = .unknown
     public var headers: [String: String] = [:]
     public var cookies: [String: String] = [:]
     public var body: [UInt8] = []
