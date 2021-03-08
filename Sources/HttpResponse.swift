@@ -87,7 +87,7 @@ public enum HttpResponse {
     case noContent
     case tooManyRequests
     case internalServerError
-    case raw(Int, String, HttpResponseHeaders?, ((HttpResponseBodyWriter) throws -> Void)? )
+    case raw(Int, String, ((HttpResponseBodyWriter) throws -> Void)? )
 
     public var statusCode: Int {
         switch self {
@@ -105,7 +105,7 @@ public enum HttpResponse {
         case .notAcceptable           : return 406
         case .tooManyRequests         : return 429
         case .internalServerError     : return 500
-        case .raw(let code, _, _, _)  : return code
+        case .raw(let code, _, _)  : return code
         }
     }
 
@@ -125,7 +125,7 @@ public enum HttpResponse {
         case .notAcceptable            : return "Not Acceptable"
         case .tooManyRequests          : return "Too Many Requests"
         case .internalServerError      : return "Internal Server Error"
-        case .raw(_, let phrase, _, _) : return phrase
+        case .raw(_, let phrase, _) : return phrase
         }
     }
 
@@ -147,12 +147,6 @@ public enum HttpResponse {
             headers.addHeader("Location", location)
         case .movedTemporarily(let location):
             headers.addHeader("Location", location)
-        case .raw(_, _, let rawHeaders, _):
-            if let rawHeaders = rawHeaders {
-                rawHeaders.raw.forEach { header in
-                    headers.addHeader(header.name, header.value)
-                }
-            }
         default: break
         }
         return headers
@@ -162,7 +156,7 @@ public enum HttpResponse {
         switch self {
         case .ok(let body)             : return body.content()
         case .badRequest(let body)     : return body?.content() ?? (-1, nil)
-        case .raw(_, _, _, let writer) : return (-1, writer)
+        case .raw(_, _, let writer) : return (-1, writer)
         default                        : return (-1, nil)
         }
     }

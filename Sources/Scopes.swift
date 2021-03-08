@@ -9,10 +9,11 @@
 import Foundation
 
 public func scopes(_ scope: @escaping Closure) -> ((HttpRequest, HttpResponseHeaders) -> HttpResponse) {
-    return { _, _ in
+    return { _, responseHeaders in
         scopesBuffer[Process.tid] = ""
         scope()
-        return .raw(200, "OK", HttpResponseHeaders().addHeader("Content-Type", "text/html"), {
+        responseHeaders.addHeader("Content-Type", "text/html")
+        return .raw(200, "OK", {
             try? $0.write([UInt8](("<!DOCTYPE html>"  + (scopesBuffer[Process.tid] ?? "")).utf8))
         })
     }
