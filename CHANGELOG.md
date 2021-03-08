@@ -19,6 +19,10 @@ All notable changes to this project will be documented in this file. Changes not
 # [Unreleased]
 
 ## Added
+
+# [1.5.1]
+
+## Added
 - Add new cases to the responses (`noContent`, `notImplemented`, `badGateway`, `serviceUnavailable`)  by [@tomieq](https://github.com/tomieq)
 - Replace dictionary headers with HttpResponseHeaders class  by [@tomieq](https://github.com/tomieq)
 - Keep in HttpRequest cookie values  by [@tomieq](https://github.com/tomieq)
