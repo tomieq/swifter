@@ -20,8 +20,9 @@ All notable changes to this project will be documented in this file. Changes not
 
 ## Added
 - Add new case to the responses (`noContent`)  by [@tomieq](https://github.com/tomieq)
-- Replace headers dictionary with HttpHeaders class  by [@tomieq](https://github.com/tomieq)
+- Replace dictionary headers with HttpResponseHeaders class  by [@tomieq](https://github.com/tomieq)
 - Keep in HttpRequest cookie values  by [@tomieq](https://github.com/tomieq)
+- Replace JSONSerialization with Encodable  by [@tomieq](https://github.com/tomieq)
 
 # [1.5.0]
 
