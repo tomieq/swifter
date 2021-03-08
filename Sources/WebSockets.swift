@@ -140,7 +140,7 @@ public func websocket(
             disconnected?(session)
         }
         let secWebSocketAccept = String.toBase64((secWebSocketKey + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11").sha1())
-        let headers = HttpHeaders()
+        let headers = HttpResponseHeaders()
             .addHeader("Upgrade", "WebSocket")
             .addHeader("Connection", "Upgrade")
             .addHeader("Sec-WebSocket-Accept", secWebSocketAccept)

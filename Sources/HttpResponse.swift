@@ -79,7 +79,7 @@ public enum HttpResponseBody {
 // swiftlint:disable cyclomatic_complexity
 public enum HttpResponse {
 
-    case switchProtocols(HttpHeaders, (Socket) -> Void)
+    case switchProtocols(HttpResponseHeaders, (Socket) -> Void)
     case ok(HttpResponseBody), created, accepted
     case movedPermanently(String)
     case movedTemporarily(String)
@@ -87,7 +87,7 @@ public enum HttpResponse {
     case noContent
     case tooManyRequests
     case internalServerError
-    case raw(Int, String, HttpHeaders?, ((HttpResponseBodyWriter) throws -> Void)? )
+    case raw(Int, String, HttpResponseHeaders?, ((HttpResponseBodyWriter) throws -> Void)? )
 
     public var statusCode: Int {
         switch self {
@@ -129,8 +129,8 @@ public enum HttpResponse {
         }
     }
 
-    public func headers() -> HttpHeaders{
-        let headers = HttpHeaders().addHeader("Server", "Swifter \(HttpServer.VERSION)")
+    public func headers() -> HttpResponseHeaders{
+        let headers = HttpResponseHeaders().addHeader("Server", "Swifter \(HttpServer.VERSION)")
         switch self {
         case .switchProtocols(let switchHeaders, _):
             switchHeaders.raw.forEach { header in

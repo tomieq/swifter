@@ -38,7 +38,7 @@ public func shareFilesFromDirectory(_ directoryPath: String, defaults: [String] 
 
         if let file = try? filePath.openForReading() {
             let mimeType = fileRelativePath.value.mimeType()
-            let responseHeaders = HttpHeaders().addHeader("Content-Type", mimeType)
+            let responseHeaders = HttpResponseHeaders().addHeader("Content-Type", mimeType)
 
             if let attr = try? FileManager.default.attributesOfItem(atPath: filePath),
                 let fileSize = attr[FileAttributeKey.size] as? UInt64 {

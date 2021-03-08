@@ -151,7 +151,7 @@ public func demoServer(_ publicDir: String) -> HttpServer {
     }
 
     server["/raw"] = { _ in
-        return HttpResponse.raw(200, "OK", HttpHeaders().addHeader("XXX-Custom-Header", "value"), { try $0.write([UInt8]("test".utf8)) })
+        return HttpResponse.raw(200, "OK", HttpResponseHeaders().addHeader("XXX-Custom-Header", "value"), { try $0.write([UInt8]("test".utf8)) })
     }
 
     server["/redirect/permanently"] = { _ in

@@ -7,26 +7,26 @@
 
 import Foundation
 
-public class HttpHeaders {
+public class HttpResponseHeaders {
     private var storage: [(name: String, value: String)] = []
     var raw: [(name: String, value: String)] {
         return self.storage
     }
     
     @discardableResult
-    func addHeader(_ name: String, _ value: String) -> HttpHeaders {
+    func addHeader(_ name: String, _ value: String) -> HttpResponseHeaders {
         self.storage.append((name, value))
         return self
     }
     
     @discardableResult
-    func setCookie(name: String, value: String) -> HttpHeaders {
+    func setCookie(name: String, value: String) -> HttpResponseHeaders {
         self.storage.append(("Set-Cookie", "\(name)=\(value)"))
         return self
     }
     
     @discardableResult
-    func unsetCookie(name: String) -> HttpHeaders {
+    func unsetCookie(name: String) -> HttpResponseHeaders {
         self.storage.append(("Set-Cookie", "\(name)=; Max-Age=-99999999"))
         return self
     }
