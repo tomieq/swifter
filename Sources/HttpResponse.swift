@@ -79,7 +79,7 @@ public enum HttpResponseBody {
 // swiftlint:disable cyclomatic_complexity
 public enum HttpResponse {
 
-    case switchProtocols([String: String], (Socket) -> Void)
+    case switchProtocols(HttpHeaders, (Socket) -> Void)
     case ok(HttpResponseBody), created, accepted
     case movedPermanently(String)
     case movedTemporarily(String)
@@ -87,7 +87,7 @@ public enum HttpResponse {
     case noContent
     case tooManyRequests
     case internalServerError
-    case raw(Int, String, [String: String]?, ((HttpResponseBodyWriter) throws -> Void)? )
+    case raw(Int, String, HttpHeaders?, ((HttpResponseBodyWriter) throws -> Void)? )
 
     public var statusCode: Int {
         switch self {
@@ -129,31 +129,31 @@ public enum HttpResponse {
         }
     }
 
-    public func headers() -> [String: String] {
-        var headers = ["Server": "Swifter \(HttpServer.VERSION)"]
+    public func headers() -> HttpHeaders{
+        let headers = HttpHeaders().addHeader("Server", "Swifter \(HttpServer.VERSION)")
         switch self {
         case .switchProtocols(let switchHeaders, _):
-            for (key, value) in switchHeaders {
-                headers[key] = value
+            switchHeaders.raw.forEach { header in
+                headers.addHeader(header.name, header.value)
             }
         case .ok(let body):
             switch body {
-            case .json: headers["Content-Type"] = "application/json"
-            case .html: headers["Content-Type"] = "text/html"
-            case .data(_, let contentType): headers["Content-Type"] = contentType
+            case .json: headers.addHeader("Content-Type", "application/json")
+            case .html: headers.addHeader("Content-Type", "text/html")
+            case .data(_, let contentType): headers.addHeader("Content-Type", contentType ?? "")
             default:break
             }
         case .movedPermanently(let location):
-            headers["Location"] = location
+            headers.addHeader("Location", location)
         case .movedTemporarily(let location):
-            headers["Location"] = location
+            headers.addHeader("Location", location)
         case .raw(_, _, let rawHeaders, _):
             if let rawHeaders = rawHeaders {
-                for (key, value) in rawHeaders {
-                    headers.updateValue(value, forKey: key)
+                rawHeaders.raw.forEach { header in
+                    headers.addHeader(header.name, header.value)
                 }
             }
-        default:break
+        default: break
         }
         return headers
     }

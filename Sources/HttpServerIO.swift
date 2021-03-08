@@ -186,8 +186,8 @@ open class HttpServerIO {
             responseHeader.append("Connection: keep-alive\r\n")
         }
 
-        for (name, value) in response.headers() {
-            responseHeader.append("\(name): \(value)\r\n")
+        response.headers().raw.forEach { header in
+            responseHeader.append("\(header.name): \(header.value)\r\n")
         }
 
         responseHeader.append("\r\n")
