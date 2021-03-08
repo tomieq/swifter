@@ -47,10 +47,10 @@ open class HttpRouter {
         return result
     }
 
-    public func register(_ method: String?, path: String, handler: ((HttpRequest, HttpResponseHeaders) -> HttpResponse)?) {
+    public func register(_ method: HttpMethod?, path: String, handler: ((HttpRequest, HttpResponseHeaders) -> HttpResponse)?) {
         var pathSegments = stripQuery(path).split("/")
         if let method = method {
-            pathSegments.insert(method, at: 0)
+            pathSegments.insert(method.rawValue, at: 0)
         } else {
             pathSegments.insert("*", at: 0)
         }
@@ -58,11 +58,11 @@ open class HttpRouter {
         inflate(&rootNode, generator: &pathSegmentsGenerator).handler = handler
     }
 
-    public func route(_ method: String?, path: String) -> ([String: String], (HttpRequest, HttpResponseHeaders) -> HttpResponse)? {
+    public func route(_ method: HttpMethod?, path: String) -> ([String: String], (HttpRequest, HttpResponseHeaders) -> HttpResponse)? {
 
         return queue.sync {
             if let method = method {
-                let pathSegments = (method + "/" + stripQuery(path)).split("/")
+                let pathSegments = (method.rawValue + "/" + stripQuery(path)).split("/")
                 var pathSegmentsGenerator = pathSegments.makeIterator()
                 var params = [String: String]()
                 if let handler = findHandler(&rootNode, params: &params, generator: &pathSegmentsGenerator) {
