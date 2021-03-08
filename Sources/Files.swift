@@ -10,7 +10,7 @@ import Foundation
 public func shareFile(_ path: String) -> ((HttpRequest) -> HttpResponse) {
     return { _ in
         if let file = try? path.openForReading() {
-            return .raw(200, "OK", nil, { writer in
+            return .raw(200, "OK", { writer in
                 try? writer.write(file)
                 file.close()
             })
@@ -27,7 +27,7 @@ public func shareFilesFromDirectory(_ directoryPath: String, defaults: [String] 
         if fileRelativePath.value.isEmpty {
             for path in defaults {
                 if let file = try? (directoryPath + String.pathSeparator + path).openForReading() {
-                    return .raw(200, "OK", nil, { writer in
+                    return .raw(200, "OK", { writer in
                         try? writer.write(file)
                         file.close()
                     })
@@ -38,14 +38,14 @@ public func shareFilesFromDirectory(_ directoryPath: String, defaults: [String] 
 
         if let file = try? filePath.openForReading() {
             let mimeType = fileRelativePath.value.mimeType()
-            let responseHeaders = HttpResponseHeaders().addHeader("Content-Type", mimeType)
+            responseHeaders.addHeader("Content-Type", mimeType)
 
             if let attr = try? FileManager.default.attributesOfItem(atPath: filePath),
                 let fileSize = attr[FileAttributeKey.size] as? UInt64 {
                 responseHeaders.addHeader("Content-Length", String(fileSize))
             }
 
-            return .raw(200, "OK", responseHeaders, { writer in
+            return .raw(200, "OK", { writer in
                 try? writer.write(file)
                 file.close()
             })
@@ -87,7 +87,7 @@ public func directoryBrowser(_ dir: String) -> ((HttpRequest, HttpResponseHeader
                 guard let file = try? filePath.openForReading() else {
                     return .notFound
                 }
-                return .raw(200, "OK", nil, { writer in
+                return .raw(200, "OK", { writer in
                     try? writer.write(file)
                     file.close()
                 })
