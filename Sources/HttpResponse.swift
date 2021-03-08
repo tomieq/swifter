@@ -84,6 +84,7 @@ public enum HttpResponse {
     case movedPermanently(String)
     case movedTemporarily(String)
     case badRequest(HttpResponseBody?), unauthorized, forbidden, notFound, notAcceptable
+    case noContent
     case tooManyRequests
     case internalServerError
     case raw(Int, String, [String: String]?, ((HttpResponseBodyWriter) throws -> Void)? )
@@ -94,6 +95,7 @@ public enum HttpResponse {
         case .ok                      : return 200
         case .created                 : return 201
         case .accepted                : return 202
+        case .noContent                : return 204
         case .movedPermanently        : return 301
         case .movedTemporarily        : return 307
         case .badRequest              : return 400
@@ -113,6 +115,7 @@ public enum HttpResponse {
         case .ok                       : return "OK"
         case .created                  : return "Created"
         case .accepted                 : return "Accepted"
+        case .noContent                : return "No Content"
         case .movedPermanently         : return "Moved Permanently"
         case .movedTemporarily         : return "Moved Temporarily"
         case .badRequest               : return "Bad Request"
