@@ -17,8 +17,12 @@ All notable changes to this project will be documented in this file. Changes not
 > * Something was deprecated. (#pr-number) by @pr-author
 
 # [Unreleased]
-
 ## Added
+
+# [1.5.2]
+## Added
+- Added new type `javaScript` in HttpResponseBody by [@tomieq](https://github.com/tomieq)
+- Added helper function to access flat query param value  by [@tomieq](https://github.com/tomieq)
 
 # [1.5.1]
 
