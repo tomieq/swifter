@@ -49,6 +49,10 @@ public class HttpRequest {
         }
     }
 
+    public func queryParam(_ name: String) -> String? {
+        return self.queryParams.first{ $0.0 == name }?.1
+    }
+
     public struct MultiPart {
 
         public let headers: [String: String]
