@@ -26,6 +26,7 @@ public enum HttpResponseBody {
     case html(String)
     case htmlBody(String)
     case text(String)
+    case javaScript(String)
     case data(Data, contentType: String? = nil)
     case custom(Any, (Any) throws -> String)
 
@@ -50,6 +51,11 @@ public enum HttpResponseBody {
             case .htmlBody(let body):
                 let serialised = "<html><meta charset=\"UTF-8\"><body>\(body)</body></html>"
                 let data = [UInt8](serialised.utf8)
+                return (data.count, {
+                    try $0.write(data)
+                })
+            case .javaScript(let body):
+                let data = [UInt8](body.utf8)
                 return (data.count, {
                     try $0.write(data)
                 })
@@ -145,6 +151,7 @@ public enum HttpResponse {
             switch body {
             case .json: headers.addHeader("Content-Type", "application/json")
             case .html: headers.addHeader("Content-Type", "text/html")
+            case .javaScript: headers.addHeader("Content-Type", "text/javascript")
             case .data(_, let contentType): headers.addHeader("Content-Type", contentType ?? "")
             default: break
             }
