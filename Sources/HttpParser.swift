@@ -37,9 +37,6 @@ public class HttpParser {
                     request.cookies[data[0]] = data[1]
                 }
             }
-        if let value = request.headers["connection"] {
-            request.supportsKeepAlive = "keep-alive" == value.trimmingCharacters(in: .whitespaces).lowercased()
-        }
         
         if let contentLength = request.headers["content-length"], let contentLengthValue = Int(contentLength) {
             // Prevent a buffer overflow and runtime error trying to create an `UnsafeMutableBufferPointer` with
