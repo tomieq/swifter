@@ -17,7 +17,7 @@ public class HttpRequest {
     public var body: [UInt8] = []
     public var address: String? = ""
     public var params: [String: String] = [:]
-    public var supportsKeepAlive: Bool = false
+    public var disableKeepAlive: Bool = false
 
     public init() {}
 
@@ -48,6 +48,13 @@ public class HttpRequest {
             }
             return ("", "")
         }
+    }
+    
+    public func clientSupportsKeepAlive() -> Bool {
+        if let value = self.headers["connection"] {
+            return "keep-alive" == value.trimmingCharacters(in: .whitespaces).lowercased()
+        }
+        return false
     }
 
     public func queryParam(_ name: String) -> String? {
