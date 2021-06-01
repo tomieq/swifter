@@ -40,14 +40,23 @@ public class HttpRequest {
             // Consider to throw an exception here (examine the encoding from headers).
             return []
         }
-        return utf8String.components(separatedBy: "&").map { param -> (String, String) in
+        return utf8String.components(separatedBy: "&").compactMap { param -> (String, String)? in
             let tokens = param.components(separatedBy: "=")
             if let name = tokens.first?.removingPercentEncoding, let value = tokens.last?.removingPercentEncoding, tokens.count == 2 {
                 return (name.replacingOccurrences(of: "+", with: " "),
                         value.replacingOccurrences(of: "+", with: " "))
             }
-            return ("", "")
+            return nil
         }
+    }
+    
+    public func flatFormData() -> [String:String] {
+        let urlencodedForm = self.parseUrlencodedForm()
+        var formData: [String:String] = [:]
+        urlencodedForm.forEach{
+            formData[$0.0] = $0.1
+        }
+        return formData
     }
     
     public func clientSupportsKeepAlive() -> Bool {
