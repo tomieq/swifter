@@ -19,6 +19,10 @@ All notable changes to this project will be documented in this file. Changes not
 # [Unreleased]
 ## Added
 
+# [1.5.5]
+## Added
+- Added flatFormData() in HttpRequest by [@tomieq](https://github.com/tomieq)
+
 # [1.5.3]
 ## Added
 - Added support for overriding Keep-Alive flag due to memory leaks (https://github.com/httpswift/swifter/issues/413) by [@tomieq](https://github.com/tomieq)
