@@ -151,6 +151,11 @@ open class HttpRouter {
             }
 
             if let startStarNode = node.nodes["**"] {
+                if startStarNode.isEndOfRoute {
+                    // ** at the end of a route works as a catch-all
+                    matchedNodes.append(startStarNode)
+                    return
+                }
                 let startStarNodeKeys = startStarNode.nodes.keys
                 while currentIndex < count, let pathToken = pattern[currentIndex].removingPercentEncoding {
                     currentIndex += 1
