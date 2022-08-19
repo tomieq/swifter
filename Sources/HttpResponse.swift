@@ -86,10 +86,14 @@ public enum HttpResponse {
     case ok(HttpResponseBody), created, accepted
     case movedPermanently(String)
     case movedTemporarily(String)
-    case badRequest(HttpResponseBody?), unauthorized, forbidden, notFound, notAcceptable
+    case badRequest(HttpResponseBody?)
+    case unauthorized(HttpResponseBody?)
+    case forbidden(HttpResponseBody?)
+    case notFound(HttpResponseBody? = nil)
+    case notAcceptable(HttpResponseBody?)
     case noContent
-    case tooManyRequests
-    case internalServerError
+    case tooManyRequests(HttpResponseBody?)
+    case internalServerError(HttpResponseBody? = nil)
     case notImplemented
     case badGateway, serviceUnavailable
     case raw(Int, String, ((HttpResponseBodyWriter) throws -> Void)? )
@@ -166,10 +170,16 @@ public enum HttpResponse {
 
     func content() -> (length: Int, write: ((HttpResponseBodyWriter) throws -> Void)?) {
         switch self {
-        case .ok(let body)             : return body.content()
-        case .badRequest(let body)     : return body?.content() ?? (-1, nil)
-        case .raw(_, _, let writer) : return (-1, writer)
-        default                        : return (-1, nil)
+        case .ok(let body):
+            return body.content()
+        case .badRequest(let body), .unauthorized(let body),
+             .forbidden(let body), .notFound(let body),
+             .tooManyRequests(let body), .internalServerError(let body):
+            return body?.content() ?? (-1, nil)
+        case .raw(_, _, let writer):
+            return (-1, writer)
+        default:
+            return (-1, nil)
         }
     }
 
