@@ -137,7 +137,7 @@ class SwifterTestsHttpRouter: XCTestCase {
         router.register(.GET, path: "a/b") { _, _ in
             foundStaticRoute = true
             staticRouteExpectation.fulfill()
-            return HttpResponse.accepted
+            return HttpResponse.accepted()
         }
 
         let variableRouteExpectation = expectation(description: "Variable Route")
@@ -145,7 +145,7 @@ class SwifterTestsHttpRouter: XCTestCase {
         router.register(.GET, path: "a/:id/c") { _, _ in
             foundVariableRoute = true
             variableRouteExpectation.fulfill()
-            return HttpResponse.accepted
+            return HttpResponse.accepted()
         }
 
         let staticRouteResult = router.route(HttpMethod.GET, path: "a/b")
@@ -172,7 +172,7 @@ class SwifterTestsHttpRouter: XCTestCase {
         router.register(.GET, path: "a/:id") { _, _ in
             foundFirstVariableRoute = true
             firstVariableRouteExpectation.fulfill()
-            return HttpResponse.accepted
+            return HttpResponse.accepted()
         }
 
         let secondVariableRouteExpectation = expectation(description: "Second Variable Route")
@@ -180,7 +180,7 @@ class SwifterTestsHttpRouter: XCTestCase {
         router.register(.GET, path: "a/:id/c") { _, _ in
             foundSecondVariableRoute = true
             secondVariableRouteExpectation.fulfill()
-            return HttpResponse.accepted
+            return HttpResponse.accepted()
         }
 
         let firstRouteResult = router.route(.GET, path: "a/b")
@@ -207,7 +207,7 @@ class SwifterTestsHttpRouter: XCTestCase {
         router.register(.GET, path: "/a/:id") { _, _ in
             foundFirstVariableRoute = true
             firstVariableRouteExpectation.fulfill()
-            return HttpResponse.accepted
+            return HttpResponse.accepted()
         }
 
         let secondVariableRouteExpectation = expectation(description: "Second Variable Route")
@@ -215,7 +215,7 @@ class SwifterTestsHttpRouter: XCTestCase {
         router.register(.GET, path: "/a") { _, _ in
             foundSecondVariableRoute = true
             secondVariableRouteExpectation.fulfill()
-            return HttpResponse.accepted
+            return HttpResponse.accepted()
         }
 
         let thirdVariableRouteExpectation = expectation(description: "Third Variable Route")
@@ -223,7 +223,7 @@ class SwifterTestsHttpRouter: XCTestCase {
         router.register(.GET, path: "/a/:id/b") { _, _ in
             foundThirdVariableRoute = true
             thirdVariableRouteExpectation.fulfill()
-            return HttpResponse.accepted
+            return HttpResponse.accepted()
         }
 
         let firstRouteResult = router.route(.GET, path: "/a")
@@ -256,7 +256,7 @@ class SwifterTestsHttpRouter: XCTestCase {
         router.register(.GET, path: "/a/b/c/d/e") { _, _ in
             foundFirstVariableRoute = true
             firstVariableRouteExpectation.fulfill()
-            return HttpResponse.accepted
+            return HttpResponse.accepted()
         }
 
         let secondVariableRouteExpectation = expectation(description: "Second Variable Route")
@@ -264,7 +264,7 @@ class SwifterTestsHttpRouter: XCTestCase {
         router.register(.GET, path: "/a/:id/f/g") { _, _ in
             foundSecondVariableRoute = true
             secondVariableRouteExpectation.fulfill()
-            return HttpResponse.accepted
+            return HttpResponse.accepted()
         }
 
         let firstRouteResult = router.route(.GET, path: "/a/b/c/d/e")

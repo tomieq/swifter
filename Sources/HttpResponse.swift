@@ -83,7 +83,9 @@ public enum HttpResponseBody {
 public enum HttpResponse {
 
     case switchProtocols(HttpResponseHeaders, (Socket) -> Void)
-    case ok(HttpResponseBody), created, accepted
+    case ok(HttpResponseBody)
+    case created(HttpResponseBody? = nil)
+    case accepted(HttpResponseBody? = nil)
     case movedPermanently(String)
     case movedTemporarily(String)
     case badRequest(HttpResponseBody?)
@@ -174,7 +176,8 @@ public enum HttpResponse {
             return body.content()
         case .badRequest(let body), .unauthorized(let body),
              .forbidden(let body), .notFound(let body),
-             .tooManyRequests(let body), .internalServerError(let body):
+             .tooManyRequests(let body), .internalServerError(let body),
+             .created(let body), .accepted(let body):
             return body?.content() ?? (-1, nil)
         case .raw(_, _, let writer):
             return (-1, writer)
