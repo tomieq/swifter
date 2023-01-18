@@ -88,13 +88,13 @@ public enum HttpResponse {
     case accepted(HttpResponseBody? = nil)
     case movedPermanently(String)
     case movedTemporarily(String)
-    case badRequest(HttpResponseBody?)
-    case unauthorized(HttpResponseBody?)
-    case forbidden(HttpResponseBody?)
+    case badRequest(HttpResponseBody? = nil)
+    case unauthorized(HttpResponseBody? = nil)
+    case forbidden(HttpResponseBody? = nil)
     case notFound(HttpResponseBody? = nil)
-    case notAcceptable(HttpResponseBody?)
+    case notAcceptable(HttpResponseBody? = nil)
     case noContent
-    case tooManyRequests(HttpResponseBody?)
+    case tooManyRequests(HttpResponseBody? = nil)
     case internalServerError(HttpResponseBody? = nil)
     case notImplemented
     case badGateway, serviceUnavailable
@@ -142,11 +142,11 @@ public enum HttpResponse {
         case .notImplemented           : return "Not Implemented"
         case .badGateway               : return "Bad Gateway"
         case .serviceUnavailable       : return "Service Unavailable"
-        case .raw(_, let phrase, _) : return phrase
+        case .raw(_, let phrase, _)    : return phrase
         }
     }
 
-    public func autoHeaders() -> HttpResponseHeaders{
+    public func autoHeaders() -> HttpResponseHeaders {
         let headers = HttpResponseHeaders().addHeader("Server", "Swifter \(HttpServer.VERSION)")
         switch self {
         case .switchProtocols(let switchHeaders, _):
@@ -155,17 +155,25 @@ public enum HttpResponse {
             }
         case .ok(let body):
             switch body {
-            case .json: headers.addHeader("Content-Type", "application/json")
-            case .html: headers.addHeader("Content-Type", "text/html")
-            case .javaScript: headers.addHeader("Content-Type", "text/javascript")
-            case .data(_, let contentType): headers.addHeader("Content-Type", contentType ?? "")
-            default: break
+            case .json:
+                headers.addHeader("Content-Type", "application/json")
+            case .html, .htmlBody:
+                headers.addHeader("Content-Type", "text/html")
+            case .text:
+                headers.addHeader("Content-Type", "text/plain")
+            case .javaScript:
+                headers.addHeader("Content-Type", "text/javascript")
+            case .data(_, let contentType):
+                headers.addHeader("Content-Type", contentType ?? "")
+            default:
+                break
             }
         case .movedPermanently(let location):
             headers.addHeader("Location", location)
         case .movedTemporarily(let location):
             headers.addHeader("Location", location)
-        default: break
+        default:
+            break
         }
         return headers
     }
@@ -174,10 +182,8 @@ public enum HttpResponse {
         switch self {
         case .ok(let body):
             return body.content()
-        case .badRequest(let body), .unauthorized(let body),
-             .forbidden(let body), .notFound(let body),
-             .tooManyRequests(let body), .internalServerError(let body),
-             .created(let body), .accepted(let body):
+        case .badRequest(let body), .unauthorized(let body), .forbidden(let body), .notFound(let body),
+             .tooManyRequests(let body), .internalServerError(let body), .created(let body), .accepted(let body):
             return body?.content() ?? (-1, nil)
         case .raw(_, _, let writer):
             return (-1, writer)
