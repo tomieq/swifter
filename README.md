@@ -13,28 +13,25 @@ I forked this repo to adjust the library to my needs. I refactored a little, rem
 Tiny http server engine written in [Swift](https://developer.apple.com/swift/) programming language.
 
 ### Branches
-`* stable` - lands on CocoaPods and others. Supports the latest non-beta XCode and SPM. Stable.
+`* 1.5.6` - latest release
 
-`* master` - stable branch plus experimental web-framework layer.
-
-`* 2.0   ` - next version of Swifter (async IO). Experimental.
 
 
 ### How to start?
 ```swift
 let server = HttpServer()
-server["/hello"] = { .ok(.htmlBody("You asked for \($0)"))  }
-server.start()
-```
-
-### How to load HTML by string?
-```swift
-let server = HttpServer()
-server[path] = { request in
-    return HttpResponse.ok(.text("<html string>"))
+server["/hello"] = { request, responseHeaders in
+    .ok(.html("html goes here"))  
+}
+server["/js"] = { request, responseHeaders in
+    .ok(.javaScript("javascript goes here"))  
+}
+server["/api"] = { request, responseHeaders in
+    .ok(.json("json body"))  
 }
 server.start()
 ```
+
 
 ### How to share files?
 ```swift
@@ -45,7 +42,7 @@ server.start()
 ### How to redirect?
 ```swift
 let server = HttpServer()
-server["/redirect"] = { request in
+server["/redirect"] = { request, _ in
   return .movedPermanently("http://www.google.com")
 }
 server.start()
@@ -81,7 +78,7 @@ pod 'Swifter', '~> 1.5.0'
 
 ### Carthage? Also yes.
 ```
-github "httpswift/swifter" ~> 1.5.0
+github "tomieq/swifter" ~> 1.5.0
 ```
 
 ### Swift Package Manager.
@@ -91,7 +88,7 @@ import PackageDescription
 let package = Package(
     name: "MyServer",
     dependencies: [
-        .package(url: "https://github.com/httpswift/swifter.git", .upToNextMajor(from: "1.5.0"))
+        .package(url: "https://github.com/tomieq/swifter.git", .upToNextMajor(from: "1.5.0"))
     ]
 )
 ```
