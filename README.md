@@ -32,6 +32,11 @@ server["/api"] = { request, responseHeaders in
 server.start()
 ```
 
+### How to keep the process running on Linux?
+```swift
+import Dispatch
+dispatchMain()
+```
 
 ### How to share files?
 ```swift
@@ -92,7 +97,16 @@ let package = Package(
     ]
 )
 ```
-
+in the target:
+```swift
+    targets: [
+        .executableTarget(
+            name: "AppName",
+            dependencies: [
+                .product(name: "Swifter", package: "Swifter")
+            ])
+    ]
+```
 ### Docker.
 ```
 docker run -d -p 9080:9080 -v `pwd`:/Swifter -w /Swifter --name Swifter swift bash -c "swift run"
