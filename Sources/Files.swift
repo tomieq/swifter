@@ -10,7 +10,7 @@ import Foundation
 public func shareFile(_ path: String) -> ((HttpRequest, HttpResponseHeaders) -> HttpResponse) {
     return { _, responseHeaders in
         if let file = try? path.openForReading() {
-            let mimeType = path.mimeType()
+            let mimeType = path.mimeType
             responseHeaders.addHeader("Content-Type", mimeType)
             if let attr = try? FileManager.default.attributesOfItem(atPath: path),
                 let fileSize = attr[FileAttributeKey.size] as? UInt64 {
@@ -43,7 +43,7 @@ public func shareFilesFromDirectory(_ directoryPath: String, defaults: [String] 
         let filePath = directoryPath + String.pathSeparator + fileRelativePath.value
 
         if let file = try? filePath.openForReading() {
-            let mimeType = fileRelativePath.value.mimeType()
+            let mimeType = fileRelativePath.value.mimeType
             responseHeaders.addHeader("Content-Type", mimeType)
 
             if let attr = try? FileManager.default.attributesOfItem(atPath: filePath),
