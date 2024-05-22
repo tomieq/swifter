@@ -9,6 +9,7 @@ import Foundation
 
 public class HttpRequest {
 
+    public var peerName: String?
     public var path: String = ""
     public var queryParams: [(String, String)] = []
     public var method: HttpMethod = .unknown
