@@ -48,7 +48,7 @@ public class HttpParser {
             request.body = try readBody(socket, size: contentLengthValue)
         }
         return request
-        }
+    }
 
     private func readBody(_ socket: Socket, size: Int) throws -> [UInt8] {
         return try socket.read(length: size)

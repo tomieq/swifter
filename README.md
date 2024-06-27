@@ -79,8 +79,10 @@ server.start()
 ```swift
 server.middleware.append( { request, _ in
     // init tracking with request.id
-    request.onFinished = { id in
-        // finish tracking; id is unique UUID for this request
+    request.onFinished = { id, responseCode in
+        // finish tracking; 
+        // id is unique UUID for this request
+        // responseCode is the http code that was returned to client
     }
     return nil
 })

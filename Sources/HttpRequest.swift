@@ -20,11 +20,12 @@ public class HttpRequest {
     public var address: String? = ""
     public var params: [String: String] = [:]
     public var disableKeepAlive: Bool = false
-    public var onFinished: ((UUID) -> Void)?
+    public var onFinished: ((UUID, Int) -> Void)?
+    var responseCode: Int?
 
     public init() {}
     deinit {
-        self.onFinished?(self.id)
+        self.onFinished?(self.id, self.responseCode ?? 0)
     }
 
     public func hasTokenForHeader(_ headerName: String, token: String) -> Bool {
@@ -64,7 +65,18 @@ public class HttpRequest {
         }
         return formData
     }
-    
+
+    public func formData<T: Decodable>() -> T? {
+        do {
+            let json = try JSONSerialization.data(withJSONObject: self.flatFormData())
+            let decoder = JSONDecoder()
+            decoder.keyDecodingStrategy = .convertFromSnakeCase
+            return try decoder.decode(T.self, from: json)
+        } catch {
+            return nil
+        }
+    }
+
     public func clientSupportsKeepAlive() -> Bool {
         if let value = self.headers["connection"] {
             return "keep-alive" == value.trimmingCharacters(in: .whitespaces).lowercased()

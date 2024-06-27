@@ -124,6 +124,7 @@ open class HttpServerIO {
             let (params, handler) = self.dispatch(request, responseHeaders)
             request.params = params
             let response = handler(request, responseHeaders)
+            request.responseCode = response.statusCode
             var keepConnection = request.clientSupportsKeepAlive()
             if request.disableKeepAlive {
                 keepConnection = false
