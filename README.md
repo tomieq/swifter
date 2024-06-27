@@ -13,7 +13,7 @@ I forked this repo to adjust the library to my needs. I refactored a little, rem
 Tiny http server engine written in [Swift](https://developer.apple.com/swift/) programming language.
 
 ### Branches
-`* 1.5.6` - latest release
+`* 1.5.8` - latest release
 
 
 
@@ -73,6 +73,17 @@ server["/websocket-echo"] = websocket(text: { session, text in
   session.writeBinary(binary)
 })
 server.start()
+```
+### How to add metric tracking
+`HttpRequest` has `onFinished` closure that will be executed after request is finished
+```swift
+server.middleware.append( { request, _ in
+    // init tracking with request.id
+    request.onFinished = { id in
+        // finish tracking; id is unique UUID for this request
+    }
+    return nil
+})
 ```
 ### CocoaPods? Yes.
 ```ruby

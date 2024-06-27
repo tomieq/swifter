@@ -10,6 +10,7 @@ import Foundation
 public class HttpRequest {
 
     public var peerName: String?
+    public var id = UUID()
     public var path: String = ""
     public var queryParams: [(String, String)] = []
     public var method: HttpMethod = .unknown
@@ -19,8 +20,12 @@ public class HttpRequest {
     public var address: String? = ""
     public var params: [String: String] = [:]
     public var disableKeepAlive: Bool = false
+    public var onFinished: ((UUID) -> Void)?
 
     public init() {}
+    deinit {
+        self.onFinished?(self.id)
+    }
 
     public func hasTokenForHeader(_ headerName: String, token: String) -> Bool {
         guard let headerValue = headers[headerName] else {
