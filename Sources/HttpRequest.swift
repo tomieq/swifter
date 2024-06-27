@@ -66,7 +66,7 @@ public class HttpRequest {
         return formData
     }
 
-    public func decodeFormData<T: Codable>() -> T? {
+    public func decodeFormData<T: Decodable>() -> T? {
         do {
             return try URLFormDecoder().decode(T.self, from: Data(body))
         } catch {
@@ -86,7 +86,7 @@ public class HttpRequest {
         return self.queryParams.first{ $0.0 == name }?.1
     }
     
-    public func decodeQueryParams<T: Codable>() -> T? {
+    public func decodeQueryParams<T: Decodable>() -> T? {
         do {
             let queryParams = self.queryParams.map { "\($0.0)=\($0.1)" }.joined(separator: "&")
             guard let data = queryParams.data(using: .utf8) else { return nil }
@@ -97,7 +97,7 @@ public class HttpRequest {
         }
     }
     
-    public func decodeBody<T: Codable>() -> T? {
+    public func decodeBody<T: Decodable>() -> T? {
         do {
             return try JSONDecoder().decode(T.self, from: Data(self.body))
         } catch {
