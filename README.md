@@ -127,6 +127,20 @@ server.GET["search"] = { request, _ in
     return .ok(.text("Search results for \(search.query)"))
 }
 ```
+### How to make object from body
+```swift
+server.POST["create"] = { request, _ in
+    struct Car: Codable {
+        let weight: Int?
+        let length: Int?
+        let make: String
+    }
+    guard let car: Car = request.decodeBody() else {
+        return .badRequest(.text("Invalid body"))
+    }
+    return .ok(.text("Car created \(car.make)"))
+}
+```
 ### CocoaPods? Yes.
 ```ruby
 use_frameworks!
