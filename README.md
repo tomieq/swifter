@@ -100,6 +100,19 @@ server[WebPath.contact] = { _, _ in
     .ok(.text("contact page"))
 }
 ```
+### How to make object from uploaded form data
+```swift
+server.POST["uploadForm"] = { request, _ in
+    struct User: Codable {
+        let name: String
+        let pin: Int
+    }
+    guard let user: User = request.decodeFormData() else {
+        return .badRequest(.text("Missing fields!"))
+    }
+    return .ok(.text("Uploaded for \(user.name)"))
+}
+```
 ### CocoaPods? Yes.
 ```ruby
 use_frameworks!

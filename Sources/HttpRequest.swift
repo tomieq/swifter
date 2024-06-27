@@ -66,13 +66,11 @@ public class HttpRequest {
         return formData
     }
 
-    public func formData<T: Decodable>() -> T? {
+    public func decodeFormData<T: Codable>() -> T? {
         do {
-            let json = try JSONSerialization.data(withJSONObject: self.flatFormData())
-            let decoder = JSONDecoder()
-            decoder.keyDecodingStrategy = .convertFromSnakeCase
-            return try decoder.decode(T.self, from: json)
+            return try URLFormDecoder().decode(T.self, from: Data(body))
         } catch {
+            print(error)
             return nil
         }
     }
