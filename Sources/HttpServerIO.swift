@@ -127,7 +127,6 @@ open class HttpServerIO {
             var keepConnection = request.clientSupportsKeepAlive()
             if request.disableKeepAlive {
                 keepConnection = false
-                responseHeaders.addHeader("Connection", "close")
             }
 
             do {
@@ -190,6 +189,8 @@ open class HttpServerIO {
 
         if keepAlive && content.length != -1 {
             responseHeader.append("Connection: keep-alive\r\n")
+        } else {
+            responseHeader.append("Connection: close\r\n")
         }
 
         // combine auto-headers and overwitten by handler
