@@ -113,6 +113,20 @@ server.POST["uploadForm"] = { request, _ in
     return .ok(.text("Uploaded for \(user.name)"))
 }
 ```
+### How to make object from query params
+```swift
+server.GET["search"] = { request, _ in
+    struct Search: Codable {
+        let limit: Int
+        let start: Int
+        let query: String
+    }
+    guard let search: Search = request.decodeQueryParams() else {
+        return .badRequest(.text("Missing params!"))
+    }
+    return .ok(.text("Search results for \(search.query)"))
+}
+```
 ### CocoaPods? Yes.
 ```ruby
 use_frameworks!

@@ -22,4 +22,18 @@ class HttpRequestTests: XCTestCase {
         XCTAssertEqual(formData?.user, "John")
         XCTAssertEqual(formData?.password, 1234)
     }
+
+    func testQueryParams() {
+        struct Search: Codable {
+            let limit: Int
+            let start: Int
+            let query: String
+        }
+        let request = HttpRequest()
+        request.queryParams = [("limit", "10"), ("query", "Warsaw"), ("start", "900")]
+        let search: Search? = request.decodeQueryParams()
+        XCTAssertEqual(search?.limit, 10)
+        XCTAssertEqual(search?.query, "Warsaw")
+        XCTAssertEqual(search?.start, 900)
+    }
 }

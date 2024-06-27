@@ -85,6 +85,16 @@ public class HttpRequest {
     public func queryParam(_ name: String) -> String? {
         return self.queryParams.first{ $0.0 == name }?.1
     }
+    
+    public func decodeQueryParams<T: Codable>() -> T? {
+        do {
+            let queryParams = self.queryParams.map { "\($0.0)=\($0.1)" }.joined(separator: "&")
+            return try URLFormDecoder().decode(T.self, from: queryParams.data(using: .utf8)!)
+        } catch {
+            print(error)
+            return nil
+        }
+    }
 
     public struct MultiPart {
 
