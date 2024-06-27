@@ -87,6 +87,19 @@ server.middleware.append( { request, _ in
     return nil
 })
 ```
+### How to add routing with enum
+```swift
+enum WebPath: String, Path {
+    case home = ""
+    case contact
+}
+server[WebPath.home] = { _, _ in
+    .ok(.text("welcome!"))
+}
+server[WebPath.contact] = { _, _ in
+    .ok(.text("contact page"))
+}
+```
 ### CocoaPods? Yes.
 ```ruby
 use_frameworks!
