@@ -89,7 +89,17 @@ public class HttpRequest {
     public func decodeQueryParams<T: Codable>() -> T? {
         do {
             let queryParams = self.queryParams.map { "\($0.0)=\($0.1)" }.joined(separator: "&")
-            return try URLFormDecoder().decode(T.self, from: queryParams.data(using: .utf8)!)
+            guard let data = queryParams.data(using: .utf8) else { return nil }
+            return try URLFormDecoder().decode(T.self, from: data)
+        } catch {
+            print(error)
+            return nil
+        }
+    }
+    
+    public func decodeBody<T: Codable>() -> T? {
+        do {
+            return try JSONDecoder().decode(T.self, from: Data(self.body))
         } catch {
             print(error)
             return nil
