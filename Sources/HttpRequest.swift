@@ -7,6 +7,10 @@
 
 import Foundation
 
+public enum HttpRequestError: Error {
+    case invalidString
+}
+
 public class HttpRequest {
 
     public var peerName: String?
@@ -66,13 +70,8 @@ public class HttpRequest {
         return formData
     }
 
-    public func decodeFormData<T: Decodable>() -> T? {
-        do {
-            return try URLFormDecoder().decode(T.self, from: Data(body))
-        } catch {
-            print(error)
-            return nil
-        }
+    public func decodeFormData<T: Decodable>() throws -> T {
+        try URLFormDecoder().decode(T.self, from: Data(body))
     }
 
     public func clientSupportsKeepAlive() -> Bool {
@@ -86,24 +85,20 @@ public class HttpRequest {
         return self.queryParams.first{ $0.0 == name }?.1
     }
     
-    public func decodeQueryParams<T: Decodable>() -> T? {
-        do {
-            let queryParams = self.queryParams.map { "\($0.0)=\($0.1)" }.joined(separator: "&")
-            guard let data = queryParams.data(using: .utf8) else { return nil }
-            return try URLFormDecoder().decode(T.self, from: data)
-        } catch {
-            print(error)
-            return nil
-        }
+    public func decodeQueryParams<T: Decodable>() throws -> T {
+        let queryParams = self.queryParams.map { "\($0.0)=\($0.1)" }.joined(separator: "&")
+        guard let data = queryParams.data(using: .utf8) else { throw HttpRequestError.invalidString }
+        return try URLFormDecoder().decode(T.self, from: data)
     }
     
-    public func decodeBody<T: Decodable>() -> T? {
-        do {
-            return try JSONDecoder().decode(T.self, from: Data(self.body))
-        } catch {
-            print(error)
-            return nil
-        }
+    public func decodeHeaders<T: Decodable>() throws -> T {
+        let headers = self.headers.map { "\($0.0.camelCased)=\($0.1)" }.joined(separator: "&")
+        guard let data = headers.data(using: .utf8) else { throw HttpRequestError.invalidString }
+        return try URLFormDecoder().decode(T.self, from: data)
+    }
+    
+    public func decodeBody<T: Decodable>() throws -> T {
+        try JSONDecoder().decode(T.self, from: Data(self.body))
     }
 
     public struct MultiPart {

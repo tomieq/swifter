@@ -102,12 +102,12 @@ server[WebPath.contact] = { _, _ in
 ```
 ### How to make object from uploaded form data
 ```swift
-server.POST["uploadForm"] = { request, _ in
+server.post["uploadForm"] = { request, _ in
     struct User: Codable {
         let name: String
         let pin: Int
     }
-    guard let user: User = request.decodeFormData() else {
+    guard let user: User = try? request.decodeFormData() else {
         return .badRequest(.text("Missing fields!"))
     }
     return .ok(.text("Uploaded for \(user.name)"))
@@ -115,13 +115,13 @@ server.POST["uploadForm"] = { request, _ in
 ```
 ### How to make object from query params
 ```swift
-server.GET["search"] = { request, _ in
+server.get["search"] = { request, _ in
     struct Search: Codable {
         let limit: Int
         let start: Int
         let query: String
     }
-    guard let search: Search = request.decodeQueryParams() else {
+    guard let search: Search = try? request.decodeQueryParams() else {
         return .badRequest(.text("Missing params!"))
     }
     return .ok(.text("Search results for \(search.query)"))
@@ -129,16 +129,31 @@ server.GET["search"] = { request, _ in
 ```
 ### How to make object from body
 ```swift
-server.POST["create"] = { request, _ in
+server.post["create"] = { request, _ in
     struct Car: Codable {
         let weight: Int?
         let length: Int?
         let make: String
     }
-    guard let car: Car = request.decodeBody() else {
+    guard let car: Car = try? request.decodeBody() else {
         return .badRequest(.text("Invalid body"))
     }
     return .ok(.text("Car created \(car.make)"))
+}
+```
+### How to make object from headers
+Header field names are capitalized with first letter lowercased. That means that `Content-Type` becomes `conentType`:
+```swift
+server["headers"] = { request, _ in
+    struct Header: Codable {
+        let host: String
+        let authorization: String
+        let contentType: String
+    }
+    guard let headers: Header = try? request.decodeHeaders() else {
+        return .badRequest(.text("Missing header fields!"))
+    }
+    return .ok(.text("Showing web page for \(headers.host)"))
 }
 ```
 ### CocoaPods? Yes.
