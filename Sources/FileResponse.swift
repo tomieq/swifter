@@ -1,5 +1,5 @@
 //
-//  HttpFileResponse.swift
+//  FileResponse.swift
 //
 //
 //  Created by Tomasz on 01/07/2024.
@@ -7,7 +7,7 @@
 
 import Foundation
 
-public enum HttpFileResponse {
+public enum FileResponse {
     public static func with(absolutePath: String, responseHeaders headers: HttpResponseHeaders) -> HttpResponse? {
         guard FileManager.default.fileExists(atPath: absolutePath) else {
             return nil
