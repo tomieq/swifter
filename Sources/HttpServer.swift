@@ -48,9 +48,9 @@ open class HttpServer: HttpServerIO {
         get { return nil }
     }
 
-    public subscript(obj: Path) -> ((HttpRequest, HttpResponseHeaders) -> HttpResponse)? {
+    public subscript(webPath: WebPath) -> ((HttpRequest, HttpResponseHeaders) -> HttpResponse)? {
         set {
-            router.register(nil, path: obj.path, handler: newValue)
+            router.register(nil, path: webPath.path, handler: newValue)
         }
         get { return nil }
     }

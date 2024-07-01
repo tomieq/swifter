@@ -89,14 +89,14 @@ server.middleware.append( { request, _ in
 ```
 ### How to add routing with enum
 ```swift
-enum WebPath: String, Path {
+enum RestApi: String, WebPath {
     case home = ""
     case contact
 }
-server[WebPath.home] = { _, _ in
+server[RestApi.home] = { _, _ in
     .ok(.text("welcome!"))
 }
-server[WebPath.contact] = { _, _ in
+server[RestApi.contact] = { _, _ in
     .ok(.text("contact page"))
 }
 ```
