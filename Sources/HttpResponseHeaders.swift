@@ -30,5 +30,11 @@ public class HttpResponseHeaders {
         self.storage.append(("Set-Cookie", "\(name)=; Max-Age=-99999999"))
         return self
     }
+    
+    @discardableResult
+    public func merge(_ other: HttpResponseHeaders) -> HttpResponseHeaders {
+        self.storage.append(contentsOf: other.storage)
+        return self
+    }
 }
 

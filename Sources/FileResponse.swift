@@ -8,13 +8,14 @@
 import Foundation
 
 public enum FileResponse {
-    public static func with(absolutePath: String, responseHeaders headers: HttpResponseHeaders) -> HttpResponse? {
+    public static func with(absolutePath: String) throws {
         guard FileManager.default.fileExists(atPath: absolutePath) else {
-            return nil
+            return
         }
         guard let file = try? absolutePath.openForReading() else {
-            return .notFound()
+            throw HttpInstantResponse(response: .notFound())
         }
+        let headers = HttpResponseHeaders()
         let mimeType = absolutePath.mimeType
         headers.addHeader("Content-Type", mimeType)
 
@@ -22,10 +23,9 @@ public enum FileResponse {
            let fileSize = attr[FileAttributeKey.size] as? UInt64 {
             headers.addHeader("Content-Length", String(fileSize))
         }
-
-        return .raw(200, "OK", { writer in
+        throw HttpInstantResponse(response: .raw(200, "OK", { writer in
             try writer.write(file)
             file.close()
-        })
+        }), headers: headers)
     }
 }

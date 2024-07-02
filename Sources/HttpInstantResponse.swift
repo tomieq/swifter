@@ -23,6 +23,7 @@ enum HttpInstantResponseHandler {
             return try handler(request, headers)
         } catch {
             if let instantResponse = error as? HttpInstantResponse {
+                headers.merge(instantResponse.headers)
                 return instantResponse.response
             }
             return .internalServerError(.text("Unexpected error \(error)"))
