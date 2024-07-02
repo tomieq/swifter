@@ -42,7 +42,7 @@ public func demoServer(_ publicDir: String) -> HttpServer {
 
                     h3 { inner = "Query:" }
 
-                    table(request.queryParams) { param in
+                    table(request.queryParams.all) { param in
                         tr {
                             td { inner = param.0 }
                             td { inner = param.1 }
@@ -51,7 +51,7 @@ public func demoServer(_ publicDir: String) -> HttpServer {
 
                     h3 { inner = "Headers:" }
 
-                    table(request.headers) { header in
+                    table(request.headers.all) { header in
                         tr {
                             td { inner = header.0 }
                             td { inner = header.1 }
@@ -60,7 +60,7 @@ public func demoServer(_ publicDir: String) -> HttpServer {
 
                     h3 { inner = "Route pathParams:" }
 
-                    table(request.pathParams) { param in
+                    table(request.pathParams.all) { param in
                         tr {
                             td { inner = param.0 }
                             td { inner = param.1 }

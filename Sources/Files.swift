@@ -27,10 +27,10 @@ public func shareFile(_ path: String) -> HttpRequestHandler {
 
 public func shareFilesFromDirectory(_ directoryPath: String, defaults: [String] = ["index.html", "default.html"]) -> HttpRequestHandler {
     return { request, responseHeaders in
-        guard let fileRelativePath = request.pathParams.first else {
+        guard let fileRelativePath = request.pathParams.get("path") else {
             return .notFound()
         }
-        if fileRelativePath.value.isEmpty {
+        if fileRelativePath.isEmpty {
             for path in defaults {
                 if let file = try? (directoryPath + String.pathSeparator + path).openForReading() {
                     return .raw(200, "OK", { writer in
@@ -40,10 +40,10 @@ public func shareFilesFromDirectory(_ directoryPath: String, defaults: [String] 
                 }
             }
         }
-        let filePath = directoryPath + String.pathSeparator + fileRelativePath.value
+        let filePath = directoryPath + String.pathSeparator + fileRelativePath
 
         if let file = try? filePath.openForReading() {
-            let mimeType = fileRelativePath.value.mimeType
+            let mimeType = fileRelativePath.mimeType
             responseHeaders.addHeader("Content-Type", mimeType)
 
             if let attr = try? FileManager.default.attributesOfItem(atPath: filePath),
@@ -62,7 +62,7 @@ public func shareFilesFromDirectory(_ directoryPath: String, defaults: [String] 
 
 public func directoryBrowser(_ dir: String) -> HttpRequestHandler {
     return { request, responseHeaders in
-        guard let (_, value) = request.pathParams.first else {
+        guard let value = request.pathParams.get("path") else {
             return HttpResponse.notFound()
         }
         let filePath = dir + String.pathSeparator + value

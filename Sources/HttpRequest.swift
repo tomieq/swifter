@@ -7,22 +7,21 @@
 
 import Foundation
 
-public enum HttpRequestError: Error {
-    case invalidString
-}
-
 public class HttpRequest {
 
     public var peerName: String?
     public var id = UUID()
-    public var path: String = ""
-    public var queryParams: [(String, String)] = []
     public var method: HttpMethod = .unknown
-    public var headers: [String: String] = [:]
-    public var cookies: [String: String] = [:]
+    public var path: String = ""
+    public var pathParams = HttpRequestParams([:])
+    public var queryParams = HttpRequestParams([:])
+    public lazy var formData: HttpRequestParams = {
+        HttpRequestParams(self.parseUrlencodedForm())
+    }()
+    public var headers = HttpRequestParams([:])
+    public var cookies = HttpRequestParams([:])
     public var body: [UInt8] = []
     public var address: String? = ""
-    public var pathParams: [String: String] = [:]
     public var disableKeepAlive: Bool = false
     public var onFinished: ((UUID, Int) -> Void)?
     var responseCode: Int?
@@ -39,7 +38,7 @@ public class HttpRequest {
         return headerValue.components(separatedBy: ",").filter({ $0.trimmingCharacters(in: .whitespaces).lowercased() == token }).count > 0
     }
 
-    public func parseUrlencodedForm() -> [(String, String)] {
+    func parseUrlencodedForm() -> [(String, String)] {
         guard let contentTypeHeader = headers["content-type"] else {
             return []
         }
@@ -60,19 +59,6 @@ public class HttpRequest {
             return nil
         }
     }
-    
-    public func flatFormData() -> [String:String] {
-        let urlencodedForm = self.parseUrlencodedForm()
-        var formData: [String:String] = [:]
-        urlencodedForm.forEach{
-            formData[$0.0] = $0.1
-        }
-        return formData
-    }
-
-    public func decodeFormData<T: Decodable>() throws -> T {
-        try URLFormDecoder().decode(T.self, from: Data(body))
-    }
 
     public func clientSupportsKeepAlive() -> Bool {
         if let value = self.headers["connection"] {
@@ -81,28 +67,6 @@ public class HttpRequest {
         return false
     }
 
-    public func queryParam(_ name: String) -> String? {
-        return self.queryParams.first{ $0.0 == name }?.1
-    }
-    
-    public func decodeQueryParams<T: Decodable>() throws -> T {
-        let queryParams = self.queryParams.map { "\($0.0)=\($0.1)" }.joined(separator: "&")
-        guard let data = queryParams.data(using: .utf8) else { throw HttpRequestError.invalidString }
-        return try URLFormDecoder().decode(T.self, from: data)
-    }
-
-    public func decodePathParams<T: Decodable>() throws -> T {
-        let queryParams = self.pathParams.map { "\($0.0)=\($0.1)" }.joined(separator: "&")
-        guard let data = queryParams.data(using: .utf8) else { throw HttpRequestError.invalidString }
-        return try URLFormDecoder().decode(T.self, from: data)
-    }
-    
-    public func decodeHeaders<T: Decodable>() throws -> T {
-        let headers = self.headers.map { "\($0.0.camelCased)=\($0.1)" }.joined(separator: "&")
-        guard let data = headers.data(using: .utf8) else { throw HttpRequestError.invalidString }
-        return try URLFormDecoder().decode(T.self, from: data)
-    }
-    
     public func decodeBody<T: Decodable>() throws -> T {
         try JSONDecoder().decode(T.self, from: Data(self.body))
     }

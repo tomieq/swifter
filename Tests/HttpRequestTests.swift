@@ -17,8 +17,9 @@ class HttpRequestTests: XCTestCase {
             let password: Int
         }
         let request = HttpRequest()
+        request.headers = HttpRequestParams(["content-type":"application/x-www-form-urlencoded"])
         request.body = [UInt8]("user=John&password=1234".data(using: .utf8)!)
-        let formData: FormData? = try request.decodeFormData()
+        let formData: FormData? = try request.formData.decode()
         XCTAssertEqual(formData?.user, "John")
         XCTAssertEqual(formData?.password, 1234)
     }
@@ -30,8 +31,8 @@ class HttpRequestTests: XCTestCase {
             let query: String
         }
         let request = HttpRequest()
-        request.queryParams = [("limit", "10"), ("query", "Warsaw"), ("start", "900")]
-        let search: Search? = try request.decodeQueryParams()
+        request.queryParams = HttpRequestParams(["limit": "10", "query": "Warsaw", "start": "900"])
+        let search: Search? = try request.queryParams.decode()
         XCTAssertEqual(search?.limit, 10)
         XCTAssertEqual(search?.query, "Warsaw")
         XCTAssertEqual(search?.start, 900)
@@ -45,7 +46,7 @@ class HttpRequestTests: XCTestCase {
         let server = HttpServer()
         var expectedBook: Book?
         server.GET["book/:id/:title/ping"] = { request, _ in
-            guard let book: Book = try? request.decodePathParams() else {
+            guard let book: Book = try? request.pathParams.decode() else {
                 return .badRequest(.text("Invalid url"))
             }
             expectedBook = book

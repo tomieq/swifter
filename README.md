@@ -107,7 +107,7 @@ server.post["uploadForm"] = { request, _ in
         let name: String
         let pin: Int
     }
-    guard let user: User = try? request.decodeFormData() else {
+    guard let user: User = try? request.formData.decode() else {
         return .badRequest(.text("Missing fields!"))
     }
     return .ok(.text("Uploaded for \(user.name)"))
@@ -121,7 +121,7 @@ server.get["search"] = { request, _ in
         let start: Int
         let query: String
     }
-    guard let search: Search = try? request.decodeQueryParams() else {
+    guard let search: Search = try? request.queryParams.decode() else {
         return .badRequest(.text("Missing query params!"))
     }
     return .ok(.text("Search results for \(search.query)"))
@@ -150,7 +150,7 @@ server["headers"] = { request, _ in
         let authorization: String
         let contentType: String
     }
-    guard let headers: Header = try? request.decodeHeaders() else {
+    guard let headers: Header = try? request.headers.decode() else {
         return .badRequest(.text("Missing header fields!"))
     }
     return .ok(.text("Showing web page for \(headers.host)"))
@@ -164,7 +164,7 @@ server["book/:id/:title"] = { request, _ in
         let id: Int
         let title: String
     }
-    guard let book: Book = try? request.decodePathParams() else {
+    guard let book: Book = try? request.pathParams.decode() else {
         return .badRequest(.text("Invalid url"))
     }
     return .ok(.text("Title: \(book.title)"))
