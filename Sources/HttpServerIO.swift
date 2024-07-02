@@ -111,7 +111,7 @@ open class HttpServerIO {
         self.state = .stopped
     }
 
-    open func dispatch(_ request: HttpRequest, _ responseHeaders: HttpResponseHeaders) -> ([String: String], (HttpRequest, HttpResponseHeaders) -> HttpResponse) {
+    open func dispatch(_ request: HttpRequest, _ responseHeaders: HttpResponseHeaders) -> ([String: String], HttpRequestHandler) {
         return ([:], { _, _ in HttpResponse.notFound() })
     }
 
@@ -123,7 +123,7 @@ open class HttpServerIO {
             request.address = try? socket.peername()
             let (params, handler) = self.dispatch(request, responseHeaders)
             request.params = params
-            let response = handler(request, responseHeaders)
+            let response = HttpInstantResponseHandler.watch(request, responseHeaders, handler)
             request.responseCode = response.statusCode
             var keepConnection = request.clientSupportsKeepAlive()
             if request.disableKeepAlive {

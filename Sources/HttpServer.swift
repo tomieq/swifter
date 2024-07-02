@@ -41,14 +41,14 @@ open class HttpServer: HttpServerIO {
     public var DELETE, PATCH, HEAD, POST, GET, PUT: MethodRoute
     public var delete, patch, head, post, get, put: MethodRoute
 
-    public subscript(path: String) -> ((HttpRequest, HttpResponseHeaders) -> HttpResponse)? {
+    public subscript(path: String) -> HttpRequestHandler? {
         set {
             router.register(nil, path: path, handler: newValue)
         }
         get { return nil }
     }
 
-    public subscript(webPath: WebPath) -> ((HttpRequest, HttpResponseHeaders) -> HttpResponse)? {
+    public subscript(webPath: WebPath) -> HttpRequestHandler? {
         set {
             router.register(nil, path: webPath.path, handler: newValue)
         }
@@ -59,11 +59,11 @@ open class HttpServer: HttpServerIO {
         return router.routes()
     }
 
-    public var notFoundHandler: ((HttpRequest, HttpResponseHeaders) -> HttpResponse)?
+    public var notFoundHandler: HttpRequestHandler?
 
     public var middleware = [(HttpRequest, HttpResponseHeaders) -> HttpResponse?]()
 
-    override open func dispatch(_ request: HttpRequest, _ responseHeaders: HttpResponseHeaders) -> ([String: String], (HttpRequest, HttpResponseHeaders) -> HttpResponse) {
+    override open func dispatch(_ request: HttpRequest, _ responseHeaders: HttpResponseHeaders) -> ([String: String], HttpRequestHandler) {
         for layer in middleware {
             if let response = layer(request, responseHeaders) {
                 return ([:], { (_, _) in response })
@@ -81,7 +81,7 @@ open class HttpServer: HttpServerIO {
     public struct MethodRoute {
         public let method: HttpMethod
         public let router: HttpRouter
-        public subscript(path: String) -> ((HttpRequest, HttpResponseHeaders) -> HttpResponse)? {
+        public subscript(path: String) -> HttpRequestHandler? {
             set {
                 router.register(method, path: path, handler: newValue)
             }

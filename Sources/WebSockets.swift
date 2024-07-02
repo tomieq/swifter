@@ -10,7 +10,7 @@ import Foundation
 @available(*, deprecated, message: "Use websocket(text:binary:pong:connected:disconnected:) instead.")
 public func websocket(_ text: @escaping (WebSocketSession, String) -> Void,
                       _ binary: @escaping (WebSocketSession, [UInt8]) -> Void,
-                      _ pong: @escaping (WebSocketSession, [UInt8]) -> Void) -> ((HttpRequest, HttpResponseHeaders) -> HttpResponse) {
+                      _ pong: @escaping (WebSocketSession, [UInt8]) -> Void) -> HttpRequestHandler {
     return websocket(text: text, binary: binary, pong: pong)
 }
 
@@ -20,7 +20,7 @@ public func websocket(
     binary: ((WebSocketSession, [UInt8]) -> Void)? = nil,
     pong: ((WebSocketSession, [UInt8]) -> Void)? = nil,
     connected: ((WebSocketSession) -> Void)? = nil,
-    disconnected: ((WebSocketSession) -> Void)? = nil) -> ((HttpRequest, HttpResponseHeaders) -> HttpResponse) {
+    disconnected: ((WebSocketSession) -> Void)? = nil) -> HttpRequestHandler {
     return { request, _ in
         guard request.hasTokenForHeader("upgrade", token: "websocket") else {
             return .badRequest(.text("Invalid value of 'Upgrade' header: \(request.headers["upgrade"] ?? "unknown")"))

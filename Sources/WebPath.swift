@@ -18,7 +18,7 @@ extension WebPath where Self: RawRepresentable, Self.RawValue == String {
 }
 
 extension HttpServer.MethodRoute {
-    public subscript(webPath: WebPath) -> ((HttpRequest, HttpResponseHeaders) -> HttpResponse)? {
+    public subscript(webPath: WebPath) -> HttpRequestHandler? {
         set {
             router.register(nil, path: webPath.path, handler: newValue)
         }

@@ -7,6 +7,8 @@
 
 import Foundation
 
+public typealias HttpRequestHandler = (HttpRequest, HttpResponseHeaders) throws -> HttpResponse
+
 open class HttpRouter {
 
     public init() {}
@@ -20,7 +22,7 @@ open class HttpRouter {
         var isEndOfRoute: Bool = false
 
         /// The closure to handle the route
-        var handler: ((HttpRequest, HttpResponseHeaders) -> HttpResponse)?
+        var handler: HttpRequestHandler?
     }
 
     private var rootNode = Node()
@@ -47,7 +49,7 @@ open class HttpRouter {
         return result
     }
 
-    public func register(_ method: HttpMethod?, path: String, handler: ((HttpRequest, HttpResponseHeaders) -> HttpResponse)?) {
+    public func register(_ method: HttpMethod?, path: String, handler: HttpRequestHandler?) {
         var pathSegments = stripQuery(path).split("/")
         if let method = method {
             pathSegments.insert(method.rawValue, at: 0)
@@ -58,7 +60,7 @@ open class HttpRouter {
         inflate(&rootNode, generator: &pathSegmentsGenerator).handler = handler
     }
 
-    public func route(_ method: HttpMethod?, path: String) -> ([String: String], (HttpRequest, HttpResponseHeaders) -> HttpResponse)? {
+    public func route(_ method: HttpMethod?, path: String) -> ([String: String], HttpRequestHandler)? {
 
         return queue.sync {
             if let method = method {
@@ -98,7 +100,7 @@ open class HttpRouter {
         return currentNode
     }
 
-    private func findHandler(_ node: inout Node, params: inout [String: String], generator: inout IndexingIterator<[String]>) -> ((HttpRequest, HttpResponseHeaders) -> HttpResponse)? {
+    private func findHandler(_ node: inout Node, params: inout [String: String], generator: inout IndexingIterator<[String]>) -> (HttpRequestHandler)? {
 
         var matchedRoutes = [Node]()
         let pattern = generator.map { $0 }

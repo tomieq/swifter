@@ -7,7 +7,7 @@
 
 import Foundation
 
-public func shareFile(_ path: String) -> ((HttpRequest, HttpResponseHeaders) -> HttpResponse) {
+public func shareFile(_ path: String) -> HttpRequestHandler {
     return { _, responseHeaders in
         if let file = try? path.openForReading() {
             let mimeType = path.mimeType
@@ -25,7 +25,7 @@ public func shareFile(_ path: String) -> ((HttpRequest, HttpResponseHeaders) -> 
     }
 }
 
-public func shareFilesFromDirectory(_ directoryPath: String, defaults: [String] = ["index.html", "default.html"]) -> ((HttpRequest, HttpResponseHeaders) -> HttpResponse) {
+public func shareFilesFromDirectory(_ directoryPath: String, defaults: [String] = ["index.html", "default.html"]) -> HttpRequestHandler {
     return { request, responseHeaders in
         guard let fileRelativePath = request.params.first else {
             return .notFound()
@@ -60,7 +60,7 @@ public func shareFilesFromDirectory(_ directoryPath: String, defaults: [String] 
     }
 }
 
-public func directoryBrowser(_ dir: String) -> ((HttpRequest, HttpResponseHeaders) -> HttpResponse) {
+public func directoryBrowser(_ dir: String) -> HttpRequestHandler {
     return { request, responseHeaders in
         guard let (_, value) = request.params.first else {
             return HttpResponse.notFound()
