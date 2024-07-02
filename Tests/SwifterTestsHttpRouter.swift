@@ -68,9 +68,9 @@ class SwifterTestsHttpRouter: XCTestCase {
         XCTAssertNil(router.route(nil, path: "/"))
         XCTAssertNil(router.route(nil, path: "/a"))
         XCTAssertNil(router.route(nil, path: "/a/b/c/d"))
-        XCTAssertEqual(router.route(nil, path: "/a/value1/value2/b/c/d/value3")?.0[":arg1"], "value1")
-        XCTAssertEqual(router.route(nil, path: "/a/value1/value2/b/c/d/value3")?.0[":arg2"], "value2")
-        XCTAssertEqual(router.route(nil, path: "/a/value1/value2/b/c/d/value3")?.0[":arg3"], "value3")
+        XCTAssertEqual(router.route(nil, path: "/a/value1/value2/b/c/d/value3")?.0["arg1"], "value1")
+        XCTAssertEqual(router.route(nil, path: "/a/value1/value2/b/c/d/value3")?.0["arg2"], "value2")
+        XCTAssertEqual(router.route(nil, path: "/a/value1/value2/b/c/d/value3")?.0["arg3"], "value3")
     }
 
     func testHttpRouterMultiplePathSegmentWildcards() {
@@ -112,9 +112,9 @@ class SwifterTestsHttpRouter: XCTestCase {
         XCTAssertNotNil(router.route(nil, path: "/a/b/"))
         XCTAssertNil(router.route(nil, path: "/a/e/f/g"))
 
-        XCTAssertEqual(router.route(nil, path: "/a/b/value1")?.0[":var"], "value1")
+        XCTAssertEqual(router.route(nil, path: "/a/b/value1")?.0["var"], "value1")
 
-        XCTAssertEqual(router.route(nil, path: "/a/b/")?.0[":var"], nil)
+        XCTAssertEqual(router.route(nil, path: "/a/b/")?.0["var"], nil)
     }
 
     func testHttpRouterPercentEncodedPathSegments() {

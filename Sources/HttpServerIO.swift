@@ -122,7 +122,7 @@ open class HttpServerIO {
             let responseHeaders = HttpResponseHeaders()
             request.address = try? socket.peername()
             let (params, handler) = self.dispatch(request, responseHeaders)
-            request.params = params
+            request.pathParams = params
             let response = HttpInstantResponseHandler.watch(request, responseHeaders, handler)
             request.responseCode = response.statusCode
             var keepConnection = request.clientSupportsKeepAlive()

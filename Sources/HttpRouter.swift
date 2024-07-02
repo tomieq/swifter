@@ -132,15 +132,15 @@ open class HttpRouter {
                     // append a tail as a value for the variable.
                     let tail = pattern[currentIndex..<count].joined(separator: "/")
                     if tail.count > 0 {
-                        params[variableNode.0] = pathToken + "/" + tail
+                        params[variableNode.0.trimmedSemicolon] = pathToken + "/" + tail
                     } else {
-                        params[variableNode.0] = pathToken
+                        params[variableNode.0.trimmedSemicolon] = pathToken
                     }
 
                     matchedNodes.append(variableNode.value)
                     return
                 }
-                params[variableNode.0] = pathToken
+                params[variableNode.0.trimmedSemicolon] = pathToken
                 findHandler(&node.nodes[variableNode.0]!, params: &params, pattern: pattern, matchedNodes: &matchedNodes, index: currentIndex, count: count)
             }
 
@@ -189,4 +189,7 @@ extension String {
         return self.split { $0 == separator }.map(String.init)
     }
 
+    var trimmedSemicolon: String {
+        self.trimmingCharacters(in: CharacterSet(arrayLiteral: ":"))
+    }
 }

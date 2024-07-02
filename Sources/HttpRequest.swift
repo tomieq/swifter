@@ -22,7 +22,7 @@ public class HttpRequest {
     public var cookies: [String: String] = [:]
     public var body: [UInt8] = []
     public var address: String? = ""
-    public var params: [String: String] = [:]
+    public var pathParams: [String: String] = [:]
     public var disableKeepAlive: Bool = false
     public var onFinished: ((UUID, Int) -> Void)?
     var responseCode: Int?

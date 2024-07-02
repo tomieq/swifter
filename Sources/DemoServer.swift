@@ -58,9 +58,9 @@ public func demoServer(_ publicDir: String) -> HttpServer {
                         }
                     }
 
-                    h3 { inner = "Route params:" }
+                    h3 { inner = "Route pathParams:" }
 
-                    table(request.params) { param in
+                    table(request.pathParams) { param in
                         tr {
                             td { inner = param.0 }
                             td { inner = param.1 }

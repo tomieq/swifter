@@ -27,7 +27,7 @@ public func shareFile(_ path: String) -> HttpRequestHandler {
 
 public func shareFilesFromDirectory(_ directoryPath: String, defaults: [String] = ["index.html", "default.html"]) -> HttpRequestHandler {
     return { request, responseHeaders in
-        guard let fileRelativePath = request.params.first else {
+        guard let fileRelativePath = request.pathParams.first else {
             return .notFound()
         }
         if fileRelativePath.value.isEmpty {
@@ -62,7 +62,7 @@ public func shareFilesFromDirectory(_ directoryPath: String, defaults: [String] 
 
 public func directoryBrowser(_ dir: String) -> HttpRequestHandler {
     return { request, responseHeaders in
-        guard let (_, value) = request.params.first else {
+        guard let (_, value) = request.pathParams.first else {
             return HttpResponse.notFound()
         }
         let filePath = dir + String.pathSeparator + value
