@@ -41,6 +41,14 @@ extension HttpServer {
             self.get    = GroupedMethodRoute(commonPath: commonPath, method: .GET, router: router)
             self.put    = GroupedMethodRoute(commonPath: commonPath, method: .PUT, router: router)
         }
+        
+        public func grouped(_ name: String) -> GroupedRoute {
+            GroupedRoute(commonPath + "/" + name.trimmedSlashes, router: self.router)
+        }
+
+        public func group(_ name: String, _ setup: @escaping (GroupedRoute) -> Void) {
+            setup(self.grouped(name))
+        }
     }
 
     public struct GroupedMethodRoute {

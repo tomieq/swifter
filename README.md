@@ -196,17 +196,27 @@ users.get[":id"]  = { request, _ in
 ```
 You can also use this approach:
 ```swift
-server.group("library") { library in
-    // route from GET /library
-    library.get["/"]  = { request, _ in
-        .ok(.html("Welcome to library"))
+server.group("libraries") { libraries in
+    // route from GET /libraries
+    libraries.get["/"] = { request, _ in
+        .ok(.html("Welcome to libraries"))
     }
-    // route from e.g GET /library/4
-    library.get[":id"]  = { request, _ in
-            .ok(.html("Item \(request.pathParams.get("id"))"))
+    libraries.post["/"] = { request, _ in
+        .ok(.html("Added new library"))
+    }
+    libraries.group("europe") { europe in
+        // route from e.g GET /libraries/europe/poland
+        europe.get["poland"]  = { request, _ in
+            .ok(.html("Library in Poland"))
+        }
+        // route from e.g GET /libraries/europe/cities/warsaw
+        europe.get["cities/:city"]  = { request, _ in
+            .ok(.html("Library in \(request.pathParams.get("city"))"))
+        }
     }
 }
 ```
+In both approaches you can nest routes.
 ### CocoaPods? Yes.
 ```ruby
 use_frameworks!
