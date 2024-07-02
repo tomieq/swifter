@@ -36,4 +36,32 @@ class HttpRequestTests: XCTestCase {
         XCTAssertEqual(search?.query, "Warsaw")
         XCTAssertEqual(search?.start, 900)
     }
+
+    func testDecodePathParams() throws {
+        struct Book: Codable {
+            let id: Int
+            let title: String
+        }
+        let server = HttpServer()
+        var expectedBook: Book?
+        server.GET["book/:id/:title/ping"] = { request, _ in
+            guard let book: Book = try? request.decodePathParams() else {
+                return .badRequest(.text("Invalid url"))
+            }
+            expectedBook = book
+            return .ok(.text("Title: \(book.title)"))
+        }
+        defer {
+            if server.operating {
+                server.stop()
+            }
+        }
+        try server.start()
+        let urlSession = URLSession(configuration: .default)
+        let semaphore = DispatchSemaphore(value: 0)
+        urlSession.signalIfPongReceived(semaphore, hostURL: defaultLocalhost.appendingPathComponent("book/34/esmeralda"))
+        semaphore.wait()
+        XCTAssertEqual(expectedBook?.id, 34)
+        XCTAssertEqual(expectedBook?.title, "esmeralda")
+    }
 }

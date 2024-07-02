@@ -156,6 +156,20 @@ server["headers"] = { request, _ in
     return .ok(.text("Showing web page for \(headers.host)"))
 }
 ```
+### How to make object from path params
+Header field names are capitalized with first letter lowercased. That means that `Content-Type` becomes `conentType`:
+```swift
+server["book/:id/:title"] = { request, _ in
+    struct Book: Codable {
+        let id: Int
+        let title: String
+    }
+    guard let book: Book = try? request.decodePathParams() else {
+        return .badRequest(.text("Invalid url"))
+    }
+    return .ok(.text("Title: \(book.title)"))
+}
+```
 ### CocoaPods? Yes.
 ```ruby
 use_frameworks!

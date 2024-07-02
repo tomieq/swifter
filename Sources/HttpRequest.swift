@@ -90,6 +90,12 @@ public class HttpRequest {
         guard let data = queryParams.data(using: .utf8) else { throw HttpRequestError.invalidString }
         return try URLFormDecoder().decode(T.self, from: data)
     }
+
+    public func decodePathParams<T: Decodable>() throws -> T {
+        let queryParams = self.pathParams.map { "\($0.0)=\($0.1)" }.joined(separator: "&")
+        guard let data = queryParams.data(using: .utf8) else { throw HttpRequestError.invalidString }
+        return try URLFormDecoder().decode(T.self, from: data)
+    }
     
     public func decodeHeaders<T: Decodable>() throws -> T {
         let headers = self.headers.map { "\($0.0.camelCased)=\($0.1)" }.joined(separator: "&")
