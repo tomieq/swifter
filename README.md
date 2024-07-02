@@ -122,7 +122,7 @@ server.get["search"] = { request, _ in
         let query: String
     }
     guard let search: Search = try? request.decodeQueryParams() else {
-        return .badRequest(.text("Missing params!"))
+        return .badRequest(.text("Missing query params!"))
     }
     return .ok(.text("Search results for \(search.query)"))
 }
@@ -168,6 +168,16 @@ server["book/:id/:title"] = { request, _ in
         return .badRequest(.text("Invalid url"))
     }
     return .ok(.text("Title: \(book.title)"))
+}
+```
+### How to return response instantly
+You can implement some validation or authorization classes using `throw HttpInstantResponse`
+```swift
+server.post["restricted/user/changepassword"] = { request, _ in
+    guard AccessValidator.canProcess(request) else {
+        throw HttpInstantResponse(response: .unauthorized())
+    }
+    return .ok(.text("Password changed"))
 }
 ```
 ### CocoaPods? Yes.
