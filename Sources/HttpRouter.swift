@@ -192,4 +192,8 @@ extension String {
     var trimmedSemicolon: String {
         self.trimmingCharacters(in: CharacterSet(arrayLiteral: ":"))
     }
+    
+    var trimmedSlashes: String {
+        self.trimmingCharacters(in: CharacterSet(arrayLiteral: "/"))
+    }
 }

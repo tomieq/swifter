@@ -20,7 +20,7 @@ open class HttpServer: HttpServerIO {
         #endif
     }()
 
-    private let router = HttpRouter()
+    let router = HttpRouter()
 
     public override init() {
         self.DELETE = MethodRoute(method: .DELETE, router: router)

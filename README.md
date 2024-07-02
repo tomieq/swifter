@@ -180,6 +180,33 @@ server.post["restricted/user/changepassword"] = { request, _ in
     return .ok(.text("Password changed"))
 }
 ```
+### How to compose modules by path
+You can build routing with groups so they have common path prefixes:
+```swift
+// create a new routing groups with prefix `user`
+let users = server.grouped("user")
+// this route will be at URL: `user/list`
+users.get["list"]  = { request, _ in
+    .ok(.html("user list"))
+}
+// this route will be for specific user, e.g. `user/876`
+users.get[":id"]  = { request, _ in
+    .ok(.html("user with id \(request.pathParams.get("id"))"))
+}
+```
+You can also use this approach:
+```swift
+server.group("library") { library in
+    // route from GET /library
+    library.get["/"]  = { request, _ in
+        .ok(.html("Welcome to library"))
+    }
+    // route from e.g GET /library/4
+    library.get[":id"]  = { request, _ in
+            .ok(.html("Item \(request.pathParams.get("id"))"))
+    }
+}
+```
 ### CocoaPods? Yes.
 ```ruby
 use_frameworks!
