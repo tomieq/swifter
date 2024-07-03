@@ -138,6 +138,7 @@ open class HttpServerIO {
                 }
             } catch {
                 print("Failed to send response: \(error)")
+                break
             }
             if let session = response.socketSession() {
                 delegate?.socketConnectionReceived(socket)
