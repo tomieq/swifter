@@ -130,7 +130,7 @@ class SwifterTestsHttpParser: XCTestCase {
             XCTAssert(bodyString.lengthOfBytes(using: .utf8) == contentLength, "Has correct request size")
 
             let unicodeBytes = bodyString.utf8.map { return $0 }
-            XCTAssert(request.body == unicodeBytes, "Request body must be correct")
+            XCTAssert(request.body.raw == unicodeBytes, "Request body must be correct")
         } catch { }
 
         do { // test payload equal to 1 read segmant
@@ -142,7 +142,8 @@ class SwifterTestsHttpParser: XCTestCase {
             XCTAssert(bodyString.lengthOfBytes(using: .utf8) == contentLength, "Has correct request size")
 
             let unicodeBytes = bodyString.utf8.map { return $0 }
-            XCTAssert(request.body == unicodeBytes, "Request body must be correct")
+            XCTAssert(request.body.raw == unicodeBytes, "Request body must be correct")
+            XCTAssert(request.body.string == bodyString, "Request body must be correct")
         } catch { }
 
         do { // test very large multi-segment payload
@@ -154,7 +155,8 @@ class SwifterTestsHttpParser: XCTestCase {
             XCTAssert(bodyString.lengthOfBytes(using: .utf8) == contentLength, "Has correct request size")
 
             let unicodeBytes = bodyString.utf8.map { return $0 }
-            XCTAssert(request.body == unicodeBytes, "Request body must be correct")
+            XCTAssert(request.body.raw == unicodeBytes, "Request body must be correct")
+            XCTAssert(request.body.string == bodyString, "Request body must be correct")
         } catch { }
 
         var resp = try? parser.readHttpRequest(TestSocket("GET /open?link=https://www.youtube.com/watch?v=D2cUBG4PnOA HTTP/1.0\nContent-Length: 10\n\n1234567890"))

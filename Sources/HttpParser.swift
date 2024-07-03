@@ -45,7 +45,7 @@ public class HttpParser {
             guard contentLengthValue >= 0 else {
                 throw HttpParserError.negativeContentLength
             }
-            request.body = try readBody(socket, size: contentLengthValue)
+            request.body = HttpRequestBody(try readBody(socket, size: contentLengthValue))
         }
         return request
     }

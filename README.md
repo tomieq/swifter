@@ -135,7 +135,7 @@ server.post["create"] = { request, _ in
         let length: Int?
         let make: String
     }
-    guard let car: Car = try? request.decodeBody() else {
+    guard let car: Car = try? request.body.decode() else {
         return .badRequest(.text("Invalid body"))
     }
     return .ok(.text("Car created \(car.make)"))
@@ -184,12 +184,12 @@ server.post["restricted/user/changepassword"] = { request, _ in
 You can build routing with groups so they have common path prefixes:
 ```swift
 // create a new routing groups with prefix `user`
-let users = server.grouped("user")
-// this route will be at URL: `user/list`
+let users = server.grouped("users")
+// this route will be at URL: `users/list`
 users.get["list"]  = { request, _ in
     .ok(.html("user list"))
 }
-// this route will be for specific user, e.g. `user/876`
+// this route will be for specific user, e.g. `users/876`
 users.get[":id"]  = { request, _ in
     .ok(.html("user with id \(request.pathParams.get("id"))"))
 }

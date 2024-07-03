@@ -20,7 +20,7 @@ public class HttpRequest {
     }()
     public var headers = HttpRequestParams([:])
     public var cookies = HttpRequestParams([:])
-    public var body: [UInt8] = []
+    public var body = HttpRequestBody([])
     public var address: String? = ""
     public var disableKeepAlive: Bool = false
     public var onFinished: ((UUID, Int) -> Void)?
@@ -46,7 +46,7 @@ public class HttpRequest {
         guard let contentType = contentTypeHeaderTokens.first, contentType == "application/x-www-form-urlencoded" else {
             return []
         }
-        guard let utf8String = String(bytes: body, encoding: .utf8) else {
+        guard let utf8String = body.string else {
             // Consider to throw an exception here (examine the encoding from headers).
             return []
         }
@@ -65,10 +65,6 @@ public class HttpRequest {
             return "keep-alive" == value.trimmingCharacters(in: .whitespaces).lowercased()
         }
         return false
-    }
-
-    public func decodeBody<T: Decodable>() throws -> T {
-        try JSONDecoder().decode(T.self, from: Data(self.body))
     }
 
     public struct MultiPart {
@@ -117,7 +113,7 @@ public class HttpRequest {
             }
         })
         if let boundary = boundary, boundary.utf8.count > 0 {
-            return parseMultiPartFormData(body, boundary: "--\(boundary)")
+            return parseMultiPartFormData(body.raw, boundary: "--\(boundary)")
         }
         return []
     }

@@ -18,7 +18,7 @@ class HttpRequestTests: XCTestCase {
         }
         let request = HttpRequest()
         request.headers = HttpRequestParams(["content-type":"application/x-www-form-urlencoded"])
-        request.body = [UInt8]("user=John&password=1234".data(using: .utf8)!)
+        request.body = HttpRequestBody([UInt8]("user=John&password=1234".data(using: .utf8)!))
         let formData: FormData? = try request.formData.decode()
         XCTAssertEqual(formData?.user, "John")
         XCTAssertEqual(formData?.password, 1234)
