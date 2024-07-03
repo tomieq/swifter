@@ -183,11 +183,18 @@ server.post["restricted/user/changepassword"] = { request, _ in
 ### How to compose modules by path
 You can build routing with groups so they have common path prefixes:
 ```swift
-// create a new routing groups with prefix `user`
+// create a new routing groups with prefix `users`
 let users = server.grouped("users")
-// this route will be at URL: `users/list`
-users.get["list"]  = { request, _ in
+// this route will be at URL: `users`
+users.get.handler  = { request, _ in
     .ok(.html("user list"))
+}
+users.post.handler  = { request, _ in
+    .ok(.html("added user list"))
+}
+// this route will be at URL: `users/avatars`
+users.get["avatars"]  = { request, _ in
+    .ok(.html("user avatars"))
 }
 // this route will be for specific user, e.g. `users/876`
 users.get[":id"]  = { request, _ in
@@ -198,10 +205,10 @@ You can also use this approach:
 ```swift
 server.group("libraries") { libraries in
     // route from GET /libraries
-    libraries.get["/"] = { request, _ in
+    libraries.get.handler = { request, _ in
         .ok(.html("Welcome to libraries"))
     }
-    libraries.post["/"] = { request, _ in
+    libraries.post.handler = { request, _ in
         .ok(.html("Added new library"))
     }
     libraries.group("europe") { europe in

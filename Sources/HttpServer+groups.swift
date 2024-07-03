@@ -55,11 +55,23 @@ extension HttpServer {
         let commonPath: String
         let method: HttpMethod
         let router: HttpRouter
+
         public subscript(path: String) -> HttpRequestHandler? {
             set {
-                router.register(method, path: commonPath + "/" + path.trimmedSlashes, handler: newValue)
+                register(path: path, handler: newValue)
             }
             get { return nil }
+        }
+
+        public var handler: HttpRequestHandler? {
+            set {
+                register(path: "", handler: newValue)
+            }
+            get { return nil }
+        }
+        
+        func register(path: String, handler: HttpRequestHandler?) {
+            router.register(method, path: commonPath + "/" + path.trimmedSlashes, handler: handler)
         }
     }
 }
