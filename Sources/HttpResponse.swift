@@ -81,6 +81,7 @@ public enum HttpResponse {
     case accepted(HttpResponseBody? = nil)
     case movedPermanently(String)
     case movedTemporarily(String)
+    case found(String)
     case badRequest(HttpResponseBody? = nil)
     case unauthorized(HttpResponseBody? = nil)
     case forbidden(HttpResponseBody? = nil)
@@ -101,6 +102,7 @@ public enum HttpResponse {
         case .accepted                : return 202
         case .noContent               : return 204
         case .movedPermanently        : return 301
+        case .found                   : return 302
         case .movedTemporarily        : return 307
         case .badRequest              : return 400
         case .unauthorized            : return 401
@@ -125,6 +127,7 @@ public enum HttpResponse {
         case .noContent                : return "No Content"
         case .movedPermanently         : return "Moved Permanently"
         case .movedTemporarily         : return "Moved Temporarily"
+        case .found                    : return "Found"
         case .badRequest               : return "Bad Request"
         case .unauthorized             : return "Unauthorized"
         case .forbidden                : return "Forbidden"
@@ -161,9 +164,7 @@ public enum HttpResponse {
             default:
                 break
             }
-        case .movedPermanently(let location):
-            headers.addHeader("Location", location)
-        case .movedTemporarily(let location):
+        case .movedPermanently(let location), .movedTemporarily(let location), .found(let location):
             headers.addHeader("Location", location)
         default:
             break
