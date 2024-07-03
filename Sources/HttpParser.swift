@@ -39,12 +39,7 @@ public class HttpParser {
                 }
             }
         
-        if let contentLength = request.headers["content-length"], let contentLengthValue = Int(contentLength) {
-            // Prevent a buffer overflow and runtime error trying to create an `UnsafeMutableBufferPointer` with
-            // a negative length
-            guard contentLengthValue >= 0 else {
-                throw HttpParserError.negativeContentLength
-            }
+        if let contentLength = request.headers["content-length"], let contentLengthValue = Int(contentLength), contentLengthValue >= 0 {
             request.body = HttpRequestBody(try readBody(socket, size: contentLengthValue))
         }
         return request
@@ -60,7 +55,7 @@ public class HttpParser {
     }
 
     private func readBody(_ socket: Socket, size: Int) throws -> [UInt8] {
-        return try socket.read(length: size)
+        try socket.read(length: size)
     }
 
     private func readHeaders(_ socket: Socket) throws -> [String: String] {
