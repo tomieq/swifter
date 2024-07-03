@@ -1,5 +1,5 @@
 //
-//  FileResponse.swift
+//  HttpFileResponse.swift
 //
 //
 //  Created by Tomasz on 01/07/2024.
@@ -7,7 +7,7 @@
 
 import Foundation
 
-public enum FileResponse {
+public enum HttpFileResponse {
     public static func with(absolutePath: String) throws {
         guard FileManager.default.fileExists(atPath: absolutePath) else {
             return
@@ -16,8 +16,7 @@ public enum FileResponse {
             throw HttpInstantResponse(response: .notFound())
         }
         let headers = HttpResponseHeaders()
-        let mimeType = absolutePath.mimeType
-        headers.addHeader("Content-Type", mimeType)
+        headers.addHeader("Content-Type", absolutePath.mimeType)
 
         if let attr = try? FileManager.default.attributesOfItem(atPath: absolutePath),
            let fileSize = attr[FileAttributeKey.size] as? UInt64 {

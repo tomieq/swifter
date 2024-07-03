@@ -250,6 +250,15 @@ server.get["/stream"] = { _, _ in
     })
 }
 ```
+### How to serve static files
+```swift
+server.notFoundHandler = { [unowned self] request, responseHeaders in
+    let absolutePath = ...
+    try HttpFileResponse.with(absolutePath: absolutePath)
+    print("File `\(absolutePath)` doesn't exist")
+    return .notFound()
+}
+```
 ### CocoaPods? Yes.
 ```ruby
 use_frameworks!
