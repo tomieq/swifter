@@ -45,7 +45,7 @@ class HttpRequestTests: XCTestCase {
         }
         let server = HttpServer()
         var expectedBook: Book?
-        server.get["book/:id/:title/ping"] = { request, _ in
+        server.get["book/:id/:title"] = { request, _ in
             guard let book: Book = try? request.pathParams.decode() else {
                 return .badRequest(.text("Invalid url"))
             }
@@ -58,10 +58,9 @@ class HttpRequestTests: XCTestCase {
             }
         }
         try server.start()
-        let urlSession = URLSession(configuration: .default)
         let semaphore = DispatchSemaphore(value: 0)
-        urlSession.signalIfPongReceived(semaphore, hostURL: defaultLocalhost.appendingPathComponent("book/34/esmeralda"))
-        semaphore.wait()
+        URLSession.default.runRequest(semaphore, hostURL: defaultLocalhost.appendingPathComponent("book/34/esmeralda"))
+        _ = semaphore.wait(timeout: .now() + .seconds(1))
         XCTAssertEqual(expectedBook?.id, 34)
         XCTAssertEqual(expectedBook?.title, "esmeralda")
     }
