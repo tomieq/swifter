@@ -6,7 +6,6 @@
 //
 
 import Foundation
-
 import XCTest
 #if os(Linux)
 import FoundationNetworking
@@ -38,11 +37,12 @@ class HttpInstantResponseTests: XCTestCase {
             return .ok(.text("OK"))
         }
         try server.start()
-        let semaphore = DispatchSemaphore(value: 0)
-        URLSession.default.runRequest(semaphore, hostURL: defaultLocalhost.appendingPathComponent("api/v1")) { body in
+        let expectation = expectation(description: "")
+        URLSession.default.runRequest(url: defaultLocalhost.appendingPathComponent("api/v1")) { _, body in
             XCTAssertEqual(body, "InvalidVersion")
+            expectation.fulfill()
         }
-        _ = semaphore.wait(timeout: .now() + .seconds(1))
+        wait(for: [expectation], timeout: 1)
     }
     
     func testReturningResponseFromMiddleware() throws {
@@ -50,13 +50,15 @@ class HttpInstantResponseTests: XCTestCase {
             return .ok(.text("OK"))
         }
         server.middleware.append({ _, _ in
-            throw HttpInstantResponse(response: .ok(.text("InstantMiddleware")))
+            throw HttpInstantResponse(response: .badRequest(.text("InstantMiddleware")))
         })
         try server.start()
-        let semaphore = DispatchSemaphore(value: 0)
-        URLSession.default.runRequest(semaphore, hostURL: defaultLocalhost.appendingPathComponent("api/v1")) { body in
+        let expectation = expectation(description: "")
+        URLSession.default.runRequest(url: defaultLocalhost.appendingPathComponent("api/v1")) { code, body in
+            XCTAssertEqual(code, 400)
             XCTAssertEqual(body, "InstantMiddleware")
+            expectation.fulfill()
         }
-        _ = semaphore.wait(timeout: .now() + .seconds(1))
+        wait(for: [expectation], timeout: 1)
     }
 }

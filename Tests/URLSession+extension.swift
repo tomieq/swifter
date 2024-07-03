@@ -9,7 +9,7 @@ import Foundation
 
 
 extension URLSession {
-    func runTask(
+    private func runTask(
         hostURL: URL = defaultLocalhost,
         completionHandler handler: @escaping (Data?, URLResponse?, Error?) -> Void
     ) -> URLSessionDataTask {
@@ -18,27 +18,32 @@ extension URLSession {
 
     /*
      usage:
-     let semaphore = DispatchSemaphore(value: 0)
-     URLSession.default.runRequest(semaphore, hostURL: defaultLocalhost.appendingPathComponent("book/34/esmeralda")) { body in
+     let expectation = expectation(description: "description")
+     URLSession.default.runRequest(url: defaultLocalhost.appendingPathComponent("users/5")) { body in
+         XCTAssertEqual(body, "5")
+         expectation.fulfill()
      }
-     _ = semaphore.wait(timeout: .now() + .seconds(1))
+     wait(for: [expectation], timeout: 1)
      */
-    func runRequest(_ semaphore: DispatchSemaphore, hostURL: URL = defaultLocalhost, body: ((String?) -> Void)? = nil ) {
-        runTask(hostURL: hostURL) { data, response, error in
+    func runRequest(url: URL, body: ((Int, String?) -> Void)? = nil ) {
+        runTask(hostURL: url) { data, response, error in
             guard error == nil else {
                 print("runRequest error: \(error.debugDescription)")
                 return
             }
-            if let _ = response as? HTTPURLResponse {
-                semaphore.signal()
-            }
-            if let data = data {
-                body?(String(data: data, encoding: .utf8))
+            if let httpResponse = response as? HTTPURLResponse {
+                body?(httpResponse.statusCode, data?.asString)
             }
         }.resume()
     }
     
     static var `default`: URLSession {
         URLSession(configuration: .default)
+    }
+}
+
+extension Data {
+    var asString: String? {
+        String(data: self, encoding: .utf8)
     }
 }

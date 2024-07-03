@@ -58,9 +58,11 @@ class HttpRequestTests: XCTestCase {
             }
         }
         try server.start()
-        let semaphore = DispatchSemaphore(value: 0)
-        URLSession.default.runRequest(semaphore, hostURL: defaultLocalhost.appendingPathComponent("book/34/esmeralda"))
-        _ = semaphore.wait(timeout: .now() + .seconds(1))
+        let expectation = expectation(description: "description")
+        URLSession.default.runRequest(url: defaultLocalhost.appendingPathComponent("book/34/esmeralda")) { _, body in
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 1)
         XCTAssertEqual(expectedBook?.id, 34)
         XCTAssertEqual(expectedBook?.title, "esmeralda")
     }
