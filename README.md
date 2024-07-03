@@ -6,30 +6,29 @@
 
 ### Why this fork?
 
-I forked this repo to adjust the library to my needs. I refactored a little, removed not-linux compatible classes and added some features I found useful (like cookie handling & setting). You can click `Compare` button on top of this page to see the difference.
+I forked this repo to adjust the library to my needs. I refactored a little, removed linux incompatible classes and added some features I found useful (like cookie handling & setting).
 
 ### What is Swifter?
 
 Tiny http server engine written in [Swift](https://developer.apple.com/swift/) programming language.
 
 ### Branches
-`* 1.5.8` - latest release
-
+`* 2.0.0` - latest release
 
 
 ### How to start?
 ```swift
 let server = HttpServer()
-server["/hello"] = { request, responseHeaders in
+server["hello"] = { request, responseHeaders in
     .ok(.html("html goes here"))  
 }
-server["/js"] = { request, responseHeaders in
-    .ok(.javaScript("javascript goes here"))  
+server["code.js"] = { request, responseHeaders in
+    .ok(.js("javascript goes here"))  
 }
-server["/api"] = { request, responseHeaders in
-    .ok(.json("json body"))  
+server["api"] = { request, responseHeaders in
+    .ok(.json(<Encodeble object>))  
 }
-server.start()
+try server.start(8080)
 ```
 
 ### How to keep the process running on Linux?
@@ -72,7 +71,7 @@ server["/websocket-echo"] = websocket(text: { session, text in
 }, binary: { session, binary in
   session.writeBinary(binary)
 })
-server.start()
+try server.start()
 ```
 ### How to add metric tracking
 `HttpRequest` has `onFinished` closure that will be executed after request is finished
@@ -93,13 +92,57 @@ enum RestApi: String, WebPath {
     case home = ""
     case contact
 }
-server[RestApi.home] = { _, _ in
+server.get[RestApi.home] = { _, _ in
     .ok(.text("welcome!"))
 }
-server[RestApi.contact] = { _, _ in
+server.get[RestApi.contact] = { _, _ in
     .ok(.text("contact page"))
 }
 ```
+### How to compose routing
+You can build routing with groups so they have common path prefixes:
+```swift
+// create a new routing groups with prefix `users`
+let users = server.grouped("users")
+// this route will be at URL: `/users`
+users.get.handler  = { request, _ in
+    .ok(.html("user list"))
+}
+users.post.handler  = { request, _ in
+    .ok(.html("added user list"))
+}
+// this route will be at URL: `/users/avatars`
+users.get["avatars"]  = { request, _ in
+    .ok(.html("user avatars"))
+}
+// this route will be for specific user, e.g. `/users/876`
+users.get[":id"]  = { request, _ in
+    .ok(.html("user with id \(request.pathParams.get("id"))"))
+}
+```
+You can also use this approach:
+```swift
+server.group("libraries") { libraries in
+    // route from GET /libraries
+    libraries.get.handler = { request, _ in
+        .ok(.html("Welcome to libraries"))
+    }
+    libraries.post.handler = { request, _ in
+        .ok(.html("Added new library"))
+    }
+    libraries.group("europe") { europe in
+        // route from GET /libraries/europe/poland
+        europe.get["poland"]  = { request, _ in
+            .ok(.html("Library in Poland"))
+        }
+        // route from e.g GET /libraries/europe/cities/warsaw
+        europe.get["cities/:city"]  = { request, _ in
+            .ok(.html("Library in \(request.pathParams.get("city"))"))
+        }
+    }
+}
+```
+In both approaches you can nest routes as deep as you like.
 ### How to make object from uploaded form data
 ```swift
 server.post["uploadForm"] = { request, _ in
@@ -114,6 +157,7 @@ server.post["uploadForm"] = { request, _ in
 }
 ```
 ### How to make object from query params
+`GET /search?start=10limit=50&query=SELECT`
 ```swift
 server.get["search"] = { request, _ in
     struct Search: Codable {
@@ -144,7 +188,7 @@ server.post["create"] = { request, _ in
 ### How to make object from headers
 Header field names are capitalized with first letter lowercased. That means that `Content-Type` becomes `conentType`:
 ```swift
-server["headers"] = { request, _ in
+server.get["resource"] = { request, _ in
     struct Header: Codable {
         let host: String
         let authorization: String
@@ -159,7 +203,8 @@ server["headers"] = { request, _ in
 ### How to make object from path params
 Header field names are capitalized with first letter lowercased. That means that `Content-Type` becomes `conentType`:
 ```swift
-server["book/:id/:title"] = { request, _ in
+// /GET book/98/poker-face
+server.get["book/:id/:title"] = { request, _ in
     struct Book: Codable {
         let id: Int
         let title: String
@@ -180,50 +225,6 @@ server.post["restricted/user/changepassword"] = { request, _ in
     return .ok(.text("Password changed"))
 }
 ```
-### How to compose modules by path
-You can build routing with groups so they have common path prefixes:
-```swift
-// create a new routing groups with prefix `users`
-let users = server.grouped("users")
-// this route will be at URL: `users`
-users.get.handler  = { request, _ in
-    .ok(.html("user list"))
-}
-users.post.handler  = { request, _ in
-    .ok(.html("added user list"))
-}
-// this route will be at URL: `users/avatars`
-users.get["avatars"]  = { request, _ in
-    .ok(.html("user avatars"))
-}
-// this route will be for specific user, e.g. `users/876`
-users.get[":id"]  = { request, _ in
-    .ok(.html("user with id \(request.pathParams.get("id"))"))
-}
-```
-You can also use this approach:
-```swift
-server.group("libraries") { libraries in
-    // route from GET /libraries
-    libraries.get.handler = { request, _ in
-        .ok(.html("Welcome to libraries"))
-    }
-    libraries.post.handler = { request, _ in
-        .ok(.html("Added new library"))
-    }
-    libraries.group("europe") { europe in
-        // route from e.g GET /libraries/europe/poland
-        europe.get["poland"]  = { request, _ in
-            .ok(.html("Library in Poland"))
-        }
-        // route from e.g GET /libraries/europe/cities/warsaw
-        europe.get["cities/:city"]  = { request, _ in
-            .ok(.html("Library in \(request.pathParams.get("city"))"))
-        }
-    }
-}
-```
-In both approaches you can nest routes.
 ### How to send custom Server header for every response
 ```swift
 var server = HttpServer()
@@ -266,8 +267,3 @@ in the target:
             ])
     ]
 ```
-### Docker.
-```
-docker run -d -p 9080:9080 -v `pwd`:/Swifter -w /Swifter --name Swifter swift bash -c "swift run"
-```
-
