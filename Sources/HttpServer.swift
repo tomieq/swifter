@@ -42,11 +42,11 @@ open class HttpServer: HttpServerIO {
 
     public var notFoundHandler: HttpRequestHandler?
 
-    public var middleware = [(HttpRequest, HttpResponseHeaders) -> HttpResponse?]()
+    public var middleware = [HttpMiddlewareHandler]()
 
     override open func dispatch(_ request: HttpRequest, _ responseHeaders: HttpResponseHeaders) -> ([String: String], HttpRequestHandler) {
         for layer in middleware {
-            if let response = layer(request, responseHeaders) {
+            if let response = HttpInstantResponseHandler.watch(request, responseHeaders, layer) {
                 return ([:], { (_, _) in response })
             }
         }

@@ -19,13 +19,21 @@ extension URLSession {
     /*
      usage:
      let semaphore = DispatchSemaphore(value: 0)
-     URLSession.default.runRequest(semaphore, hostURL: defaultLocalhost.appendingPathComponent("book/34/esmeralda"))
+     URLSession.default.runRequest(semaphore, hostURL: defaultLocalhost.appendingPathComponent("book/34/esmeralda")) { body in
+     }
      _ = semaphore.wait(timeout: .now() + .seconds(1))
      */
-    func runRequest(_ semaphore: DispatchSemaphore, hostURL: URL = defaultLocalhost) {
-        runTask(hostURL: hostURL) { _, response, _ in
+    func runRequest(_ semaphore: DispatchSemaphore, hostURL: URL = defaultLocalhost, body: ((String?) -> Void)? = nil ) {
+        runTask(hostURL: hostURL) { data, response, error in
+            guard error == nil else {
+                print("runRequest error: \(error.debugDescription)")
+                return
+            }
             if let _ = response as? HTTPURLResponse {
                 semaphore.signal()
+            }
+            if let data = data {
+                body?(String(data: data, encoding: .utf8))
             }
         }.resume()
     }

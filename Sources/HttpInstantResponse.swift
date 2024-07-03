@@ -29,4 +29,16 @@ enum HttpInstantResponseHandler {
             return .internalServerError(.text("Unexpected error \(error)"))
         }
     }
+
+    static func watch(_ request: HttpRequest, _ headers: HttpResponseHeaders, _ handler: HttpMiddlewareHandler) -> HttpResponse? {
+        do {
+            return try handler(request, headers)
+        } catch {
+            if let instantResponse = error as? HttpInstantResponse {
+                headers.merge(instantResponse.headers)
+                return instantResponse.response
+            }
+            return .internalServerError(.text("Unexpected error \(error)"))
+        }
+    }
 }
