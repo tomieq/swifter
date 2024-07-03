@@ -229,6 +229,10 @@ In both approaches you can nest routes.
 var server = HttpServer()
 server.name = "Apache"
 ```
+You can even set global headers that are send with every response until specific RequestHandler overrides it.
+```swift
+server.globalHeaders.addHeader("X-Docker-Instance", UUID().uuidString)
+```
 ### CocoaPods? Yes.
 ```ruby
 use_frameworks!

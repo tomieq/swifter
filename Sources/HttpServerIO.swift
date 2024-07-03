@@ -16,6 +16,7 @@ open class HttpServerIO {
 
     public weak var delegate: HttpServerIODelegate?
     public var name = "Swifter"
+    public var globalHeaders = HttpResponseHeaders()
 
     private var socket = Socket(socketFileDescriptor: -1)
     private var sockets = Set<Socket>()
@@ -206,8 +207,11 @@ open class HttpServerIO {
                 responseHeader.append("\(header.name): \(header.value)\r\n")
             }
         }
-        if !sendHeaders.contains("Server".lowercased()) {
-            responseHeader.append("Server: \(self.name)\r\n")
+        self.globalHeaders.addHeader("Server", self.name)
+        self.globalHeaders.raw.forEach { header in
+            if !sendHeaders.contains(header.name.lowercased()) {
+                responseHeader.append("\(header.name): \(header.value)\r\n")
+            }
         }
 
         responseHeader.append("\r\n")
