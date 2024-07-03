@@ -71,7 +71,7 @@ public func demoServer(_ publicDir: String) -> HttpServer {
         }(request, responseHeaders)
     }
 
-    server.GET["/upload"] = scopes {
+    server.get["/upload"] = scopes {
         html {
             body {
                 form {
@@ -92,7 +92,7 @@ public func demoServer(_ publicDir: String) -> HttpServer {
         }
     }
 
-    server.POST["/upload"] = { request, responseHeaders in
+    server.post["/upload"] = { request, responseHeaders in
         var response = ""
         for multipart in request.parseMultiPartFormData() {
             guard let name = multipart.name, let fileName = multipart.fileName else { continue }
@@ -101,7 +101,7 @@ public func demoServer(_ publicDir: String) -> HttpServer {
         return HttpResponse.ok(.html(response))
     }
 
-    server.GET["/login"] = scopes {
+    server.get["/login"] = scopes {
         html {
             head {
                 script { src = "http://cdn.staticfile.org/jquery/2.1.4/jquery.min.js" }
@@ -134,7 +134,7 @@ public func demoServer(_ publicDir: String) -> HttpServer {
         }
     }
 
-    server.POST["/login"] = { request, _ in
+    server.post["/login"] = { request, _ in
         let formFields = request.parseUrlencodedForm()
         return HttpResponse.ok(.html(formFields.map({ "\($0.0) = \($0.1)" }).joined(separator: "<br>")))
     }

@@ -20,19 +20,12 @@ extension HttpServer {
     public class GroupedRoute {
         let commonPath: String
         let router: HttpRouter
-        
-        public var DELETE, PATCH, HEAD, POST, GET, PUT: GroupedMethodRoute
+
         public var delete, patch, head, post, get, put: GroupedMethodRoute
         
         init(_ commonPath: String, router: HttpRouter) {
             self.commonPath = commonPath
             self.router = router
-            self.DELETE = GroupedMethodRoute(commonPath: commonPath, method: .DELETE, router: router)
-            self.PATCH  = GroupedMethodRoute(commonPath: commonPath, method: .PATCH, router: router)
-            self.HEAD   = GroupedMethodRoute(commonPath: commonPath, method: .HEAD, router: router)
-            self.POST   = GroupedMethodRoute(commonPath: commonPath, method: .POST, router: router)
-            self.GET    = GroupedMethodRoute(commonPath: commonPath, method: .GET, router: router)
-            self.PUT    = GroupedMethodRoute(commonPath: commonPath, method: .PUT, router: router)
 
             self.delete = GroupedMethodRoute(commonPath: commonPath, method: .DELETE, router: router)
             self.patch  = GroupedMethodRoute(commonPath: commonPath, method: .PATCH, router: router)

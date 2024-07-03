@@ -45,7 +45,7 @@ class HttpRequestTests: XCTestCase {
         }
         let server = HttpServer()
         var expectedBook: Book?
-        server.GET["book/:id/:title/ping"] = { request, _ in
+        server.get["book/:id/:title/ping"] = { request, _ in
             guard let book: Book = try? request.pathParams.decode() else {
                 return .badRequest(.text("Invalid url"))
             }
