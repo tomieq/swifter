@@ -66,10 +66,16 @@ server.start()
 ### How to WebSockets ?
 ```swift
 let server = HttpServer()
-server["/websocket-echo"] = websocket(text: { session, text in
-  session.writeText(text)
-}, binary: { session, binary in
-  session.writeBinary(binary)
+server["/websocket-echo"] = websocket(text: { (session, text) in
+    session.writeText(text)
+}, binary: { (session, binary) in
+    session.writeBinary(binary)
+}, pong: { (_, _) in
+    // Got a pong frame
+}, connected: { _ in
+    // New client connected
+}, disconnected: { _ in
+    // Client disconnected
 })
 try server.start()
 ```
@@ -233,6 +239,16 @@ server.name = "Apache"
 You can even set global headers that are send with every response until specific RequestHandler overrides it.
 ```swift
 server.globalHeaders.addHeader("X-Docker-Instance", UUID().uuidString)
+```
+### How to stream data
+```swift
+server.get["/stream"] = { _, _ in
+    return HttpResponse.raw(200, "OK", { writer in
+        for index in 0...100 {
+            try writer.write([UInt8]("[chunk \(index)]".utf8))
+        }
+    })
+}
 ```
 ### CocoaPods? Yes.
 ```ruby
