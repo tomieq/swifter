@@ -140,7 +140,7 @@ public enum HttpResponse {
     }
 
     public func autoHeaders() -> HttpResponseHeaders {
-        let headers = HttpResponseHeaders().addHeader("Server", "Swifter \(HttpServer.VERSION)")
+        let headers = HttpResponseHeaders()
         switch self {
         case .switchProtocols(let switchHeaders, _):
             switchHeaders.raw.forEach { header in

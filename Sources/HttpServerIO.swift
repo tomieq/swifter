@@ -15,6 +15,7 @@ public protocol HttpServerIODelegate: AnyObject {
 open class HttpServerIO {
 
     public weak var delegate: HttpServerIODelegate?
+    public var name = "Swifter"
 
     private var socket = Socket(socketFileDescriptor: -1)
     private var sockets = Set<Socket>()
@@ -204,6 +205,9 @@ open class HttpServerIO {
             if !sendHeaders.contains(header.name.lowercased()) {
                 responseHeader.append("\(header.name): \(header.value)\r\n")
             }
+        }
+        if !sendHeaders.contains("Server".lowercased()) {
+            responseHeader.append("Server: \(self.name)\r\n")
         }
 
         responseHeader.append("\r\n")

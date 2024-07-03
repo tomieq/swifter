@@ -224,6 +224,11 @@ server.group("libraries") { libraries in
 }
 ```
 In both approaches you can nest routes.
+### How to send custom Server header for every response
+```swift
+var server = HttpServer()
+server.name = "Apache"
+```
 ### CocoaPods? Yes.
 ```ruby
 use_frameworks!
