@@ -253,7 +253,7 @@ import PackageDescription
 let package = Package(
     name: "MyServer",
     dependencies: [
-        .package(url: "https://github.com/tomieq/swifter.git", .upToNextMajor(from: "1.5.0"))
+        .package(url: "https://github.com/tomieq/swifter.git", .upToNextMajor(from: "2.0.0"))
     ]
 )
 ```

@@ -208,13 +208,14 @@ open class HttpServerIO {
                 responseHeader.append("\(header.name): \(header.value)\r\n")
             }
         }
-        self.globalHeaders.addHeader("Server", self.name)
         self.globalHeaders.raw.forEach { header in
             if !sendHeaders.contains(header.name.lowercased()) {
                 responseHeader.append("\(header.name): \(header.value)\r\n")
             }
         }
-
+        if !sendHeaders.contains("Server".lowercased()) {
+            responseHeader.append("Server: \(self.name)\r\n")
+        }
         responseHeader.append("\r\n")
 
         try socket.writeUTF8(responseHeader)
