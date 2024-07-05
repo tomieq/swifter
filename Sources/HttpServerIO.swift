@@ -17,6 +17,7 @@ open class HttpServerIO {
     public weak var delegate: HttpServerIODelegate?
     public var name = "Swifter"
     public var globalHeaders = HttpResponseHeaders()
+    public let metrics = ConnectionMetrics()
 
     private var socket = Socket(socketFileDescriptor: -1)
     private var sockets = Set<Socket>()
@@ -87,8 +88,9 @@ open class HttpServerIO {
                     strongSelf.queue.async {
                         strongSelf.sockets.insert(socket)
                     }
-
+                    strongSelf.metrics.socketOpened()
                     strongSelf.handleConnection(socket)
+                    strongSelf.metrics.socketClosed()
 
                     strongSelf.queue.async {
                         strongSelf.sockets.remove(socket)

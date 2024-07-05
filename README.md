@@ -259,11 +259,14 @@ server.notFoundHandler = { [unowned self] request, responseHeaders in
     return .notFound()
 }
 ```
-### CocoaPods? Yes.
-```ruby
-use_frameworks!
-
-pod 'Swifter', '~> 1.5.0'
+### Socket metrics
+If you are interested in watching amount of open sockets/connected clients, you can do it by 
+```swift
+server.metrics.onOpenConnectionsChanged = { number in
+    print("amount of connections: \(number)")
+}
+/// or statically
+print("amount of connections: \(server.metrics.openConnections)")
 ```
 
 ### Carthage? Also yes.
