@@ -79,19 +79,6 @@ server["/websocket-echo"] = websocket(text: { (session, text) in
 })
 try server.start()
 ```
-### How to add metric tracking
-`HttpRequest` has `onFinished` closure that will be executed after request is finished
-```swift
-server.middleware.append( { request, _ in
-    // init tracking with request.id
-    request.onFinished = { id, responseCode in
-        // finish tracking; 
-        // id is unique UUID for this request
-        // responseCode is the http code that was returned to client
-    }
-    return nil
-})
-```
 ### How to add routing with enum
 ```swift
 enum RestApi: String, WebPath {
@@ -258,6 +245,20 @@ server.notFoundHandler = { [unowned self] request, responseHeaders in
     print("File `\(absolutePath)` doesn't exist")
     return .notFound()
 }
+```
+### How to add metric tracking
+`HttpRequest` has `onFinished` closure that will be executed after request is finished
+```swift
+server.middleware.append( { request, header in
+    print("Request \(request.id) \(request.method) \(request.path) from \(request.peerName ?? "")")
+    request.onFinished = { id, code in
+        // finish tracking
+        // id is unique UUID for this request
+        // responseCode is the http code that was returned to client
+        print("Request \(id) finished with \(code)")
+    }
+    return nil
+})
 ```
 ### Socket metrics
 If you are interested in watching amount of open sockets/connected clients, you can do it by 
