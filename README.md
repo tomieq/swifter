@@ -280,7 +280,13 @@ server.globalErrorHandler = { error, headers in
     headers.addHeader("X-Retry-ID", UUID().uuidString)
     return .internalServerError(.json(ErrorResponse(code: 62, message: "Transaction aborted, please retry")))
 }
-``` 
+```
+If you want to hide all Errors, not show them in response, just:
+```swift
+server.globalErrorHandler = { _, _ in
+    .internalServerError()
+}
+```
 ### Carthage? Also yes.
 ```
 github "tomieq/swifter" ~> 1.5.0
