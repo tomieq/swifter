@@ -17,8 +17,9 @@ public struct HttpInstantResponse: Error {
     }
 }
 
-enum HttpInstantResponseHandler {
-    static func watch(_ request: HttpRequest, _ headers: HttpResponseHeaders, _ handler: HttpRequestHandler) -> HttpResponse {
+class HttpInstantResponseHandler {
+    var errorHandler: HttpGlobalErrorHandler?
+    func watch(_ request: HttpRequest, _ headers: HttpResponseHeaders, _ handler: HttpRequestHandler) -> HttpResponse {
         do {
             return try handler(request, headers)
         } catch {
@@ -26,11 +27,11 @@ enum HttpInstantResponseHandler {
                 headers.merge(instantResponse.headers)
                 return instantResponse.response
             }
-            return .internalServerError(.text("Unexpected error \(error)"))
+            return self.errorHandler?(error, headers) ?? .internalServerError(.text("Unexpected error \(error)"))
         }
     }
 
-    static func watch(_ request: HttpRequest, _ headers: HttpResponseHeaders, _ handler: HttpMiddlewareHandler) -> HttpResponse? {
+    func watch(_ request: HttpRequest, _ headers: HttpResponseHeaders, _ handler: HttpMiddlewareHandler) -> HttpResponse? {
         do {
             return try handler(request, headers)
         } catch {
@@ -38,7 +39,7 @@ enum HttpInstantResponseHandler {
                 headers.merge(instantResponse.headers)
                 return instantResponse.response
             }
-            return .internalServerError(.text("Unexpected error \(error)"))
+            return self.errorHandler?(error, headers) ?? .internalServerError(.text("Unexpected error \(error)"))
         }
     }
 }

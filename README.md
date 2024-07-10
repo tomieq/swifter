@@ -269,7 +269,18 @@ server.metrics.onOpenConnectionsChanged = { number in
 /// or statically
 print("amount of connections: \(server.metrics.openConnections)")
 ```
-
+### Global error mapping
+As your request handlers are allowed to throw Errors, you might register you error mapper:
+```swift
+server.globalErrorHandler = { error, headers in
+    struct ErrorResponse: Codable {
+        let code: Int
+        let message: String
+    }
+    headers.addHeader("X-Retry-ID", UUID().uuidString)
+    return .internalServerError(.json(ErrorResponse(code: 62, message: "Transaction aborted, please retry")))
+}
+``` 
 ### Carthage? Also yes.
 ```
 github "tomieq/swifter" ~> 1.5.0

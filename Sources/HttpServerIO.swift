@@ -18,6 +18,13 @@ open class HttpServerIO {
     public var name = "Swifter"
     public var globalHeaders = HttpResponseHeaders()
     public let metrics = ConnectionMetrics()
+    let instantRequestHandler = HttpInstantResponseHandler()
+    public var globalErrorHandler: HttpGlobalErrorHandler? {
+        set {
+            self.instantRequestHandler.errorHandler = newValue
+        }
+        get { return nil }
+    }
 
     private var socket = Socket(socketFileDescriptor: -1)
     private var sockets = Set<Socket>()
@@ -127,7 +134,7 @@ open class HttpServerIO {
             request.address = try? socket.peername()
             let (params, handler) = self.dispatch(request, responseHeaders)
             request.pathParams = HttpRequestParams(params)
-            let response = HttpInstantResponseHandler.watch(request, responseHeaders, handler)
+            let response = self.instantRequestHandler.watch(request, responseHeaders, handler)
             request.responseCode = response.statusCode
             var keepConnection = request.clientSupportsKeepAlive()
             if request.disableKeepAlive {

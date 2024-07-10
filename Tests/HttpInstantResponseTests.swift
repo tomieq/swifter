@@ -61,4 +61,24 @@ class HttpInstantResponseTests: XCTestCase {
         }
         wait(for: [expectation], timeout: 1)
     }
+    
+    func testGlobalErrorHandler() throws {
+        enum CustomError: Error {
+            case uups
+        }
+        server.get["api/v1"] = { _, _ in
+            throw CustomError.uups
+        }
+        server.globalErrorHandler = { error, headers in
+            return .badRequest(.text("repacked"))
+        }
+        try server.start()
+        let expectation = expectation(description: "")
+        URLSession.default.runRequest(url: defaultLocalhost.appendingPathComponent("api/v1")) { code, body in
+            XCTAssertEqual(code, 400)
+            XCTAssertEqual(body, "repacked")
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 1)
+    }
 }
