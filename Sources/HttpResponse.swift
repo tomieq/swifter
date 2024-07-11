@@ -23,6 +23,7 @@ public protocol HttpResponseBodyWriter {
 public enum HttpResponseBody {
 
     case json(Encodable)
+    case jsonString(CustomStringConvertible)
     case html(CustomStringConvertible)
     case text(CustomStringConvertible)
     case js(CustomStringConvertible)
@@ -37,18 +38,8 @@ public enum HttpResponseBody {
                 return (data.count, {
                     try $0.write(data)
                 })
-            case .text(let body):
+            case .text(let body), .jsonString(let body), .html(let body), .js(let body):
                 let data = [UInt8](body.description.utf8)
-                return (data.count, {
-                    try $0.write(data)
-                })
-            case .html(let html):
-                let data = [UInt8](html.description.utf8)
-                return (data.count, {
-                    try $0.write(data)
-                })
-            case .js(let js):
-                let data = [UInt8](js.description.utf8)
                 return (data.count, {
                     try $0.write(data)
                 })
@@ -151,7 +142,7 @@ public enum HttpResponse {
             }
         case .ok(let body):
             switch body {
-            case .json:
+            case .json, .jsonString:
                 headers.addHeader("Content-Type", "application/json")
             case .html:
                 headers.addHeader("Content-Type", "text/html")
