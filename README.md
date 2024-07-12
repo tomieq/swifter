@@ -251,11 +251,12 @@ server.notFoundHandler = { [unowned self] request, responseHeaders in
 ```swift
 server.middleware.append( { request, header in
     print("Request \(request.id) \(request.method) \(request.path) from \(request.peerName ?? "")")
-    request.onFinished = { id, code in
+    request.onFinished = { id, code, duration in
         // finish tracking
         // id is unique UUID for this request
         // responseCode is the http code that was returned to client
-        print("Request \(id) finished with \(code)")
+        // duration is the time in seconds
+        print("Request \(id) finished with \(code) in \(String(format: "%.3f", duration)) seconds")
     }
     return nil
 })
