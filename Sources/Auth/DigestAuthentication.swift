@@ -33,7 +33,7 @@ public class DigestAuthentication {
 
     public func authorizedUser(_ request: HttpRequest) throws -> String {
         
-        if let authorization = request.headers.get("Authorization") {
+        if let authorization = request.headers.get("Authorization"), authorization.starts(with: "Digest") {
 
             var values: [String: String] = [:]
             authorization.split(",").forEach { line in
@@ -43,17 +43,17 @@ public class DigestAuthentication {
                 values[key] = value
             }
             guard values["realm"] == realm else {
-                throw HttpInstantResponse(response: .badRequest(.text("realm mismatch")))
+                throw HttpInstantResponse(response: .unauthorized(.text("realm mismatch")))
             }
             guard let uri = values["uri"], uri.starts(with: request.path) else {
-                throw HttpInstantResponse(response: .badRequest(.text("uri mismatch")))
+                throw HttpInstantResponse(response: .unauthorized(.text("uri mismatch")))
             }
             guard let username = values["Digest username"] else {
-                throw HttpInstantResponse(response: .badRequest(.text("no username")))
+                throw HttpInstantResponse(response: .unauthorized(.text("no username")))
             }
             guard let serverNonce = values["nonce"], let clientNonce = values["cnonce"], 
                     let counter = values["nc"], let qualityOfProtection = values["qop"] else {
-                throw HttpInstantResponse(response: .badRequest(.text("missing authorization values")))
+                throw HttpInstantResponse(response: .unauthorized(.text("missing authorization values")))
             }
             guard let password = credentialsProvider(username) else {
                 throw generateChallenge(request)

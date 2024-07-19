@@ -246,8 +246,25 @@ server.notFoundHandler = { [unowned self] request, responseHeaders in
     return .notFound()
 }
 ```
+### How to add Basic Authentication?
+You can easily add basic authentication using `BasicAuthentication` class. You need just to provide function that returns password for asked user:
+```swift
+server.get["basic"] = { request, _ in
+    let basic = BasicAuthentication(credentialsProvider: { login in
+        switch login {
+        case "admin": "root"
+        case "user": "12345"
+        default: nil
+        }
+    })
+    if let login = basic.authorizedUser(request) {
+        return .ok(.text("Welcome \(login)"))
+    }
+    return .unauthorized(.text("Please authorize with basic"))
+}
+```
 ### How to add Digest Authentication?
-You can easily add digest authentication using `DigestAuthentication` class. You need just to provide function that returns password for asked user:
+You can add digest authentication using `DigestAuthentication` class. You need just to provide function that returns password for asked user:
 ```swift
 server.get["restricted"] = { request, _ in
     let digest = DigestAuthentication(realm: "Swifter Digest", credentialsProvider: { login in
@@ -261,6 +278,7 @@ server.get["restricted"] = { request, _ in
     return .ok(.text("Welcome \(login)"))
 }
 ```
+`DigestAuthentication` creates a proper challenge response, so it is a throwing function (throws proper `HttpInstantResponse`).
 ### How to add metric tracking
 `HttpRequest` has `onFinished` closure that will be executed after request is finished
 ```swift
