@@ -143,13 +143,13 @@ public enum HttpResponse {
         case .ok(let body):
             switch body {
             case .json, .jsonString:
-                headers.addHeader("Content-Type", "application/json")
+                headers.addHeader("Content-Type", "application/json; charset=utf-8")
             case .html:
-                headers.addHeader("Content-Type", "text/html")
+                headers.addHeader("Content-Type", "text/html; charset=utf-8")
             case .text:
-                headers.addHeader("Content-Type", "text/plain")
+                headers.addHeader("Content-Type", "text/plain; charset=utf-8")
             case .js:
-                headers.addHeader("Content-Type", "text/javascript")
+                headers.addHeader("Content-Type", "text/javascript; charset=utf-8")
             case .data(_, let contentType):
                 headers.addHeader("Content-Type", contentType ?? "")
             default:
