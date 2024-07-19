@@ -42,7 +42,7 @@ public class HttpRequestParams {
 
     public subscript(_ name: String) -> String? {
         get {
-            self.storage.first { $0.0 == name }?.1
+            self.storage.first { $0.0 == name }?.1 ?? self.storage.first { $0.0.lowercased() == name.lowercased() }?.1
         }
     }
 

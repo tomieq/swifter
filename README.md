@@ -246,6 +246,21 @@ server.notFoundHandler = { [unowned self] request, responseHeaders in
     return .notFound()
 }
 ```
+### How to add Digest Authentication?
+You can easily add digest authentication using `DigestAuthentication` class. You need just to provide function that returns password for asked user:
+```swift
+server.get["restricted"] = { request, _ in
+    let digest = DigestAuthentication(realm: "Swifter Digest", credentialsProvider: { login in
+        switch login {
+        case "admin": "root"
+        case "user": "12345"
+        default: nil
+        }
+    })
+    let login = try digest.authorizedUser(request)
+    return .ok(.text("Welcome \(login)"))
+}
+```
 ### How to add metric tracking
 `HttpRequest` has `onFinished` closure that will be executed after request is finished
 ```swift
