@@ -52,6 +52,7 @@ open class HttpRouter {
     }
 
     public func register(_ method: HttpMethod?, path: String, handler: HttpRequestHandler?) {
+        let path = path.first == "/" ? path : "/" + path
         var pathSegments = stripQuery(path).split("/")
         if let method = method {
             pathSegments.insert(method.rawValue, at: 0)
