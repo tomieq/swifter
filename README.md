@@ -306,7 +306,7 @@ print("amount of connections: \(server.metrics.openConnections)")
 ### Global error mapping
 As your request handlers are allowed to throw Errors, you might register you error mapper:
 ```swift
-server.globalErrorHandler = { error, headers in
+server.globalErrorHandler = { error, request, headers in
     struct ErrorResponse: Codable {
         let code: Int
         let message: String

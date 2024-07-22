@@ -69,7 +69,7 @@ class HttpInstantResponseTests: XCTestCase {
         server.get["api/v1"] = { _, _ in
             throw CustomError.uups
         }
-        server.globalErrorHandler = { error, headers in
+        server.globalErrorHandler = { error, request, headers in
             return .badRequest(.text("repacked"))
         }
         try server.start()

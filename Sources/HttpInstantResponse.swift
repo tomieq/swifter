@@ -27,7 +27,7 @@ class HttpInstantResponseHandler {
                 headers.merge(instantResponse.headers)
                 return instantResponse.response
             }
-            return self.errorHandler?(error, headers) ?? .internalServerError(.text("Unexpected error \(error)"))
+            return self.errorHandler?(error, request, headers) ?? .internalServerError(.text("Unexpected error \(error)"))
         }
     }
 
@@ -39,7 +39,7 @@ class HttpInstantResponseHandler {
                 headers.merge(instantResponse.headers)
                 return instantResponse.response
             }
-            return self.errorHandler?(error, headers) ?? .internalServerError(.text("Unexpected error \(error)"))
+            return self.errorHandler?(error, request, headers) ?? .internalServerError(.text("Unexpected error \(error)"))
         }
     }
 }
