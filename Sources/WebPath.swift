@@ -25,3 +25,12 @@ extension HttpServer.MethodRoute {
         get { return nil }
     }
 }
+
+extension HttpServer.GroupedMethodRoute {
+    public subscript(webPath: WebPath) -> HttpRequestHandler? {
+        set {
+            router.register(nil, path: webPath.path, handler: newValue)
+        }
+        get { return nil }
+    }
+}
