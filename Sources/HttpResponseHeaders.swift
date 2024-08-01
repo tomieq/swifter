@@ -20,14 +20,14 @@ public class HttpResponseHeaders {
     }
     
     @discardableResult
-    public func setCookie(name: String, value: String) -> HttpResponseHeaders {
-        self.storage.append(("Set-Cookie", "\(name)=\(value)"))
+    public func setCookie(name: String, value: String, path: String = "/") -> HttpResponseHeaders {
+        self.storage.append(("Set-Cookie", "\(name)=\(value); Path=\(path)"))
         return self
     }
     
     @discardableResult
-    public func unsetCookie(name: String) -> HttpResponseHeaders {
-        self.storage.append(("Set-Cookie", "\(name)=; Max-Age=-99999999"))
+    public func unsetCookie(name: String, path: String = "/") -> HttpResponseHeaders {
+        self.storage.append(("Set-Cookie", "\(name)=; Max-Age=-99999999; Path=\(path)"))
         return self
     }
     
