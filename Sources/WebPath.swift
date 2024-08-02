@@ -20,7 +20,7 @@ extension WebPath where Self: RawRepresentable, Self.RawValue == String {
 extension HttpServer.MethodRoute {
     public subscript(webPath: WebPath) -> HttpRequestHandler? {
         set {
-            router.register(nil, path: webPath.path, handler: newValue)
+            router.register(method, path: webPath.path, handler: newValue)
         }
         get { return nil }
     }
@@ -29,7 +29,7 @@ extension HttpServer.MethodRoute {
 extension HttpServer.GroupedMethodRoute {
     public subscript(webPath: WebPath) -> HttpRequestHandler? {
         set {
-            router.register(nil, path: webPath.path, handler: newValue)
+            router.register(method, path: commonPath + "/" + webPath.path, handler: newValue)
         }
         get { return nil }
     }
