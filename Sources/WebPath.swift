@@ -29,7 +29,7 @@ extension HttpServer.MethodRoute {
 extension HttpServer.GroupedMethodRoute {
     public subscript(webPath: WebPath) -> HttpRequestHandler? {
         set {
-            router.register(method, path: commonPath + "/" + webPath.path, handler: newValue)
+            router.register(method, path: commonPath + "/" + webPath.path.trimmedSlashes, handler: newValue)
         }
         get { return nil }
     }

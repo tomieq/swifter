@@ -11,9 +11,12 @@ import Foundation
 extension URLSession {
     private func runTask(
         hostURL: URL = defaultLocalhost,
+        method: String = "GET",
         completionHandler handler: @escaping (Data?, URLResponse?, Error?) -> Void
     ) -> URLSessionDataTask {
-        return self.dataTask(with: hostURL, completionHandler: handler)
+        var request = URLRequest(url: hostURL)
+        request.httpMethod = method
+        return self.dataTask(with: request, completionHandler: handler)
     }
 
     /*
@@ -25,8 +28,8 @@ extension URLSession {
      }
      wait(for: [expectation], timeout: 1)
      */
-    func runRequest(url: URL, body: ((Int, String?) -> Void)? = nil ) {
-        runTask(hostURL: url) { data, response, error in
+    func runRequest(url: URL, method: String = "GET", body: ((Int, String?) -> Void)? = nil) {
+        runTask(hostURL: url, method: method) { data, response, error in
             guard error == nil else {
                 print("runRequest error: \(error.debugDescription)")
                 return

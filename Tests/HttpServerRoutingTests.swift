@@ -40,7 +40,7 @@ class HttpServerRoutingTests: XCTestCase {
             bmw.get.handler = { _, _ in
                 .ok(.text("mainBMW"))
             }
-            bmw.get["z1"] = { _, _ in
+            bmw.post["z1"] = { _, _ in
                 .ok(.text("cabrio"))
             }
         }
@@ -56,10 +56,45 @@ class HttpServerRoutingTests: XCTestCase {
             expectation2.fulfill()
         }
         let expectation3 = expectation(description: "")
-        URLSession.default.runRequest(url: defaultLocalhost.appendingPathComponent("cars/bmw/z1")) { _, body in
+        URLSession.default.runRequest(url: defaultLocalhost.appendingPathComponent("cars/bmw/z1"), method: "POST") { _, body in
             XCTAssertEqual(body, "cabrio")
             expectation3.fulfill()
         }
-        wait(for: [expectation1, expectation2, expectation3], timeout: 1)
+        wait(for: [expectation1, expectation2, expectation3], timeout: 2)
+    }
+    
+    func testGroupedRoutingByWebPath() throws {
+        enum LocalPath: String, WebPath {
+            case series1
+        }
+        let cars = server.grouped("cars")
+        cars.group("bmw") { bmw in
+            bmw.get.handler = { _, _ in
+                .ok(.text("mainBMW"))
+            }
+            bmw.post[LocalPath.series1] = { _, _ in
+                .ok(.text("post"))
+            }
+            bmw.get[LocalPath.series1] = { _, _ in
+                .ok(.text("get"))
+            }
+        }
+        try server.start()
+        let expectation1 = expectation(description: "")
+        URLSession.default.runRequest(url: defaultLocalhost.appendingPathComponent("cars/bmw")) { _, body in
+            XCTAssertEqual(body, "mainBMW")
+            expectation1.fulfill()
+        }
+        let expectation2 = expectation(description: "")
+        URLSession.default.runRequest(url: defaultLocalhost.appendingPathComponent("cars/bmw/series1"), method: "POST") { _, body in
+            XCTAssertEqual(body, "post")
+            expectation2.fulfill()
+        }
+        let expectation3 = expectation(description: "")
+        URLSession.default.runRequest(url: defaultLocalhost.appendingPathComponent("cars/bmw/series1"), method: "GET") { _, body in
+            XCTAssertEqual(body, "get")
+            expectation3.fulfill()
+        }
+        wait(for: [expectation1, expectation2, expectation3], timeout: 3)
     }
 }
