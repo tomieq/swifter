@@ -59,7 +59,7 @@ class URLFormParser {
                 if omitEmptyValues, token[1].count == 0 {
                     continue
                 }
-                guard let decodedValue else {
+                guard let decodedValue = decodedValue else {
                     throw URLFormError(identifier: "percentDecoding", reason: "Could not percent decode string value: \(token[1])")
                 }
                 key = try self.parseKey(data: decodedKey)

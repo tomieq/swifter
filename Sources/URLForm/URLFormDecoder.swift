@@ -129,7 +129,7 @@ private final class URLFormKeyedDecoder<K>: KeyedDecodingContainerProtocol where
             guard let _ = T.self as? String.Type else { return self.context.data.get(at: self.codingPath + [key]) }
             return self.context.data.get(at: self.codingPath + [key]) ?? ""
         }
-        guard let data else { throw DecodingError.valueNotFound(T.self, at: self.codingPath + [key]) }
+        guard let data = data else { throw DecodingError.valueNotFound(T.self, at: self.codingPath + [key]) }
 
         return try convertible.convertFromURLEncodedFormData(data) as! T
     }
@@ -170,7 +170,7 @@ private final class URLFormUnkeyedDecoder: UnkeyedDecodingContainer {
     }
 
     var isAtEnd: Bool {
-        guard let count else {
+        guard let count = count else {
             return true
         }
         return self.currentIndex >= count

@@ -47,7 +47,7 @@ extension Int: BasicKeyRepresentable {
     }
 }
 
-extension [BasicKeyRepresentable] {
+extension Array where Element == BasicKeyRepresentable {
     public func makeBasicKeys() -> [BasicKey] {
         map { $0.makeBasicKey() }
     }
