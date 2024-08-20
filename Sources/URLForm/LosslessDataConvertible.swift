@@ -47,7 +47,7 @@ extension String: LosslessDataConvertible {
     }
 }
 
-extension [UInt8]: LosslessDataConvertible {
+extension Array where Element == UInt8  {
     /// Converts `Data` to `[UInt8]`.
     public static func convertFromData(_ data: Data) -> [UInt8] { .init(data) }
 
