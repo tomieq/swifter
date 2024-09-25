@@ -142,28 +142,37 @@ public enum HttpResponse {
                 headers.addHeader(header.name, header.value)
             }
         case .ok(let body):
-            switch body {
-            case .json, .jsonString:
-                headers.addHeader("Content-Type", "application/json; charset=utf-8")
-            case .html:
-                headers.addHeader("Content-Type", "text/html; charset=utf-8")
-            case .text:
-                headers.addHeader("Content-Type", "text/plain; charset=utf-8")
-            case .js:
-                headers.addHeader("Content-Type", "text/javascript; charset=utf-8")
-            case .css:
-                headers.addHeader("Content-Type", "text/css")
-            case .data(_, let contentType):
-                headers.addHeader("Content-Type", contentType ?? "")
-            default:
-                break
-            }
+            self.addContentType(headers: headers, body: body)
+        case .badRequest(let body), .created(let body), .accepted(let body),
+                .unauthorized(let body), .forbidden(let body), .notFound(let body), .notAcceptable(let body),
+                .tooManyRequests(let body), .internalServerError(let body):
+            guard let body = body else { break }
+            self.addContentType(headers: headers, body: body)
         case .movedPermanently(let location), .movedTemporarily(let location), .found(let location):
             headers.addHeader("Location", location)
         default:
             break
         }
         return headers
+    }
+    
+    func addContentType(headers: HttpResponseHeaders, body: HttpResponseBody) {
+        switch body {
+        case .json, .jsonString:
+            headers.addHeader("Content-Type", "application/json; charset=utf-8")
+        case .html:
+            headers.addHeader("Content-Type", "text/html; charset=utf-8")
+        case .text:
+            headers.addHeader("Content-Type", "text/plain; charset=utf-8")
+        case .js:
+            headers.addHeader("Content-Type", "text/javascript; charset=utf-8")
+        case .css:
+            headers.addHeader("Content-Type", "text/css")
+        case .data(_, let contentType):
+            headers.addHeader("Content-Type", contentType ?? "")
+        default:
+            break
+        }
     }
 
     func content() -> (length: Int, write: ((HttpResponseBodyWriter) throws -> Void)?) {
