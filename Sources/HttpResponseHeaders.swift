@@ -20,6 +20,20 @@ public class HttpResponseHeaders {
     }
     
     @discardableResult
+    public func setClientCache(_ cacheTime: CacheTime) -> HttpResponseHeaders {
+        var value: String {
+            switch cacheTime {
+            case .none:
+                return "no-cache"
+            default:
+                return "max-age=\(cacheTime.rawSeconds)"
+            }
+        }
+        self.storage.append(("Cache-Control", value))
+        return self
+    }
+    
+    @discardableResult
     public func setCookie(name: String, value: String, path: String = "/") -> HttpResponseHeaders {
         self.storage.append(("Set-Cookie", "\(name)=\(value); Path=\(path)"))
         return self

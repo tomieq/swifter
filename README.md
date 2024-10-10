@@ -241,7 +241,7 @@ server.get["/stream"] = { _, _ in
 ```swift
 server.notFoundHandler = { [unowned self] request, responseHeaders in
     let absolutePath = ...
-    try HttpFileResponse.with(absolutePath: absolutePath)
+    try HttpFileResponse.with(absolutePath: absolutePath, clientCache: .days(7))
     print("File `\(absolutePath)` doesn't exist")
     return .notFound()
 }

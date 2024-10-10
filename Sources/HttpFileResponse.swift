@@ -8,7 +8,7 @@
 import Foundation
 
 public enum HttpFileResponse {
-    public static func with(absolutePath: String) throws {
+    public static func with(absolutePath: String, clientCache: CacheTime? = nil) throws {
         guard FileManager.default.fileExists(atPath: absolutePath) else {
             return
         }
@@ -17,6 +17,9 @@ public enum HttpFileResponse {
         }
         let headers = HttpResponseHeaders()
         headers.addHeader("Content-Type", absolutePath.mimeType)
+        if let clientCache = clientCache {
+            headers.setClientCache(clientCache)
+        }
 
         if let attr = try? FileManager.default.attributesOfItem(atPath: absolutePath),
            let fileSize = attr[FileAttributeKey.size] as? UInt64 {
