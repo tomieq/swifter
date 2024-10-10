@@ -74,6 +74,7 @@ public enum HttpResponse {
     case movedPermanently(String)
     case movedTemporarily(String)
     case found(String)
+    case notModified
     case badRequest(HttpResponseBody? = nil)
     case unauthorized(HttpResponseBody? = nil)
     case forbidden(HttpResponseBody? = nil)
@@ -95,6 +96,7 @@ public enum HttpResponse {
         case .noContent               : return 204
         case .movedPermanently        : return 301
         case .found                   : return 302
+        case .notModified             : return 304
         case .movedTemporarily        : return 307
         case .badRequest              : return 400
         case .unauthorized            : return 401
@@ -120,6 +122,7 @@ public enum HttpResponse {
         case .movedPermanently         : return "Moved Permanently"
         case .movedTemporarily         : return "Moved Temporarily"
         case .found                    : return "Found"
+        case .notModified              : return "Not Modified"
         case .badRequest               : return "Bad Request"
         case .unauthorized             : return "Unauthorized"
         case .forbidden                : return "Forbidden"
