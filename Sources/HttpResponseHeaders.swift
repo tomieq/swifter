@@ -23,7 +23,7 @@ public class HttpResponseHeaders {
     public func setClientCache(_ cacheTime: CacheTime) -> HttpResponseHeaders {
         var value: String {
             switch cacheTime {
-            case .none:
+            case .noCache:
                 return "no-cache"
             default:
                 return "max-age=\(cacheTime.rawSeconds)"

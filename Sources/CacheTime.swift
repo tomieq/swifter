@@ -6,7 +6,7 @@
 //
 
 public enum CacheTime {
-    case none
+    case noCache
     case seconds(Int)
     case minutes(Int)
     case hours(Int)
@@ -14,7 +14,7 @@ public enum CacheTime {
     
     var rawSeconds: Int {
         switch self {
-        case .none:
+        case .noCache:
             return 0
         case .seconds(let value):
             return value
