@@ -34,8 +34,15 @@ public class HttpResponseHeaders {
     }
     
     @discardableResult
-    public func setCookie(name: String, value: String, path: String = "/") -> HttpResponseHeaders {
-        self.storage.append(("Set-Cookie", "\(name)=\(value); Path=\(path)"))
+    public func setCookie(name: String,
+                          value: String,
+                          path: String = "/",
+                          cache: CacheTime? = nil) -> HttpResponseHeaders {
+        var maxAge = ""
+        if let seconds = cache?.rawSeconds {
+            maxAge = " Max-Age=\(seconds);"
+        }
+        self.storage.append(("Set-Cookie", "\(name)=\(value);\(maxAge) Path=\(path)"))
         return self
     }
     
