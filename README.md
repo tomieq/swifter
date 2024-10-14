@@ -13,7 +13,7 @@ I forked this repo to adjust the library to my needs. I refactored a little, rem
 Tiny http server engine written in [Swift](https://developer.apple.com/swift/) programming language.
 
 ### Branches
-`* 2.0.4` - latest release
+`* 2.1.0` - latest release
 
 
 ### How to start?
@@ -321,10 +321,6 @@ server.globalErrorHandler = { _, _ in
     .internalServerError()
 }
 ```
-### Carthage? Also yes.
-```
-github "tomieq/swifter" ~> 1.5.0
-```
 
 ### Swift Package Manager.
 ```swift
@@ -333,7 +329,7 @@ import PackageDescription
 let package = Package(
     name: "MyServer",
     dependencies: [
-        .package(url: "https://github.com/tomieq/swifter.git", .upToNextMajor(from: "2.0.4"))
+        .package(url: "https://github.com/tomieq/swifter.git", .upToNextMajor(from: "2.1.0"))
     ]
 )
 ```
