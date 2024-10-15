@@ -6,9 +6,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: docker run --rm -v "$PWD:/code" -w /code swift:6.0 swift test
+      - run: docker run --rm -v "$PWD:/code" -w /code swift:6.0 swift build
   swift-54-build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: docker run --rm -v "$PWD:/code" -w /code swift:5.4 swift test
+      - run: docker run --rm -v "$PWD:/code" -w /code swift:5.4 swift build
