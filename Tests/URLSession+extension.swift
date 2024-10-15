@@ -6,9 +6,17 @@
 //
 
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
-
-extension URLSession {
+class DefaultSession {
+    let instance: URLSession
+    
+    init() {
+        self.instance = URLSession(configuration: .default)
+    }
+    
     private func runTask(
         hostURL: URL = defaultLocalhost,
         method: String = "GET",
@@ -16,7 +24,7 @@ extension URLSession {
     ) -> URLSessionDataTask {
         var request = URLRequest(url: hostURL)
         request.httpMethod = method
-        return self.dataTask(with: request, completionHandler: handler)
+        return instance.dataTask(with: request, completionHandler: handler)
     }
 
     /*
@@ -39,10 +47,7 @@ extension URLSession {
             }
         }.resume()
     }
-    
-    static var `default`: URLSession {
-        URLSession(configuration: .default)
-    }
+
 }
 
 extension Data {

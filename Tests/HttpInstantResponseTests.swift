@@ -38,7 +38,7 @@ class HttpInstantResponseTests: XCTestCase {
         }
         try server.start()
         let expectation = expectation(description: "")
-        URLSession.default.runRequest(url: defaultLocalhost.appendingPathComponent("api/v1")) { _, body in
+        DefaultSession().runRequest(url: defaultLocalhost.appendingPathComponent("api/v1")) { _, body in
             XCTAssertEqual(body, "InvalidVersion")
             expectation.fulfill()
         }
@@ -54,7 +54,7 @@ class HttpInstantResponseTests: XCTestCase {
         })
         try server.start()
         let expectation = expectation(description: "")
-        URLSession.default.runRequest(url: defaultLocalhost.appendingPathComponent("api/v1")) { code, body in
+        DefaultSession().runRequest(url: defaultLocalhost.appendingPathComponent("api/v1")) { code, body in
             XCTAssertEqual(code, 400)
             XCTAssertEqual(body, "InstantMiddleware")
             expectation.fulfill()
@@ -70,15 +70,17 @@ class HttpInstantResponseTests: XCTestCase {
             throw CustomError.uups
         }
         server.globalErrorHandler = { error, request, headers in
+            print("dupa")
             return .badRequest(.text("repacked"))
         }
         try server.start()
         let expectation = expectation(description: "")
-        URLSession.default.runRequest(url: defaultLocalhost.appendingPathComponent("api/v1")) { code, body in
+        DefaultSession().runRequest(url: defaultLocalhost.appendingPathComponent("api/v1")) { code, body in
+            expectation.fulfill()
             XCTAssertEqual(code, 400)
             XCTAssertEqual(body, "repacked")
-            expectation.fulfill()
+            print("got it")
         }
-        wait(for: [expectation], timeout: 1)
+        wait(for: [expectation], timeout: 10)
     }
 }

@@ -46,17 +46,17 @@ class HttpServerRoutingTests: XCTestCase {
         }
         try server.start()
         let expectation1 = expectation(description: "")
-        URLSession.default.runRequest(url: defaultLocalhost.appendingPathComponent("users/5")) { _, body in
+        DefaultSession().runRequest(url: defaultLocalhost.appendingPathComponent("users/5")) { _, body in
             XCTAssertEqual(body, "5")
             expectation1.fulfill()
         }
         let expectation2 = expectation(description: "")
-        URLSession.default.runRequest(url: defaultLocalhost.appendingPathComponent("cars/bmw")) { _, body in
+        DefaultSession().runRequest(url: defaultLocalhost.appendingPathComponent("cars/bmw")) { _, body in
             XCTAssertEqual(body, "mainBMW")
             expectation2.fulfill()
         }
         let expectation3 = expectation(description: "")
-        URLSession.default.runRequest(url: defaultLocalhost.appendingPathComponent("cars/bmw/z1"), method: "POST") { _, body in
+        DefaultSession().runRequest(url: defaultLocalhost.appendingPathComponent("cars/bmw/z1"), method: "POST") { _, body in
             XCTAssertEqual(body, "cabrio")
             expectation3.fulfill()
         }
@@ -81,17 +81,17 @@ class HttpServerRoutingTests: XCTestCase {
         }
         try server.start()
         let expectation1 = expectation(description: "")
-        URLSession.default.runRequest(url: defaultLocalhost.appendingPathComponent("cars/bmw")) { _, body in
+        DefaultSession().runRequest(url: defaultLocalhost.appendingPathComponent("cars/bmw")) { _, body in
             XCTAssertEqual(body, "mainBMW")
             expectation1.fulfill()
         }
         let expectation2 = expectation(description: "")
-        URLSession.default.runRequest(url: defaultLocalhost.appendingPathComponent("cars/bmw/series1"), method: "POST") { _, body in
+        DefaultSession().runRequest(url: defaultLocalhost.appendingPathComponent("cars/bmw/series1"), method: "POST") { _, body in
             XCTAssertEqual(body, "post")
             expectation2.fulfill()
         }
         let expectation3 = expectation(description: "")
-        URLSession.default.runRequest(url: defaultLocalhost.appendingPathComponent("cars/bmw/series1"), method: "GET") { _, body in
+        DefaultSession().runRequest(url: defaultLocalhost.appendingPathComponent("cars/bmw/series1"), method: "GET") { _, body in
             XCTAssertEqual(body, "get")
             expectation3.fulfill()
         }
