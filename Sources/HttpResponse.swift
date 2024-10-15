@@ -79,7 +79,10 @@ public enum HttpResponse {
     case unauthorized(HttpResponseBody? = nil)
     case forbidden(HttpResponseBody? = nil)
     case notFound(HttpResponseBody? = nil)
+    case methodNotAllowed(HttpResponseBody? = nil)
     case notAcceptable(HttpResponseBody? = nil)
+    case iAmTeapot(HttpResponseBody? = nil)
+    case tooEarly(HttpResponseBody? = nil)
     case noContent
     case tooManyRequests(HttpResponseBody? = nil)
     case internalServerError(HttpResponseBody? = nil)
@@ -102,7 +105,10 @@ public enum HttpResponse {
         case .unauthorized            : return 401
         case .forbidden               : return 403
         case .notFound                : return 404
+        case .methodNotAllowed        : return 405
         case .notAcceptable           : return 406
+        case .iAmTeapot               : return 418
+        case .tooEarly                : return 425
         case .tooManyRequests         : return 429
         case .internalServerError     : return 500
         case .notImplemented          : return 501
@@ -127,7 +133,10 @@ public enum HttpResponse {
         case .unauthorized             : return "Unauthorized"
         case .forbidden                : return "Forbidden"
         case .notFound                 : return "Not Found"
+        case .methodNotAllowed         : return "Method Not Allowed"
         case .notAcceptable            : return "Not Acceptable"
+        case .iAmTeapot                : return "I'm a teapot"
+        case .tooEarly                 : return "Too Early"
         case .tooManyRequests          : return "Too Many Requests"
         case .internalServerError      : return "Internal Server Error"
         case .notImplemented           : return "Not Implemented"
@@ -147,7 +156,9 @@ public enum HttpResponse {
         case .ok(let body):
             self.addContentType(headers: headers, body: body)
         case .badRequest(let body), .created(let body), .accepted(let body),
-                .unauthorized(let body), .forbidden(let body), .notFound(let body), .notAcceptable(let body),
+                .unauthorized(let body), .forbidden(let body), .notFound(let body),
+                .methodNotAllowed(let body), .notAcceptable(let body),
+                .iAmTeapot(let body), .tooEarly(let body),
                 .tooManyRequests(let body), .internalServerError(let body):
             guard let body = body else { break }
             self.addContentType(headers: headers, body: body)
