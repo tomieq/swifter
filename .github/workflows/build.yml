@@ -1,0 +1,14 @@
+name: compability-workflow
+run-name: Build for multiple Swift versions
+on: [push]
+jobs:
+  swift-60-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker run --rm -v "$PWD:/code" -w /code swift:6.0 swift test
+  swift-54-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker run --rm -v "$PWD:/code" -w /code swift:5.4 swift test
