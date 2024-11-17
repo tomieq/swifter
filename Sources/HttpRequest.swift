@@ -23,15 +23,19 @@ public class HttpRequest {
     public var body = HttpRequestBody([])
     public var address: String? = ""
     public var disableKeepAlive: Bool = false
-    public var onFinished: ((UUID, Int, Double) -> Void)?
+    public var onFinished: ((HttpRequestSummary) -> Void)?
     var responseCode: Int?
+    var responseSize: UInt64 = 0
     private let creationTime = DispatchTime.now()
 
     public init() {}
     deinit {
         let nanoTime = DispatchTime.now().uptimeNanoseconds - creationTime.uptimeNanoseconds
         let elapsedTimeInSeconds = Double(nanoTime) / 1_000_000_000
-        self.onFinished?(self.id, self.responseCode ?? 0, elapsedTimeInSeconds)
+        self.onFinished?(HttpRequestSummary(requestID: self.id,
+                                            responseCode: self.responseCode ?? 0,
+                                            responseSizeInBytes: self.responseSize,
+                                            durationInSeconds: elapsedTimeInSeconds))
     }
 
     public func hasTokenForHeader(_ headerName: String, token: String) -> Bool {

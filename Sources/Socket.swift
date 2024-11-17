@@ -26,6 +26,7 @@ open class Socket: Hashable, Equatable {
 
     let socketFileDescriptor: Int32
     private var shutdown = false
+    let transferCounter = TransferCounter()
 
     public init(socketFileDescriptor: Int32) {
         self.socketFileDescriptor = socketFileDescriptor
@@ -120,6 +121,7 @@ open class Socket: Hashable, Equatable {
             }
             sent += result
         }
+        transferCounter.countBytes(UInt64(length))
     }
 
     /// Read a single byte off the socket. This method is optimized for reading

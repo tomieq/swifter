@@ -53,5 +53,6 @@ extension Socket {
         if result == -1 {
             throw SocketError.writeFailed("sendfile: " + Errno.description())
         }
+        transferCounter.countBytes(file.size)
     }
 }

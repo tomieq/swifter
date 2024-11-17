@@ -284,12 +284,13 @@ server.get["restricted"] = { request, _ in
 ```swift
 server.middleware.append( { request, header in
     print("Request \(request.id) \(request.method) \(request.path) from \(request.peerName ?? "")")
-    request.onFinished = { id, code, duration in
+    request.onFinished = { summary in
         // finish tracking
         // id is unique UUID for this request
         // responseCode is the http code that was returned to client
-        // duration is the time in seconds
-        print("Request \(id) finished with \(code) in \(String(format: "%.3f", duration)) seconds")
+        // responseSizeInBytes is amount of bytes in response
+        // durationInSeconds is the time in seconds
+        print("Request \(summary.requestID) finished with \(summary.responseCode) [\(summary.responseSizeInBytes)B] in \(String(format: "%.3f", summary.durationInSeconds)) seconds")
     }
     return nil
 })

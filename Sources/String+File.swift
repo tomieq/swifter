@@ -14,11 +14,12 @@ extension String {
     }
 
     public class File {
-
         let pointer: UnsafeMutablePointer<FILE>
+        let size: UInt64
 
-        public init(_ pointer: UnsafeMutablePointer<FILE>) {
+        public init(_ pointer: UnsafeMutablePointer<FILE>, size: UInt64) {
             self.pointer = pointer
+            self.size = size
         }
 
         public func close() {
@@ -83,7 +84,14 @@ extension String {
         guard let file = path.withCString({ pathPointer in mode.withCString({ fopen(pathPointer, $0) }) }) else {
             throw FileError.error(errno)
         }
-        return File(file)
+        return File(file, size: filesize(path))
+    }
+    
+    private func filesize(_ path: String) -> UInt64 {
+        var attributes: [FileAttributeKey : Any]? {
+            try? FileManager.default.attributesOfItem(atPath: path)
+        }
+        return attributes?[.size] as? UInt64 ?? UInt64(0)
     }
 
     public func exists() throws -> Bool {

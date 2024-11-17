@@ -143,7 +143,11 @@ open class HttpServerIO {
 
             do {
                 if self.operating {
-                    keepConnection = try self.respond(socket, response: response, customHeaders: responseHeaders, keepAlive: keepConnection)
+                    keepConnection = try self.respond(socket, 
+                                                      request: request,
+                                                      response: response,
+                                                      customHeaders: responseHeaders,
+                                                      keepAlive: keepConnection)
                 }
             } catch {
                 print("Failed to send response: \(error)")
@@ -184,7 +188,11 @@ open class HttpServerIO {
         }
     }
 
-    private func respond(_ socket: Socket, response: HttpResponse, customHeaders: HttpResponseHeaders, keepAlive: Bool) throws -> Bool {
+    private func respond(_ socket: Socket,
+                         request: HttpRequest,
+                         response: HttpResponse,
+                         customHeaders: HttpResponseHeaders,
+                         keepAlive: Bool) throws -> Bool {
         guard self.operating else { return false }
 
         // Some web-socket clients (like Jetfire) expects to have header section in a single packet.
@@ -227,12 +235,14 @@ open class HttpServerIO {
         }
         responseHeader.append("\r\n")
 
+        socket.transferCounter.startCounting()
         try socket.writeUTF8(responseHeader)
 
         if let writeClosure = content.write {
             let context = InnerWriteContext(socket: socket)
             try writeClosure(context)
         }
+        request.responseSize = socket.transferCounter.transfer
 
         return keepAlive && content.length != -1
     }
