@@ -22,9 +22,9 @@ open class HttpServer: HttpServerIO {
 
     public var delete, patch, head, post, get, put: MethodRoute
 
-    public subscript(path: String) -> HttpRequestHandler? {
+    public subscript(path: CustomStringConvertible) -> HttpRequestHandler? {
         set {
-            router.register(nil, path: path, handler: newValue)
+            router.register(nil, path: path.description, handler: newValue)
         }
         get { return nil }
     }
@@ -62,9 +62,9 @@ open class HttpServer: HttpServerIO {
     public struct MethodRoute {
         public let method: HttpMethod
         public let router: HttpRouter
-        public subscript(path: String) -> HttpRequestHandler? {
+        public subscript(path: CustomStringConvertible) -> HttpRequestHandler? {
             set {
-                router.register(method, path: path, handler: newValue)
+                router.register(method, path: path.description, handler: newValue)
             }
             get { return nil }
         }

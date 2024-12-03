@@ -49,9 +49,9 @@ extension HttpServer {
         let method: HttpMethod
         let router: HttpRouter
 
-        public subscript(path: String) -> HttpRequestHandler? {
+        public subscript(path: CustomStringConvertible) -> HttpRequestHandler? {
             set {
-                register(path: path, handler: newValue)
+                register(path: path.description, handler: newValue)
             }
             get { return nil }
         }
