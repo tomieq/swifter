@@ -25,8 +25,7 @@ public class HttpRequest {
     public var disableKeepAlive: Bool = false
     public var onFinished: ((HttpRequestSummary) -> Void)?
     public var session: HttpSession?
-    var responseCode: Int?
-    var responseSize: UInt64 = 0
+    var partialSummary = HttpRequestPartialSummary()
     private let creationTime = DispatchTime.now()
 
     public init() {}
@@ -34,8 +33,8 @@ public class HttpRequest {
         let nanoTime = DispatchTime.now().uptimeNanoseconds - creationTime.uptimeNanoseconds
         let elapsedTimeInSeconds = Double(nanoTime) / 1_000_000_000
         self.onFinished?(HttpRequestSummary(requestID: self.id,
-                                            responseCode: self.responseCode ?? 0,
-                                            responseSizeInBytes: self.responseSize,
+                                            responseCode: self.partialSummary.responseCode,
+                                            responseSizeInBytes: self.partialSummary.responseSize,
                                             durationInSeconds: elapsedTimeInSeconds))
     }
 

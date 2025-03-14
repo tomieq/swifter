@@ -135,7 +135,7 @@ open class HttpServerIO {
             let (params, handler) = self.dispatch(request, responseHeaders)
             request.pathParams = HttpRequestParams(params)
             let response = self.instantRequestHandler.watch(request, responseHeaders, handler)
-            request.responseCode = response.statusCode
+            request.partialSummary.responseCode = response.statusCode
             var keepConnection = request.clientSupportsKeepAlive()
             if request.disableKeepAlive {
                 keepConnection = false
@@ -242,7 +242,7 @@ open class HttpServerIO {
             let context = InnerWriteContext(socket: socket)
             try writeClosure(context)
         }
-        request.responseSize = socket.transferCounter.transfer
+        request.partialSummary.responseSize = socket.transferCounter.transfer
 
         return keepAlive && content.length != -1
     }

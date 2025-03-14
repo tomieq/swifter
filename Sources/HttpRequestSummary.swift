@@ -13,3 +13,8 @@ public struct HttpRequestSummary {
     public let responseSizeInBytes: UInt64
     public let durationInSeconds: Double
 }
+
+final class HttpRequestPartialSummary {
+    var responseCode: Int = 0
+    var responseSize: UInt64 = 0
+}
