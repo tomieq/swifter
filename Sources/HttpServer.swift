@@ -12,15 +12,18 @@ open class HttpServer: HttpServerIO {
     let router = HttpRouter()
 
     public override init() {
-        self.delete = MethodRoute(method: .DELETE, router: router)
-        self.patch  = MethodRoute(method: .PATCH, router: router)
-        self.head   = MethodRoute(method: .HEAD, router: router)
-        self.post   = MethodRoute(method: .POST, router: router)
-        self.get    = MethodRoute(method: .GET, router: router)
-        self.put    = MethodRoute(method: .PUT, router: router)
+        self.delete  = MethodRoute(method: .DELETE, router: router)
+        self.patch   = MethodRoute(method: .PATCH, router: router)
+        self.head    = MethodRoute(method: .HEAD, router: router)
+        self.post    = MethodRoute(method: .POST, router: router)
+        self.get     = MethodRoute(method: .GET, router: router)
+        self.put     = MethodRoute(method: .PUT, router: router)
+        self.connect = MethodRoute(method: .CONNECT, router: router)
+        self.options = MethodRoute(method: .OPTIONS, router: router)
+        self.trace   = MethodRoute(method: .TRACE, router: router)
     }
 
-    public var delete, patch, head, post, get, put: MethodRoute
+    public var delete, patch, head, post, get, put, connect, options, trace: MethodRoute
 
     public subscript(path: CustomStringConvertible) -> HttpRequestHandler? {
         set {

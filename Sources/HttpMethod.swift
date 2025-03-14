@@ -15,6 +15,9 @@ public enum HttpMethod: String {
     case DELETE
     case PATCH
     case HEAD
+    case CONNECT
+    case OPTIONS
+    case TRACE
     case unknown
     
     init?(_ name: String) {
