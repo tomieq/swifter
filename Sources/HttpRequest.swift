@@ -24,6 +24,7 @@ public class HttpRequest {
     public var address: String? = ""
     public var disableKeepAlive: Bool = false
     public var onFinished: ((HttpRequestSummary) -> Void)?
+    public var session: HttpSession?
     var responseCode: Int?
     var responseSize: UInt64 = 0
     private let creationTime = DispatchTime.now()

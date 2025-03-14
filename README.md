@@ -322,6 +322,32 @@ server.metrics.onOpenConnectionsChanged = { number in
 /// or statically
 print("amount of connections: \(server.metrics.openConnections)")
 ```
+### Session Data
+If you want to initialize some data in middleware that should be shared with endpoint, use `session` attribute that can carry `HttpSession` object type:
+```swift
+class SessionData: HttpSession {
+    var username: String
+    
+    init(username: String) {
+        self.username = username
+    }
+}
+
+extension HttpRequest {
+    var sessionData: SessionData? {
+        self.session as? SessionData
+    }
+}
+
+server.middleware.append( { request, _ in
+    request.session = SessionData(username: "Admin")
+    return nil
+})
+
+server.get["test"] = { request, _ in
+    .ok(.text(request.sessionData?.username ?? "Not allowed"))
+}
+```
 ### Global error mapping
 As your request handlers are allowed to throw Errors, you might register you error mapper:
 ```swift
