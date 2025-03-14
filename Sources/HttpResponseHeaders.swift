@@ -14,8 +14,8 @@ public class HttpResponseHeaders {
     }
     
     @discardableResult
-    public func addHeader(_ name: String, _ value: String) -> HttpResponseHeaders {
-        self.storage.append((name, value))
+    public func addHeader(_ name: String, _ value: CustomStringConvertible) -> HttpResponseHeaders {
+        self.storage.append((name, value.description))
         return self
     }
     
@@ -35,14 +35,14 @@ public class HttpResponseHeaders {
     
     @discardableResult
     public func setCookie(name: String,
-                          value: String,
+                          value: CustomStringConvertible,
                           path: String = "/",
                           cache: CacheTime? = nil) -> HttpResponseHeaders {
         var maxAge = ""
         if let seconds = cache?.rawSeconds {
             maxAge = " Max-Age=\(seconds);"
         }
-        self.storage.append(("Set-Cookie", "\(name)=\(value);\(maxAge) Path=\(path)"))
+        self.storage.append(("Set-Cookie", "\(name)=\(value.description);\(maxAge) Path=\(path)"))
         return self
     }
     
