@@ -237,6 +237,18 @@ server.get["/stream"] = { _, _ in
     })
 }
 ```
+Sample of generating random 4MB of data:
+```swift
+server.get["bot_trap"] = { _, _ in
+    .raw(200, "OK", { writer in
+        for mb in 0...3 {
+            for i in 0...2048 {
+                try writer.write(Data.random(length: 512))
+            }
+        }
+    })
+}
+```
 ### How to serve static files
 ```swift
 server.notFoundHandler = { [unowned self] request, responseHeaders in
