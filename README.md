@@ -307,6 +307,12 @@ server.middleware.append( { request, header in
     return nil
 })
 ```
+If you want readable response size, use:
+```swift
+    request.onFinished = { summary in
+        print("Response size\(summary.responseSizeInBytes.readableSizeWithUnit)")
+    }
+```
 ### Socket metrics
 If you are interested in watching amount of open sockets/connected clients, you can do it by 
 ```swift
