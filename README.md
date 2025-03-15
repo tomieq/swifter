@@ -313,6 +313,22 @@ If you want readable response size, use:
         print("Response size\(summary.responseSizeInBytes.readableSizeWithUnit)")
     }
 ```
+### Selective middleware
+If you want add middleware for selective endpoints, you can use single wildcard (`*`) for single level matching or double wildcard (`**`) for greedy matching:
+```swift
+server.middleware["api/**"] = { request, header in
+    // this will intercept all calls to any endpoint starting with `api`
+    header.addHeader("Token", UUID())
+    return nil
+}
+```
+The typical usage is for authentication:
+```swift
+server.middleware["resticted/*/resource"] = { request, header in
+    let login = try digest.authorizedUser(request)
+    return nil
+}
+```
 ### Socket metrics
 If you are interested in watching amount of open sockets/connected clients, you can do it by 
 ```swift

@@ -82,6 +82,7 @@ class SwifterTestsHttpRouter: XCTestCase {
         XCTAssertNil(router.route(nil, path: "/"))
         XCTAssertNil(router.route(nil, path: "/a"))
         XCTAssertNotNil(router.route(nil, path: "/a/b/c/d/e/f/g"))
+        XCTAssertNotNil(router.route(nil, path: "/a/b/c/e/f/g"))
         XCTAssertNil(router.route(nil, path: "/a/e/f/g"))
     }
     
