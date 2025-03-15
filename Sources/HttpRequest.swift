@@ -23,7 +23,7 @@ public class HttpRequest {
     public var body = HttpRequestBody([])
     public var address: String? = ""
     public var disableKeepAlive: Bool = false
-    public var onFinished: ((HttpRequestSummary) -> Void)?
+    private var onFinishedClosures: [(HttpRequestSummary) -> Void] = []
     public var session: HttpSession?
     var partialSummary = HttpRequestPartialSummary()
     private let creationTime = DispatchTime.now()
@@ -32,10 +32,15 @@ public class HttpRequest {
     deinit {
         let nanoTime = DispatchTime.now().uptimeNanoseconds - creationTime.uptimeNanoseconds
         let elapsedTimeInSeconds = Double(nanoTime) / 1_000_000_000
-        self.onFinished?(HttpRequestSummary(requestID: self.id,
-                                            responseCode: self.partialSummary.responseCode,
-                                            responseSizeInBytes: self.partialSummary.responseSize,
-                                            durationInSeconds: elapsedTimeInSeconds))
+        let summary = HttpRequestSummary(requestID: self.id,
+                                         responseCode: self.partialSummary.responseCode,
+                                         responseSizeInBytes: self.partialSummary.responseSize,
+                                         durationInSeconds: elapsedTimeInSeconds)
+        self.onFinishedClosures.forEach { $0(summary) }
+    }
+    
+    public func onFinished(_ closure: @escaping (HttpRequestSummary) -> Void) {
+        self.onFinishedClosures.append(closure)
     }
 
     public func hasTokenForHeader(_ headerName: String, token: String) -> Bool {

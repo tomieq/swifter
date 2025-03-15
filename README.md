@@ -296,7 +296,7 @@ server.get["restricted"] = { request, _ in
 ```swift
 server.middleware.append( { request, header in
     print("Request \(request.id) \(request.method) \(request.path) from \(request.peerName ?? "")")
-    request.onFinished = { summary in
+    request.onFinished { summary in
         // finish tracking
         // id is unique UUID for this request
         // responseCode is the http code that was returned to client
@@ -309,7 +309,7 @@ server.middleware.append( { request, header in
 ```
 If you want readable response size, use:
 ```swift
-    request.onFinished = { summary in
+    request.onFinished { summary in
         print("Response size\(summary.responseSizeInBytes.readableSizeWithUnit)")
     }
 ```
