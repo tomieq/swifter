@@ -236,13 +236,15 @@ open class HttpServerIO {
         responseHeader.append("\r\n")
 
         socket.transferCounter.startCounting()
+        defer {
+            request.partialSummary.responseSize = socket.transferCounter.transfer
+        }
         try socket.writeUTF8(responseHeader)
 
         if let writeClosure = content.write {
             let context = InnerWriteContext(socket: socket)
             try writeClosure(context)
         }
-        request.partialSummary.responseSize = socket.transferCounter.transfer
 
         return keepAlive && content.length != -1
     }

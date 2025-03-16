@@ -110,6 +110,9 @@ open class Socket: Hashable, Equatable {
 
     private func writeBuffer(_ pointer: UnsafeRawPointer, length: Int) throws {
         var sent = 0
+        defer {
+            transferCounter.countBytes(UInt64(sent))
+        }
         while sent < length {
             #if os(Linux)
                 let result = send(self.socketFileDescriptor, pointer + sent, Int(length - sent), Int32(MSG_NOSIGNAL))
@@ -121,7 +124,6 @@ open class Socket: Hashable, Equatable {
             }
             sent += result
         }
-        transferCounter.countBytes(UInt64(length))
     }
 
     /// Read a single byte off the socket. This method is optimized for reading
