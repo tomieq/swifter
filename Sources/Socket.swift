@@ -202,14 +202,25 @@ open class Socket: Hashable, Equatable {
         } while index != Socket.NL
         return characters
     }
-
-    public func peername() throws -> String {
-        var addr = sockaddr(), len: socklen_t = socklen_t(MemoryLayout<sockaddr>.size)
-        if getpeername(self.socketFileDescriptor, &addr, &len) != 0 {
-            throw SocketError.getPeerNameFailed(Errno.description())
+    
+    func peername() throws -> String {
+        var addr = sockaddr_storage()
+        var addrLen = socklen_t(MemoryLayout<sockaddr_storage>.size)
+        
+        if getpeername(socketFileDescriptor, withUnsafeMutablePointer(to: &addr) {
+            UnsafeMutableRawPointer($0).assumingMemoryBound(to: sockaddr.self)
+        }, &addrLen) != 0 {
+            throw SocketError.getNameInfoFailed(Errno.description())
         }
+        
         var hostBuffer = [CChar](repeating: 0, count: Int(NI_MAXHOST))
-        if getnameinfo(&addr, len, &hostBuffer, socklen_t(hostBuffer.count), nil, 0, NI_NUMERICHOST) != 0 {
+        
+        let result = withUnsafePointer(to: &addr) {
+            $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {
+                getnameinfo($0, addrLen, &hostBuffer, socklen_t(hostBuffer.count), nil, 0, NI_NUMERICHOST)
+            }
+        }
+        if result != 0 {
             throw SocketError.getNameInfoFailed(Errno.description())
         }
         return String(cString: hostBuffer)
