@@ -88,8 +88,9 @@ public enum HttpResponse {
     case noContent
     case tooManyRequests(HttpResponseBody? = nil)
     case internalServerError(HttpResponseBody? = nil)
-    case notImplemented
-    case badGateway, serviceUnavailable
+    case notImplemented(HttpResponseBody? = nil)
+    case badGateway(HttpResponseBody? = nil)
+    case serviceUnavailable(HttpResponseBody? = nil)
     case raw(Int, String, ((HttpResponseBodyWriter) throws -> Void)? )
 
     public var statusCode: Int {
@@ -163,12 +164,13 @@ public enum HttpResponse {
             self.addContentType(headers: headers, body: body)
         case .badRequest(let body), .created(let body), .accepted(let body), .unauthorized(let body), .forbidden(let body),
              .notFound(let body), .methodNotAllowed(let body), .notAcceptable(let body), .conflict(let body), .iAmTeapot(let body),
-             .locked(let body), .tooEarly(let body), .tooManyRequests(let body), .internalServerError(let body):
+             .locked(let body), .tooEarly(let body), .tooManyRequests(let body), .internalServerError(let body),
+             .notImplemented(let body), .badGateway(let body), .serviceUnavailable(let body):
             guard let body = body else { break }
             self.addContentType(headers: headers, body: body)
         case .movedPermanently(let location), .movedTemporarily(let location), .found(let location):
             headers.addHeader("Location", location)
-        default:
+        case .notModified, .noContent, .raw(_, _, _):
             break
         }
         return headers
@@ -199,7 +201,8 @@ public enum HttpResponse {
             return body.content()
         case .badRequest(let body), .created(let body), .accepted(let body), .unauthorized(let body), .forbidden(let body),
              .notFound(let body), .methodNotAllowed(let body), .notAcceptable(let body), .conflict(let body), .iAmTeapot(let body),
-             .locked(let body), .tooEarly(let body), .tooManyRequests(let body), .internalServerError(let body):
+             .locked(let body), .tooEarly(let body), .tooManyRequests(let body), .internalServerError(let body),
+             .notImplemented(let body), .badGateway(let body), .serviceUnavailable(let body):
             return body?.content() ?? (-1, nil)
         case .raw(_, _, let writer):
             return (-1, writer)
