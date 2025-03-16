@@ -19,13 +19,13 @@ Tiny http server engine written in [Swift](https://developer.apple.com/swift/) p
 ### How to start?
 ```swift
 let server = HttpServer()
-server["hello"] = { request, responseHeaders in
+server.get["hello"] = { request, responseHeaders in
     .ok(.html("html goes here"))  
 }
-server["code.js"] = { request, responseHeaders in
+server.get["code.js"] = { request, responseHeaders in
     .ok(.js("javascript goes here"))  
 }
-server["api"] = { request, responseHeaders in
+server.get["api"] = { request, responseHeaders in
     .ok(.json(<Encodeble object>))  
 }
 try server.start(8080)
@@ -40,13 +40,13 @@ dispatchMain()
 ### How to share files?
 ```swift
 let server = HttpServer()
-server["/desktop/:path"] = shareFilesFromDirectory("/Users/me/Desktop")
+server.get["/desktop/:path"] = shareFilesFromDirectory("/Users/me/Desktop")
 server.start()
 ```
 ### How to redirect?
 ```swift
 let server = HttpServer()
-server["/redirect"] = { request, _ in
+server.get["/redirect"] = { request, _ in
   return .movedPermanently("http://www.google.com")
 }
 server.start()
@@ -54,7 +54,7 @@ server.start()
 ### How to HTML ?
 ```swift
 let server = HttpServer()
-server["/my_html"] = scopes { 
+server.get["/my_html"] = scopes { 
   html {
     body {
       h1 { inner = "hello" }
@@ -66,7 +66,7 @@ server.start()
 ### How to WebSockets ?
 ```swift
 let server = HttpServer()
-server["/websocket-echo"] = websocket(text: { (session, text) in
+server.get["/websocket-echo"] = websocket(text: { (session, text) in
     session.writeText(text)
 }, binary: { (session, binary) in
     session.writeBinary(binary)
