@@ -2,16 +2,6 @@ import Swifter
 import Dispatch
 
 let server = HttpServer()
-server["/"] = scopes {
-  html {
-    body {
-      center {
-        img { src = "https://swift.org/assets/images/swift.svg" }
-      }
-    }
-  }
-}
-server["/files/:path"] = directoryBrowser("/")
 
 let semaphore = DispatchSemaphore(value: 0)
 do {
