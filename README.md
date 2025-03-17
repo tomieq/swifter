@@ -51,18 +51,6 @@ server.get["/redirect"] = { request, _ in
 }
 server.start()
 ```
-### How to HTML ?
-```swift
-let server = HttpServer()
-server.get["/my_html"] = scopes { 
-  html {
-    body {
-      h1 { inner = "hello" }
-    }
-  }
-}
-server.start()
-```
 ### How to WebSockets ?
 ```swift
 let server = HttpServer()
