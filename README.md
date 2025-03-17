@@ -295,7 +295,7 @@ server.get["restricted"] = { request, _ in
 `HttpRequest` has `onFinished` closure that will be executed after request is finished
 ```swift
 server.middleware.append( { request, header in
-    print("Request \(request.id) \(request.method) \(request.path) from \(request.peerName ?? "")")
+    print("Request \(request.id) \(request.method) \(request.path) from \(request.clientIP ?? "")")
     request.onFinished { summary in
         // finish tracking
         // id is unique UUID for this request

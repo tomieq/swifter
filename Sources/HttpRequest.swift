@@ -9,7 +9,6 @@ import Foundation
 
 public class HttpRequest {
 
-    public var peerName: String?
     public var id = UUID()
     public var method: HttpMethod = .unknown
     public var path: String = ""
@@ -21,7 +20,7 @@ public class HttpRequest {
     public var headers = HttpRequestParams([:])
     public var cookies = HttpRequestParams([:])
     public var body = HttpRequestBody([])
-    public var address: String? = ""
+    public var clientIP: String? = ""
     public var disableKeepAlive: Bool = false
     private var onFinishedClosures: [(HttpRequestSummary) -> Void] = []
     public var session: HttpSession?

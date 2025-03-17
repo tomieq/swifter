@@ -131,7 +131,6 @@ open class HttpServerIO {
         while self.operating, let request = try? parser.readHttpRequest(socket) {
             let request = request
             let responseHeaders = HttpResponseHeaders()
-            request.address = try? socket.peername()
             let (params, handler) = self.dispatch(request, responseHeaders)
             request.pathParams = HttpRequestParams(params)
             let response = self.instantRequestHandler.watch(request, responseHeaders, handler)

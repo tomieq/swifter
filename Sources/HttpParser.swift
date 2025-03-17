@@ -23,7 +23,7 @@ public class HttpParser {
             throw HttpParserError.invalidStatusLine(statusLine)
         }
         let request = HttpRequest()
-        request.peerName = try? socket.peername()
+        request.clientIP = socket.peerIP
         request.method = HttpMethod(statusLineTokens[0]) ?? .unknown
         let encodedPath = self.escapingInvalidURL(statusLineTokens[1])
         let urlComponents = URLComponents(string: encodedPath)

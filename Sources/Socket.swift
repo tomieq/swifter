@@ -203,28 +203,24 @@ open class Socket: Hashable, Equatable {
         return characters
     }
     
-    func peername() throws -> String {
+    lazy var peerIP: String? = {
         var addr = sockaddr_storage()
         var addrLen = socklen_t(MemoryLayout<sockaddr_storage>.size)
         
         if getpeername(socketFileDescriptor, withUnsafeMutablePointer(to: &addr) {
             UnsafeMutableRawPointer($0).assumingMemoryBound(to: sockaddr.self)
         }, &addrLen) != 0 {
-            throw SocketError.getNameInfoFailed(Errno.description())
+            return nil
         }
         
         var hostBuffer = [CChar](repeating: 0, count: Int(NI_MAXHOST))
-        
         let result = withUnsafePointer(to: &addr) {
             $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {
                 getnameinfo($0, addrLen, &hostBuffer, socklen_t(hostBuffer.count), nil, 0, NI_NUMERICHOST)
             }
         }
-        if result != 0 {
-            throw SocketError.getNameInfoFailed(Errno.description())
-        }
-        return String(cString: hostBuffer)
-    }
+        return result == 0 ? String(cString: hostBuffer) : nil
+    }()
 
     public class func setNoSigPipe(_ socket: Int32) {
         #if os(Linux)
