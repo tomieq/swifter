@@ -95,10 +95,10 @@ open class HttpServerIO {
                     strongSelf.queue.async {
                         strongSelf.sockets.insert(socket)
                     }
-                    strongSelf.metrics.socketOpened()
-                    strongSelf.handleConnection(socket)
-                    strongSelf.metrics.socketClosed()
 
+                    strongSelf.metrics.socket(.opened)
+                    strongSelf.handleConnection(socket)
+                    strongSelf.metrics.socket(.closed)
                     strongSelf.queue.async {
                         strongSelf.sockets.remove(socket)
                     }

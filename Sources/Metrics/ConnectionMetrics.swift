@@ -8,6 +8,19 @@
 import Foundation
 
 public class ConnectionMetrics {
+    enum SocketAction {
+        case opened
+        case closed
+        
+        var diff: Int {
+            switch self {
+            case .opened:
+                1
+            case .closed:
+                -1
+            }
+        }
+    }
     private let queue = DispatchQueue(label: "swifter.metrics.queue", attributes: .concurrent)
     private var openSockets = 0
     public var openConnections: Int {
@@ -19,17 +32,13 @@ public class ConnectionMetrics {
     }
     public var onOpenConnectionsChanged: ((Int) -> Void)?
 
-    func socketOpened() {
+    func socket(_ action: SocketAction) {
         self.queue.async(flags: .barrier) {
-            self.openSockets += 1
-            self.onOpenConnectionsChanged?(self.openSockets)
-        }
-    }
-
-    func socketClosed() {
-        self.queue.async(flags: .barrier) {
-            self.openSockets -= 1
-            self.onOpenConnectionsChanged?(self.openSockets)
+            self.openSockets += action.diff
+            let newValue = self.openSockets
+            DispatchQueue.global().async {
+                self.onOpenConnectionsChanged?(newValue)
+            }
         }
     }
 }
