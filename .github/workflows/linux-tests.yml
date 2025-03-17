@@ -1,14 +1,20 @@
 name: Test Linux Platform
-on:
-  pull_request:
-    branches:
-        - stable
+on: [push]
 
 jobs:
-  Test-Linux-Platform:
+  Test-Linux-Swift-59:
     runs-on: ubuntu-latest
     container:
-      image: swift:5.2
+      image: swift:5.9
+      options: --cap-add=SYS_PTRACE --security-opt seccomp=unconfined --security-opt apparmor=unconfined
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run Unit Tests
+        run: swift test
+  Test-Linux-Swift-60:
+    runs-on: ubuntu-latest
+    container:
+      image: swift:6.0
       options: --cap-add=SYS_PTRACE --security-opt seccomp=unconfined --security-opt apparmor=unconfined
     steps:
       - uses: actions/checkout@v2
