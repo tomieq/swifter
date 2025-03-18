@@ -15,9 +15,9 @@ public class ConnectionMetrics {
         var diff: Int {
             switch self {
             case .opened:
-                1
+                return 1
             case .closed:
-                -1
+                return -1
             }
         }
     }
