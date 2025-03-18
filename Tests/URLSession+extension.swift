@@ -18,7 +18,7 @@ class DefaultSession {
     }
     
     private func runTask(
-        hostURL: URL = defaultLocalhost,
+        hostURL: URL,
         method: String = "GET",
         completionHandler handler: @escaping (Data?, URLResponse?, Error?) -> Void
     ) -> URLSessionDataTask {

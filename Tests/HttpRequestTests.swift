@@ -57,9 +57,10 @@ class HttpRequestTests: XCTestCase {
                 server.stop()
             }
         }
-        try server.start()
+        let binding = ServerBinding.make()
+        try server.start(binding.port)
         let expectation = expectation(description: "description")
-        DefaultSession().runRequest(url: defaultLocalhost.appendingPathComponent("book/34/esmeralda")) { _, body in
+        DefaultSession().runRequest(url: binding.host.appendingPathComponent("book/34/esmeralda")) { _, body in
             expectation.fulfill()
         }
         wait(for: [expectation], timeout: 1)

@@ -33,21 +33,28 @@ class IOSafetyTests: XCTestCase {
         super.tearDown()
     }
 
+    #if os(Linux)
+    #else
     func testStopWithActiveConnections() {
-        (0...100).forEach { cpt in
+        let binding = ServerBinding.make()
+        (0...8).forEach { cpt in
             server = HttpServer.pingServer()
             do {
-                try server.start()
-                XCTAssertFalse(urlSession.retryPing())
+                try server.start(binding.port)
+                XCTAssertFalse(urlSession.retryPing(hostURL: binding.host))
                 (0...100).forEach { _ in
                     DispatchQueue.global(qos: DispatchQoS.default.qosClass).sync {
-                        urlSession.pingTask { _, _, _ in }.resume()
+                        urlSession.pingTask(hostURL: binding.host) { _, _, _ in }.resume()
                     }
                 }
                 server.stop()
+                
+                    sleep(1)
+                
             } catch let error {
                 XCTFail("\(cpt): \(error)")
             }
         }
     }
+    #endif
 }

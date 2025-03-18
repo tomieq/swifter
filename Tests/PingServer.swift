@@ -11,6 +11,7 @@ import Foundation
 import FoundationNetworking
 #endif
 @testable import Swifter
+import Dispatch
 
 // Server
 extension HttpServer {
@@ -23,44 +24,42 @@ extension HttpServer {
     }
 }
 
-let defaultLocalhost = URL(string: "http://localhost:8080")!
-
+struct ServerBinding {
+    let port: UInt16
+    let host: URL
+    
+    static func make() -> ServerBinding {
+        queue.sync {
+            ServerBinding.nextPort += 1
+            return ServerBinding(port: ServerBinding.nextPort, host: URL(string: "http://127.0.0.1:\(ServerBinding.nextPort)")!)
+        }
+    }
+    private static var nextPort: UInt16 = 9080
+    private static let queue = DispatchQueue(label: "serverbinding.init")
+}
 // Client
 extension URLSession {
     func pingTask(
-        hostURL: URL = defaultLocalhost,
+        hostURL: URL,
         completionHandler handler: @escaping (Data?, URLResponse?, Error?) -> Void
     ) -> URLSessionDataTask {
         return self.dataTask(with: hostURL.appendingPathComponent("/ping"), completionHandler: handler)
     }
 
     func retryPing(
-        hostURL: URL = defaultLocalhost,
+        hostURL: URL,
         timeout: Double = 2.0
     ) -> Bool {
         let semaphore = DispatchSemaphore(value: 0)
         self.signalIfPongReceived(semaphore, hostURL: hostURL)
-        let timeoutDate = NSDate().addingTimeInterval(timeout)
-        var timedOut = false
-        while semaphore.wait(timeout: DispatchTime.now()) != DispatchTimeoutResult.timedOut {
-            if NSDate().laterDate(timeoutDate as Date) != timeoutDate as Date {
-                timedOut = true
-                break
-            }
-
-            #if swift(>=4.2)
-            let mode = RunLoop.Mode.common
-            #else
-            let mode = RunLoopMode.commonModes
-            #endif
-
-            _ = RunLoop.current.run(
-                mode: mode,
-                before: NSDate.distantFuture
-            )
+        
+        let result = semaphore.wait(timeout: .now() + timeout)
+        switch result {
+        case .success:
+            return false
+        case .timedOut:
+            return true
         }
-
-        return timedOut
     }
 
     func signalIfPongReceived(_ semaphore: DispatchSemaphore, hostURL: URL) {

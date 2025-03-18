@@ -36,9 +36,10 @@ class HttpInstantResponseTests: XCTestCase {
             }
             return .ok(.text("OK"))
         }
-        try server.start()
+        let binding = ServerBinding.make()
+        try server.start(binding.port)
         let expectation = expectation(description: "")
-        DefaultSession().runRequest(url: defaultLocalhost.appendingPathComponent("api/v1")) { _, body in
+        DefaultSession().runRequest(url: binding.host.appendingPathComponent("api/v1")) { _, body in
             XCTAssertEqual(body, "InvalidVersion")
             expectation.fulfill()
         }
@@ -52,9 +53,10 @@ class HttpInstantResponseTests: XCTestCase {
         server.middleware.append({ _, _ in
             throw HttpInstantResponse(response: .badRequest(.text("InstantMiddleware")))
         })
-        try server.start()
+        let binding = ServerBinding.make()
+        try server.start(binding.port)
         let expectation = expectation(description: "")
-        DefaultSession().runRequest(url: defaultLocalhost.appendingPathComponent("api/v1")) { code, body in
+        DefaultSession().runRequest(url: binding.host.appendingPathComponent("api/v1")) { code, body in
             XCTAssertEqual(code, 400)
             XCTAssertEqual(body, "InstantMiddleware")
             expectation.fulfill()
@@ -72,9 +74,10 @@ class HttpInstantResponseTests: XCTestCase {
         server.globalErrorHandler = { error, request, headers in
             return .badRequest(.text("repacked"))
         }
-        try server.start()
+        let binding = ServerBinding.make()
+        try server.start(binding.port)
         let expectation = expectation(description: "")
-        DefaultSession().runRequest(url: defaultLocalhost.appendingPathComponent("api/v1")) { code, body in
+        DefaultSession().runRequest(url: binding.host.appendingPathComponent("api/v1")) { code, body in
             expectation.fulfill()
             XCTAssertEqual(code, 400)
             XCTAssertEqual(body, "repacked")

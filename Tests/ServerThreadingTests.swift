@@ -38,25 +38,19 @@ class ServerThreadingTests: XCTestCase {
         server.get[path] = { request, _ in .ok(.html("You asked for " + request.path)) }
 
         do {
-
-            #if os(Linux)
-            try server.start(9081)
-            hostURL = URL(string: "http://localhost:9081")!
-            #else
-            try server.start()
-            hostURL = defaultLocalhost
-            #endif
+            let binding = ServerBinding.make()
+            try server.start(binding.port)
 
             let requestExpectation = expectation(description: "Request should finish.")
             requestExpectation.expectedFulfillmentCount = 3
 
             (1...3).forEach { index in
                 queue.asyncAfter(deadline: .now() + .seconds(index)) {
-                    let task = URLSession.shared.executeAsyncTask(hostURL: hostURL, path: path) { (_, response, _ ) in
+                    let task = URLSession.shared.executeAsyncTask(hostURL: binding.host, path: path) { (_, response, _ ) in
                         requestExpectation.fulfill()
                         let statusCode = (response as? HTTPURLResponse)?.statusCode
                         XCTAssertNotNil(statusCode)
-                        XCTAssertEqual(statusCode, 200, "\(hostURL)")
+                        XCTAssertEqual(statusCode, 200, "\(binding.host)")
                     }
 
                     task.resume()
@@ -78,14 +72,14 @@ class ServerThreadingTests: XCTestCase {
         var requestExpectation: XCTestExpectation? = expectation(description: "Should handle the request concurrently")
 
         do {
-
-            try server.start()
+            let binding = ServerBinding.make()
+            try server.start(binding.port)
             let downloadGroup = DispatchGroup()
 
             DispatchQueue.concurrentPerform(iterations: 3) { _ in
                 downloadGroup.enter()
 
-                let task = URLSession.shared.executeAsyncTask(path: path) { (_, response, _ ) in
+                let task = URLSession.shared.executeAsyncTask(hostURL: binding.host, path: path) { (_, response, _ ) in
 
                     let statusCode = (response as? HTTPURLResponse)?.statusCode
                     XCTAssertNotNil(statusCode)
@@ -109,7 +103,7 @@ class ServerThreadingTests: XCTestCase {
 extension URLSession {
 
     func executeAsyncTask(
-        hostURL: URL = defaultLocalhost,
+        hostURL: URL,
         path: String,
         completionHandler handler: @escaping (Data?, URLResponse?, Error?) -> Void
         ) -> URLSessionDataTask {
