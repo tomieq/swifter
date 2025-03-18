@@ -70,7 +70,6 @@ class HttpInstantResponseTests: XCTestCase {
             throw CustomError.uups
         }
         server.globalErrorHandler = { error, request, headers in
-            print("dupa")
             return .badRequest(.text("repacked"))
         }
         try server.start()
@@ -79,7 +78,6 @@ class HttpInstantResponseTests: XCTestCase {
             expectation.fulfill()
             XCTAssertEqual(code, 400)
             XCTAssertEqual(body, "repacked")
-            print("got it")
         }
         wait(for: [expectation], timeout: 10)
     }
