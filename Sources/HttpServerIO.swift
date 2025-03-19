@@ -65,8 +65,10 @@ open class HttpServerIO {
 
     private let queue = DispatchQueue(label: "swifter.httpserverio.clientsockets")
 
-    public func port() throws -> Int {
-        return Int(try socket.port())
+    public var port: Int {
+        get throws {
+            return Int(try socket.port)
+        }
     }
 
     public func isIPv4() throws -> Bool {

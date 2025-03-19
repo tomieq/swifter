@@ -37,8 +37,3 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: docker run --rm -v "$PWD:/code" -w /code swift:5.5 swift build
-  swift-5_4-build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - run: docker run --rm -v "$PWD:/code" -w /code swift:5.4 swift build

@@ -29,6 +29,7 @@ server.get["api"] = { request, responseHeaders in
     .ok(.json(<Encodeble object>))  
 }
 try server.start(8080)
+print("Server started on port \(try server.port)")
 ```
 
 ### How to keep the process running on Linux?
