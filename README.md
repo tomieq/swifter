@@ -289,9 +289,9 @@ server.middleware.append( { request, header in
         // finish tracking
         // id is unique UUID for this request
         // responseCode is the http code that was returned to client
-        // responseSizeInBytes is amount of bytes in response
+        // responseSize is expressed in DataSize
         // durationInSeconds is the time in seconds
-        print("Request \(summary.requestID) finished with \(summary.responseCode) [\(summary.responseSizeInBytes)B] in \(String(format: "%.3f", summary.durationInSeconds)) seconds")
+        print("Request \(summary.requestID) finished with \(summary.responseCode) [\(summary.responseSize)] in \(String(format: "%.3f", summary.durationInSeconds)) seconds")
     }
     return nil
 })

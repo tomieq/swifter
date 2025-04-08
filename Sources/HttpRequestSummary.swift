@@ -10,7 +10,7 @@ import Foundation
 public struct HttpRequestSummary {
     public let requestID: UUID
     public let responseCode: Int
-    public let responseSizeInBytes: UInt64
+    public let responseSize: DataSize
     public let durationInSeconds: Double
 }
 

@@ -33,7 +33,7 @@ public class HttpRequest {
         let elapsedTimeInSeconds = Double(nanoTime) / 1_000_000_000
         let summary = HttpRequestSummary(requestID: self.id,
                                          responseCode: self.partialSummary.responseCode,
-                                         responseSizeInBytes: self.partialSummary.responseSize,
+                                         responseSize: DataSize(self.partialSummary.responseSize),
                                          durationInSeconds: elapsedTimeInSeconds)
         self.onFinishedClosures.forEach { $0(summary) }
     }
