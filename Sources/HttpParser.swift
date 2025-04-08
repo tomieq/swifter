@@ -9,12 +9,21 @@ import Foundation
 
 enum HttpParserError: Error, Equatable {
     case invalidStatusLine(String)
+    case bodyTooLarge(String)
     case negativeContentLength
 }
 
-public class HttpParser {
+public enum RequestBodyLimit {
+    case unlimited
+    case limit(DataSize)
+}
 
-    public init() { }
+public class HttpParser {
+    private let bodyLimit: RequestBodyLimit
+
+    public init(bodyLimit: RequestBodyLimit) {
+        self.bodyLimit = bodyLimit
+    }
 
     public func readHttpRequest(_ socket: Socket) throws -> HttpRequest {
         let statusLine = try socket.readLine()
@@ -40,6 +49,11 @@ public class HttpParser {
             }
         
         if let contentLength = request.headers["content-length"], let contentLengthValue = Int(contentLength), contentLengthValue >= 0 {
+            if case .limit(let dataSize) = bodyLimit, dataSize.count < contentLengthValue {
+                let msg = "Incoming body exceeds current limit \(bodyLimit)"
+                print(msg)
+                throw HttpParserError.bodyTooLarge(msg)
+            }
             request.body = HttpRequestBody(try readBody(socket, size: contentLengthValue))
         }
         return request

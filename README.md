@@ -216,6 +216,13 @@ You can even set global headers that are send with every response until specific
 ```swift
 server.globalHeaders.addHeader("X-Docker-Instance", UUID().uuidString)
 ```
+### How to set limit for incomming body size
+If somehow the server will be exposed online, it is worth to set some reasonable limit for incoming data size.
+By default it is set to `.unlimited`, but you can change it to any value:
+```swift
+server.requestBodyLimit = .limit(.MB(13.5))
+```
+Above sample will limit the body size to 13.5 MB. When exceeded, the server will terminate connection.
 ### How to stream data
 ```swift
 server.get["/stream"] = { _, _ in
@@ -283,7 +290,7 @@ server.get["restricted"] = { request, _ in
 ### How to add metric tracking
 `HttpRequest` has `onFinished` closure that will be executed after request is finished
 ```swift
-server.middleware.append( { request, header in
+server.middleware.append { request, header in
     print("Request \(request.id) \(request.method) \(request.path) from \(request.clientIP ?? "")")
     request.onFinished { summary in
         // finish tracking
@@ -294,7 +301,7 @@ server.middleware.append( { request, header in
         print("Request \(summary.requestID) finished with \(summary.responseCode) [\(summary.responseSize)] in \(String(format: "%.3f", summary.durationInSeconds)) seconds")
     }
     return nil
-})
+}
 ```
 If you want readable response size, use:
 ```swift

@@ -17,6 +17,7 @@ open class HttpServerIO {
     public weak var delegate: HttpServerIODelegate?
     public var name = "Swifter"
     public var globalHeaders = HttpResponseHeaders()
+    public var requestBodyLimit: RequestBodyLimit = .unlimited
     public let metrics = ConnectionMetrics()
     let instantRequestHandler = HttpInstantResponseHandler()
     public var globalErrorHandler: HttpGlobalErrorHandler? {
@@ -129,7 +130,7 @@ open class HttpServerIO {
     }
 
     private func handleConnection(_ socket: Socket) {
-        let parser = HttpParser()
+        let parser = HttpParser(bodyLimit: requestBodyLimit)
         while self.operating, let request = try? parser.readHttpRequest(socket) {
             let request = request
             let responseHeaders = HttpResponseHeaders()
