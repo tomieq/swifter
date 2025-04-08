@@ -82,6 +82,7 @@ public enum HttpResponse {
     case methodNotAllowed(HttpResponseBody? = nil)
     case notAcceptable(HttpResponseBody? = nil)
     case conflict(HttpResponseBody? = nil)
+    case contentTooLarge(HttpResponseBody? = nil)
     case iAmTeapot(HttpResponseBody? = nil)
     case locked(HttpResponseBody? = nil)
     case tooEarly(HttpResponseBody? = nil)
@@ -111,6 +112,7 @@ public enum HttpResponse {
         case .methodNotAllowed        : return 405
         case .notAcceptable           : return 406
         case .conflict                : return 409
+        case .contentTooLarge         : return 413
         case .iAmTeapot               : return 418
         case .locked                  : return 423
         case .tooEarly                : return 425
@@ -141,6 +143,7 @@ public enum HttpResponse {
         case .methodNotAllowed         : return "Method Not Allowed"
         case .notAcceptable            : return "Not Acceptable"
         case .conflict                 : return "Conflict"
+        case .contentTooLarge          : return "Content Too Large"
         case .iAmTeapot                : return "I'm a teapot"
         case .locked                   : return "Locked"
         case .tooEarly                 : return "Too Early"
@@ -163,7 +166,8 @@ public enum HttpResponse {
         case .ok(let body):
             self.addContentType(headers: headers, body: body)
         case .badRequest(let body), .created(let body), .accepted(let body), .unauthorized(let body), .forbidden(let body),
-             .notFound(let body), .methodNotAllowed(let body), .notAcceptable(let body), .conflict(let body), .iAmTeapot(let body),
+             .notFound(let body), .methodNotAllowed(let body), .notAcceptable(let body), .conflict(let body),
+             .contentTooLarge(let body), .iAmTeapot(let body),
              .locked(let body), .tooEarly(let body), .tooManyRequests(let body), .internalServerError(let body),
              .notImplemented(let body), .badGateway(let body), .serviceUnavailable(let body):
             guard let body = body else { break }
@@ -200,7 +204,8 @@ public enum HttpResponse {
         case .ok(let body):
             return body.content()
         case .badRequest(let body), .created(let body), .accepted(let body), .unauthorized(let body), .forbidden(let body),
-             .notFound(let body), .methodNotAllowed(let body), .notAcceptable(let body), .conflict(let body), .iAmTeapot(let body),
+             .notFound(let body), .methodNotAllowed(let body), .notAcceptable(let body), .conflict(let body),
+             .contentTooLarge(let body), .iAmTeapot(let body),
              .locked(let body), .tooEarly(let body), .tooManyRequests(let body), .internalServerError(let body),
              .notImplemented(let body), .badGateway(let body), .serviceUnavailable(let body):
             return body?.content() ?? (-1, nil)
