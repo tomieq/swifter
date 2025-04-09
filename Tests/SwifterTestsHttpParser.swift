@@ -52,7 +52,7 @@ class SwifterTestsHttpParser: XCTestCase {
 
     // swiftlint:disable function_body_length
     func testParser() {
-        let parser = HttpParser()
+        let parser = HttpParser(bodyLimit: .unlimited)
 
         do {
             _ = try parser.readHttpRequest(TestSocket(""))
