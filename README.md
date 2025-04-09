@@ -222,7 +222,20 @@ By default it is set to `.unlimited`, but you can change it to any value:
 ```swift
 server.requestBodyLimit = .limit(.MB(13.5))
 ```
-Above sample will limit the body size to 13.5 MB. When exceeded, the server will terminate connection.
+Above sample will limit the body size to 13.5 MB. 
+When exceeded, `request.body` will have empty data and `request.body.status` will be set to `.exceededLimit`, 
+so you can handle the situation gracefully:
+```swift
+server.post["api/upload"] = { request, _ in
+    switch request.body.status {
+    case .ok:
+        try processFile(request.body.data)
+        return .ok(.text("File processed"))
+    case .exceededLimit(let bodySize):
+        return .contentTooLarge(.text("Uploaded file \(bodySize) exceeded the limit"))
+    }
+}
+```
 ### How to stream data
 ```swift
 server.get["/stream"] = { _, _ in

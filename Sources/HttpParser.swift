@@ -9,7 +9,6 @@ import Foundation
 
 enum HttpParserError: Error, Equatable {
     case invalidStatusLine(String)
-    case bodyTooLarge(String)
     case negativeContentLength
 }
 
@@ -50,11 +49,12 @@ public class HttpParser {
         
         if let contentLength = request.headers["content-length"], let contentLengthValue = Int(contentLength), contentLengthValue >= 0 {
             if case .limit(let dataSize) = bodyLimit, dataSize.count < contentLengthValue {
-                let msg = "Incoming body exceeds current limit \(bodyLimit)"
+                let msg = "Incoming body size \(DataSize(contentLengthValue)) exceeds current server \(bodyLimit)"
                 print(msg)
-                throw HttpParserError.bodyTooLarge(msg)
+                request.body = HttpRequestBody([], status: .exceededLimit(bodySize: DataSize(contentLengthValue)))
+            } else {
+                request.body = HttpRequestBody(try readBody(socket, size: contentLengthValue))
             }
-            request.body = HttpRequestBody(try readBody(socket, size: contentLengthValue))
         }
         return request
     }

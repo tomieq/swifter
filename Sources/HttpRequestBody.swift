@@ -7,8 +7,14 @@
 
 import Foundation
 
+public enum HttpRequestBodyStatus {
+    case ok
+    case exceededLimit(bodySize: DataSize)
+}
+
 public class HttpRequestBody {
     public let raw: [UInt8]
+    public let status: HttpRequestBodyStatus
     
     public var string: String? {
         String(bytes: raw, encoding: .utf8)
@@ -18,8 +24,9 @@ public class HttpRequestBody {
         Data(raw)
     }
     
-    init(_ raw: [UInt8]) {
+    init(_ raw: [UInt8], status: HttpRequestBodyStatus = .ok) {
         self.raw = raw
+        self.status = status
     }
 
     public func decode<T: Decodable>() throws -> T {
