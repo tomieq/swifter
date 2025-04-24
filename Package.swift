@@ -1,4 +1,4 @@
-// swift-tools-version:5.4
+// swift-tools-version:5.9
 
 import PackageDescription
 
@@ -10,12 +10,16 @@ let package = Package(
     .executable(name: "Example", targets: ["Example"])
   ],
 
-  dependencies: [],
+  dependencies: [
+    .package(url: "https://github.com/tomieq/SwiftExtensions", branch: "master")
+  ],
 
   targets: [
     .target(
       name: "Swifter", 
-      dependencies: [], 
+      dependencies: [
+        .product(name: "SwiftExtensions", package: "SwiftExtensions")
+      ],
       path: "Sources"
       ),
 

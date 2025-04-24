@@ -1,0 +1,33 @@
+//
+//  TLSHandshakeType.swift
+//  Swifter
+//
+//  Created by Tomasz on 23/04/2025.
+//
+
+enum TLSHandshakeType: UInt8 {
+    // TLS common
+    case helloRequest = 0x00
+    case clientHello = 0x01
+    case serverHello = 0x02
+    case certificate = 0x0B
+    case certificateRequest = 0x0D
+    case certificateVerify = 0x0F
+    case finished = 0x14
+
+    // TLS 1.0 - 1.2 only, not in TLS 1.3
+    case serverKeyExchange = 12
+    case serverHelloDone = 14
+    case clientKeyExchange = 16
+    case certificateURL = 21
+    case certificateStatus = 22
+    
+    // new in TLS 1.3
+    case newSessionTicket = 4           // TLS 1.3
+    case endOfEarlyData = 5             // TLS 1.3
+    case helloRetryRequest = 6          // TLS 1.3
+    case encryptedExtensions = 8        // TLS 1.3
+    case keyUpdate = 24                 // TLS 1.3
+    
+    case messageHash = 254
+}

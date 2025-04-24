@@ -387,7 +387,7 @@ server.globalErrorHandler = { error, request, headers in
 ```
 If you want to hide all Errors, not show them in response, just:
 ```swift
-server.globalErrorHandler = { _, _ in
+server.globalErrorHandler = { _, _, _ in
     .internalServerError()
 }
 ```
