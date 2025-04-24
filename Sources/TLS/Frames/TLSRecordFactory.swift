@@ -18,7 +18,7 @@ enum TLSRecordFactoryError: Error {
 }
 
 enum TLSRecordFactory {
-    static func makeTlsRecord(stream: TLSStream) throws -> TLSRecord {
+    static func parse(stream: TLSStream) throws -> TLSRecord {
         guard let recordType = try TLSRecordType(rawValue: stream.read()) else {
             throw TLSRecordFactoryError.unknownRecordType
         }
@@ -31,7 +31,9 @@ enum TLSRecordFactory {
         case .changeCipherSpec:
             throw TLSRecordFactoryError.unsupportedRecordType(recordType)
         case .alert:
-            throw TLSRecordFactoryError.unsupportedRecordType(recordType)
+            return TLSRecord(recordType: recordType,
+                             version: version,
+                             body: try Self.assembleAlert(stream: stream))
         case .handshake:
             return TLSRecord(recordType: recordType,
                              version: version,
@@ -39,6 +41,10 @@ enum TLSRecordFactory {
         case .applicationData:
             throw TLSRecordFactoryError.unsupportedRecordType(recordType)
         }
+    }
+    
+    private static func assembleAlert(stream: TLSStream) throws -> TLSAlert {
+        TLSAlert(rawLevel: try stream.read(), rawCause: try stream.read())
     }
     
     private static func assembleHandshake(stream: TLSStream, frameLength: UInt16) throws -> TLSRecordBody {

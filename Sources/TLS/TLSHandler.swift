@@ -27,7 +27,7 @@ class TLSHandler {
     private func setup() throws {
         print("--------- Incoming connection")
         
-        let record = try TLSRecordFactory.makeTlsRecord(stream: self.stream)
+        let record = try TLSRecordFactory.parse(stream: self.stream)
         print("\(record) body: \(record.body)")
         guard let clientHello = record.body as? TLSClientHello else {
             print("Expected TLSClientHello but received \(type(of: record.body))")
@@ -47,7 +47,7 @@ class TLSHandler {
                                          extensions: clientHello.extensions)
         let response = TLSRecord(recordType: .handshake, version: record.version, body: serverHello)
         try stream.writeUInt8(response.serialised.bytes)
-        let record2 = try TLSRecordFactory.makeTlsRecord(stream: self.stream)
+        let record2 = try TLSRecordFactory.parse(stream: self.stream)
         print("\(record2) body: \(record2.body)")
     }
 }
