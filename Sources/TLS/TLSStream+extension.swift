@@ -17,7 +17,7 @@ extension TLSStream {
     }
     
     func readUInt16() throws -> UInt16 {
-        try self.read(length: 2).uInt16
+        try self.read(length: 2).data.uInt16
     }
     
     func readUInt24() throws -> Int {
@@ -26,7 +26,7 @@ extension TLSStream {
     }
     
     func readUInt32() throws -> UInt32 {
-        try self.read(length: 4).uInt32
+        try self.read(length: 4).data.uInt32
     }
 }
 
