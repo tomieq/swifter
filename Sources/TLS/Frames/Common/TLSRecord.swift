@@ -15,7 +15,7 @@ struct TLSRecord {
 
 extension TLSRecord: CustomStringConvertible {
     var description: String {
-        "TLSRecord type: \(recordType), version: \(version)"
+        "recordType: \(recordType), version: \(version)"
     }
 }
 

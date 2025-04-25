@@ -36,21 +36,24 @@ class TLSHandler {
         print("--------- Incoming connection")
         
         let record = try TLSRecordFactory.parse(stream: self.stream)
-        print("\(record) body: \(record.body)")
+        print("IN: \(record) body: \(record.body)")
         guard let clientHello = record.body as? TLSClientHello else {
             print("Expected TLSClientHello but received \(type(of: record.body))")
             try terminateWithAlert(.handshakeFailure)
             return
         }
-        guard let sharedKey = (clientHello.extensions.first { $0.type == .keyShare }) else {
+        guard let sharedKeyExtension = (clientHello.extensions.first { $0.type == .keyShare }) else {
             print("Missing preshared key")
             try terminateWithAlert(.missingExtension)
             return
         }
+        let sharedKey = try TLSKeyShare(rawBytes: sharedKeyExtension.rawBody)
+        print("sharedKey: \(sharedKey)")
         
         let supportedVersions = try clientHello.supportedVersions
         print("supportedVersions: \(supportedVersions)")
         let chosenVersion = supportedVersions.first ?? clientHello.legacyVersion
+        print("chosen version: \(chosenVersion)")
         
         let chosenVersionExtension = TLSSupportedVersions(versions: [chosenVersion]).asExtension
         
@@ -63,6 +66,6 @@ class TLSHandler {
         let response = TLSRecord(recordType: .handshake, version: record.version, body: serverHello)
         try stream.writeUInt8(response.serialised.bytes)
         let record2 = try TLSRecordFactory.parse(stream: self.stream)
-        print("\(record2) body: \(record2.body)")
+        print("IN: \(record2) body: \(record2.body)")
     }
 }
