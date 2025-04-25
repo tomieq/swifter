@@ -29,9 +29,9 @@ extension TLSServerHello: TLSOutMessage {
     var serialised: Data {
         
         var extensionResult = Data()
-//        extensions.filter{ $0.type == .keyShare }.forEach {
-//            extensionResult.append($0.serialised)
-//        }
+        extensions.filter{ $0.type == .keyShare }.forEach {
+            extensionResult.append($0.serialised)
+        }
         
         let message = TLSVersion.v1_3.rawValue.data
             .appending(random.randomBytes)

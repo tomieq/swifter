@@ -4,6 +4,7 @@
 //
 //  Created by Tomasz on 25/04/2025.
 //
+import Foundation
 import SwiftExtensions
 
 enum TLSSupportedVersionsError: Error {
@@ -13,21 +14,43 @@ enum TLSSupportedVersionsError: Error {
 struct TLSSupportedVersions {
     let versions: [TLSVersion]
     
-    init(bytes: [UInt8]) throws {
-        guard bytes.isEmpty.not else {
+    init(versions: [TLSVersion]) {
+        self.versions = versions
+    }
+    
+    init(data: Data) throws {
+        guard data.isEmpty.not else {
             versions = []
             return
         }
-        let lenght = bytes[0]
+        let lenght = data.bytes[0]
         
         let expectedLength =  1 + lenght
-        guard bytes.count == expectedLength else {
-            throw TLSSupportedVersionsError.invalidBytesSize(expected: Int(expectedLength), received: bytes.count)
+        guard data.count == expectedLength else {
+            throw TLSSupportedVersionsError.invalidBytesSize(expected: Int(expectedLength), received: data.count)
         }
         versions = (0..<lenght/2).compactMap { index in
             let offset = Int(1 + index * 2)
-            let byte = bytes[offset...]
-            return TLSVersion(rawValue: byte.array.data.uInt16)
+            let bytes = data.bytes[offset...]
+            return TLSVersion(rawValue: bytes.array.data.uInt16)
         }
+    }
+}
+
+extension TLSSupportedVersions: TLSOutMessage {
+    var serialised: Data {
+        var result = UInt8(1 + versions.count * 2).data
+        for version in self.versions {
+            result.append(version.rawValue.data)
+        }
+        return result
+    }
+}
+
+extension TLSSupportedVersions {
+    var asExtension: TLSExtension {
+        TLSExtension(type: .supportedVersions,
+                     rawType: TLSExtensionType.supportedVersions.rawValue,
+                     rawBody: serialised)
     }
 }

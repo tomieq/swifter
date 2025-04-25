@@ -9,7 +9,7 @@ import Foundation
 struct TLSExtension {
     let type: TLSExtensionType?
     let rawType: UInt16
-    let rawBody: [UInt8]
+    let rawBody: Data
 }
 
 extension TLSExtension: CustomStringConvertible {
@@ -20,9 +20,8 @@ extension TLSExtension: CustomStringConvertible {
 
 extension TLSExtension: TLSOutMessage {
     var serialised: Data {
-        var result = rawType.data
-        result.append(UInt16(rawBody.count).data)
-        result.append(contentsOf: rawBody)
-        return result
+        rawType.data
+            .appending(UInt16(rawBody.count).data)
+            .appending(rawBody)
     }
 }

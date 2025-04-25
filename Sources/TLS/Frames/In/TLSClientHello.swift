@@ -7,20 +7,20 @@
 import Foundation
 
 class TLSClientHello: TLSRecordBody {
-    let version: TLSVersion
+    let legacyVersion: TLSVersion
     let random: TLSRandom
     let sessionID: Data
     let supportedCiphers: [TLSCipherSuite]
     let compressionMethods: [TLSCompressionMethod]
     let extensions: [TLSExtension]
     
-    init(version: TLSVersion,
+    init(legacyVersion: TLSVersion,
          random: TLSRandom,
          sessionID: [UInt8],
          supportedCiphers: [TLSCipherSuite],
          compressionMethods: [TLSCompressionMethod],
          extensions: [TLSExtension]) {
-        self.version = version
+        self.legacyVersion = legacyVersion
         self.random = random
         self.sessionID = sessionID.data
         self.supportedCiphers = supportedCiphers
@@ -36,7 +36,7 @@ extension TLSClientHello {
             try extensions.filter {
                 $0.type == .supportedVersions
             }
-            .map { try TLSSupportedVersions(bytes: $0.rawBody).versions }
+            .map { try TLSSupportedVersions(data: $0.rawBody).versions }
             .first ?? []
         }
     }
@@ -44,6 +44,6 @@ extension TLSClientHello {
 
 extension TLSClientHello: CustomStringConvertible {
     var description: String {
-        "TLSClientHello version: \(version)"
+        "TLSClientHello version: \(legacyVersion)"
     }
 }

@@ -125,7 +125,7 @@ enum TLSRecordFactory {
             extensionsLength -= 4 + extensionLength
             extensions.append(TLSExtension(type: extensionType,
                                            rawType: extensionCode,
-                                           rawBody: extensionBody))
+                                           rawBody: extensionBody.data))
         }
         
 //        print("sessionID: \(Data(sessionID).hexString)")
@@ -133,7 +133,7 @@ enum TLSRecordFactory {
 //        print("compressionMethods: \(compressionMethods)")
 //        print("extensions: \(extensions)")
 
-        let clientHello = TLSClientHello(version: messageVersion,
+        let clientHello = TLSClientHello(legacyVersion: messageVersion,
                                          random: random,
                                          sessionID: sessionID,
                                          supportedCiphers: ciphers,

@@ -47,13 +47,19 @@ class TLSHandler {
             try terminateWithAlert(.missingExtension)
             return
         }
-        print("supportedVersions: \(try clientHello.supportedVersions)")
+        
+        let supportedVersions = try clientHello.supportedVersions
+        print("supportedVersions: \(supportedVersions)")
+        let chosenVersion = supportedVersions.first ?? clientHello.legacyVersion
+        
+        let chosenVersionExtension = TLSSupportedVersions(versions: [chosenVersion]).asExtension
+        
         let serverHello = TLSServerHello(version: .v1_2,
                                          random: clientHello.random,
                                          sessionID: clientHello.sessionID,
                                          chosenCipher: .TLS_AES_128_GCM_SHA256,
                                          compressionMethod: .null,
-                                         extensions: clientHello.extensions)
+                                         extensions: [chosenVersionExtension])
         let response = TLSRecord(recordType: .handshake, version: record.version, body: serverHello)
         try stream.writeUInt8(response.serialised.bytes)
         let record2 = try TLSRecordFactory.parse(stream: self.stream)
