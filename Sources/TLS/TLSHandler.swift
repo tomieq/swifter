@@ -20,7 +20,15 @@ class TLSHandler {
             try setup()
         } catch {
             print("Error: \(error)")
+            stream.close()
         }
+        
+    }
+    
+    private func terminateWithAlert(_ cause: TLSAlert.Cause) throws {
+        let alert = TLSAlert(level: .fatal, cause: cause)
+        let alertResponse = TLSRecord(recordType: .alert, version: .v1_0, body: alert)
+        try stream.writeUInt8(alertResponse.serialised.bytes)
         stream.close()
     }
     
@@ -31,14 +39,15 @@ class TLSHandler {
         print("\(record) body: \(record.body)")
         guard let clientHello = record.body as? TLSClientHello else {
             print("Expected TLSClientHello but received \(type(of: record.body))")
-            stream.close()
+            try terminateWithAlert(.handshakeFailure)
             return
         }
         guard let sharedKey = (clientHello.extensions.first { $0.type == .keyShare }) else {
             print("Missing preshared key")
-            stream.close()
+            try terminateWithAlert(.missingExtension)
             return
         }
+        print("supportedVersions: \(try clientHello.supportedVersions)")
         let serverHello = TLSServerHello(version: .v1_2,
                                          random: clientHello.random,
                                          sessionID: clientHello.sessionID,
