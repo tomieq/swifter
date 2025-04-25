@@ -12,12 +12,12 @@ enum TLSRandomError: Error {
 
 struct TLSRandom {
     private static let numberOfRandomBytes = 32
-    var randomBytes: [UInt8]
+    var randomBytes: Data
 
     init(_ bytes: [UInt8]) throws {
         guard bytes.count == Self.numberOfRandomBytes else {
             throw TLSRandomError.invalidRandomBytesCount
         }
-        self.randomBytes = bytes
+        self.randomBytes = bytes.data
     }
 }

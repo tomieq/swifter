@@ -4,11 +4,12 @@
 //
 //  Created by Tomasz on 23/04/2025.
 //
+import Foundation
 
 class TLSClientHello: TLSRecordBody {
     let version: TLSVersion
     let random: TLSRandom
-    let sessionID: [UInt8]
+    let sessionID: Data
     let supportedCiphers: [TLSCipherSuite]
     let compressionMethods: [TLSCompressionMethod]
     let extensions: [TLSExtension]
@@ -21,14 +22,14 @@ class TLSClientHello: TLSRecordBody {
          extensions: [TLSExtension]) {
         self.version = version
         self.random = random
-        self.sessionID = sessionID
+        self.sessionID = sessionID.data
         self.supportedCiphers = supportedCiphers
         self.compressionMethods = compressionMethods
         self.extensions = extensions
     }
 }
 
-// MARK: TLSExtensions
+// MARK: parsed TLSExtensions
 extension TLSClientHello {
     var supportedVersions: [TLSVersion] {
         get throws {
