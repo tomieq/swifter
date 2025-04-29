@@ -25,8 +25,8 @@ extension TLSRecord: TLSOutMessage {
             print("Not serializable body")
             return Data()
         }
-        var result = Data([recordType.rawValue])
-        result.append(version.rawValue.data)
+        var result = recordType.rawValue.data
+            .appending(version.rawValue.data)
         let serialisedBody = body.serialised
         result.append(UInt16(serialisedBody.count).data)
         result.append(serialisedBody)

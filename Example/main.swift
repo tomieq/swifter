@@ -67,6 +67,12 @@ let semaphore = DispatchSemaphore(value: 0)
 do {
     try server.start(443, forceIPv4: true)
     print("Server has started port = \(try server.port). Try to connect now...")
+//    Task {
+//        let url = URL(string: "https://localhost")!
+//
+//        /// Use URLSession to fetch the data asynchronously.
+//        let (data, response) = try await URLSession.shared.data(from: url)
+//    }
     semaphore.wait()
 } catch {
     print("Server start error: \(error)")

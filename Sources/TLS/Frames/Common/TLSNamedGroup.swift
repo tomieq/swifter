@@ -14,7 +14,7 @@ enum TLSNamedGroup: UInt16 {
     case x448      = 0x1e
     
     case GC256C    = 0x24
-    case curveSM2  = 0x29
+    case curveSM2  = 0x29 // chineese key spec
     
     /* Finite Field Groups (DHE) */
     case ffdhe2048 = 0x0100
@@ -25,6 +25,12 @@ enum TLSNamedGroup: UInt16 {
     
     case arbitrary_explicit_prime_curves = 0xFF01
     case arbitrary_explicit_char2_curves = 0xFF02
+}
+
+extension TLSNamedGroup {
+    var isSupported: Bool {
+        [.x25519].contains(self)
+    }
 }
 
 extension TLSNamedGroup {

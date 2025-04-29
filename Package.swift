@@ -2,6 +2,8 @@
 
 import PackageDescription
 
+let development = true
+
 let package = Package(
   name: "Swifter",
   platforms: [
@@ -13,14 +15,16 @@ let package = Package(
   ],
 
   dependencies: [
-    .package(url: "https://github.com/tomieq/SwiftExtensions", branch: "master")
+    .package(url: "https://github.com/tomieq/SwiftExtensions", branch: "master"),
+    .package(url: "https://github.com/apple/swift-crypto.git", .upToNextMajor(from: "3.12.3")),
   ],
 
   targets: [
     .target(
       name: "Swifter", 
       dependencies: [
-        .product(name: "SwiftExtensions", package: "SwiftExtensions")
+        .product(name: "SwiftExtensions", package: "SwiftExtensions"),
+        .product(name: "Crypto", package: "swift-crypto")
       ],
       path: "Sources"
       ),

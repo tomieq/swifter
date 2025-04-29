@@ -10,6 +10,18 @@ struct TLSExtension {
     let type: TLSExtensionType?
     let rawType: UInt16
     let rawBody: Data
+    
+    init(type: TLSExtensionType, rawBody: Data) {
+        self.type = type
+        self.rawType = type.rawValue
+        self.rawBody = rawBody
+    }
+    
+    init(rawType: UInt16, rawBody: Data) {
+        self.type = TLSExtensionType(rawValue: rawType)
+        self.rawType = rawType
+        self.rawBody = rawBody
+    }
 }
 
 extension TLSExtension: CustomStringConvertible {

@@ -130,7 +130,7 @@ open class HttpServerIO {
     }
 
     private func handleConnection(_ socket: Socket) {
-        let tlsHandler = TLSHandler(stream: socket)
+        let _ = TLSHandler(stream: socket)
         let parser = HttpParser(bodyLimit: requestBodyLimit)
         while self.operating, let request = try? parser.readHttpRequest(socket) {
             let request = request

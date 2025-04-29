@@ -49,8 +49,6 @@ extension TLSSupportedVersions: TLSOutMessage {
 
 extension TLSSupportedVersions {
     var asExtension: TLSExtension {
-        TLSExtension(type: .supportedVersions,
-                     rawType: TLSExtensionType.supportedVersions.rawValue,
-                     rawBody: serialised)
+        TLSExtension(type: .supportedVersions, rawBody: serialised)
     }
 }

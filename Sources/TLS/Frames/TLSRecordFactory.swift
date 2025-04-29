@@ -93,7 +93,7 @@ enum TLSRecordFactory {
     }
     
     private static func assembleClientHello(stream: TLSStream) throws -> TLSRecordBody {
-        let messageLength = try stream.readUInt24()
+        let _ = try stream.readUInt24()
         let versionCode = try stream.readUInt16()
         guard let messageVersion = TLSVersion(rawValue: versionCode) else {
             throw TLSRecordFactoryError.unknownMessageVersion(versionCode.hexString)
@@ -119,12 +119,10 @@ enum TLSRecordFactory {
         var extensions: [TLSExtension] = []
         while extensionsLength > 0 {
             let extensionCode = try stream.readUInt16()
-            let extensionType = TLSExtensionType(rawValue: extensionCode)
             let extensionLength = try stream.readUInt16()
             let extensionBody = try stream.read(length: extensionLength)
             extensionsLength -= 4 + extensionLength
-            extensions.append(TLSExtension(type: extensionType,
-                                           rawType: extensionCode,
+            extensions.append(TLSExtension(rawType: extensionCode,
                                            rawBody: extensionBody.data))
         }
         
