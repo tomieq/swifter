@@ -13,10 +13,10 @@ enum TLSHandlerError: Error {
 }
 
 class TLSHandler {
-    private let stream: TLSStream
+    private let stream: SocketTracker
     
     init(stream: TLSStream) {
-        self.stream = stream
+        self.stream = SocketTracker(stream: stream)
         do {
             try setup()
         } catch {
@@ -38,21 +38,19 @@ class TLSHandler {
         
         let record = try TLSRecordFactory.parse(stream: self.stream)
         print("IN: \(record) body: \(record.body)")
+        print("\(stream.inputCache.hexString.chunked(by: 2).joined(separator: " "))")
         guard let clientHello = record.body as? TLSClientHello else {
             print("Expected TLSClientHello but received \(type(of: record.body))")
             try terminateWithAlert(.handshakeFailure)
             return
         }
+        print("Incoming extensions: \(clientHello.extensions.compactMap{ $0.type })")
         
         // what can go wrong:
         // client sends unsupported ciphers
         // client sends keyShare in unsupported group
         // client sends unsupported TLS version
-        guard let sharedKeyExtension = (clientHello.extensions.first { $0.type == .keyShare }) else {
-            print("Missing preshared key")
-            try terminateWithAlert(.missingExtension)
-            return
-        }
+
         let sharedKey = try clientHello.extensions.compactMap { try $0.asClientHelloKeyShare }
         print("sharedKey: \(sharedKey)")
         //print("sharedKey: \(sharedKey.key.bytes.chunked(by: 2).map{ $0.data.hexString }.joined(separator: " "))")
@@ -93,8 +91,8 @@ class TLSHandler {
                                          compressionMethod: .null,
                                          extensions: [keyShareExtension, chosenVersionExtension])
         let response = TLSRecord(recordType: .handshake, version: record.version, body: serverHello)
-        print("OUT: \(response.serialised.bytes.map{ $0.data.hexString }.joined(separator: ""))")
         try stream.writeUInt8(response.serialised.bytes)
+        print("\(stream.outputCache.hexString.chunked(by: 2).joined(separator: " "))")
         let record2 = try TLSRecordFactory.parse(stream: self.stream)
         print("IN: \(record2) body: \(record2.body)")
     }
