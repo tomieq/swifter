@@ -10,4 +10,5 @@ protocol TLSStream {
     func read(length: Int) throws -> [UInt8]
     func writeUInt8(_ data: [UInt8]) throws
     func close()
+    var peerIP: String? { get }
 }

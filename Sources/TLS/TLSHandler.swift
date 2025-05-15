@@ -48,7 +48,7 @@ class TLSHandler {
     }
     
     private func setup() throws {
-        print("--------- Incoming connection")
+        print("--------- Incoming connection from \(stream.peerIP ?? "nil")")
         
         let record = try TLSRecordFactory.parse(stream: self.stream)
         print("IN: \(record) body: \(record.body)")

@@ -33,6 +33,11 @@ class SocketTracker {
 }
 
 extension SocketTracker: TLSStream {
+
+    var peerIP: String? {
+        stream.peerIP
+    }
+    
     func read(length: Int) throws -> [UInt8] {
         let data = try stream.read(length: length)
         input.append(data.data)
