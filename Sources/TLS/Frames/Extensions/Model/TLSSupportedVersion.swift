@@ -11,7 +11,7 @@ enum TLSSupportedVersionsError: Error {
     case invalidBytesSize(expected: Int, received: Int)
 }
 
-struct TLSSupportedVersions {
+struct TLSSupportedVersion {
     let versions: [TLSVersion]
     
     init(versions: [TLSVersion]) {
@@ -37,7 +37,7 @@ struct TLSSupportedVersions {
     }
 }
 
-extension TLSSupportedVersions: TLSOutMessage {
+extension TLSSupportedVersion: TLSOutMessage {
     var serialised: Data {
         var result = UInt8(1 + versions.count * 2).data
         for version in self.versions {
@@ -47,7 +47,7 @@ extension TLSSupportedVersions: TLSOutMessage {
     }
 }
 
-extension TLSSupportedVersions {
+extension TLSSupportedVersion {
     var asExtension: TLSExtension {
         TLSExtension(type: .supportedVersions, rawBody: serialised)
     }

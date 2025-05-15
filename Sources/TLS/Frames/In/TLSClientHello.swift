@@ -36,7 +36,7 @@ extension TLSClientHello {
             try extensions.filter {
                 $0.type == .supportedVersions
             }
-            .map { try TLSSupportedVersions(data: $0.rawBody).versions }
+            .map { try TLSSupportedVersion(data: $0.rawBody).versions }
             .first ?? []
         }
     }
