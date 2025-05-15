@@ -60,8 +60,8 @@ class TLSHandler {
         let chosenVersion = supportedVersions.first ?? clientHello.legacyVersion
         print("chosen version: \(chosenVersion)")
         
-        let chosenVersionExtension = TLSSupportedVersions(versions: [chosenVersion]).asExtension
-        let keyShareExtension = TLSKeyShare(namedGroup: .x25519).asExtension
+        let chosenVersionExtension = TLSSupportedVersion(versions: [chosenVersion]).asExtension
+
         
         /*
         let serverKeyPair = Curve25519.KeyAgreement.PrivateKey()
@@ -89,7 +89,7 @@ class TLSHandler {
                                          sessionID: clientHello.sessionID,
                                          chosenCipher: .TLS_AES_128_GCM_SHA256,
                                          compressionMethod: .null,
-                                         extensions: [keyShareExtension, chosenVersionExtension])
+                                         extensions: [chosenVersionExtension])
         let response = TLSRecord(recordType: .handshake, version: record.version, body: serverHello)
         try stream.writeUInt8(response.serialised.bytes)
         print("\(stream.outputCache.hexString.chunked(by: 2).joined(separator: " "))")
