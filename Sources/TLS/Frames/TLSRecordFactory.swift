@@ -66,16 +66,6 @@ enum TLSRecordFactory {
             throw TLSRecordFactoryError.unsupportedHandshakeType(handshakeType)
         case .finished:
             throw TLSRecordFactoryError.unsupportedHandshakeType(handshakeType)
-        case .serverKeyExchange:
-            throw TLSRecordFactoryError.unsupportedHandshakeType(handshakeType)
-        case .serverHelloDone:
-            throw TLSRecordFactoryError.unsupportedHandshakeType(handshakeType)
-        case .clientKeyExchange:
-            throw TLSRecordFactoryError.unsupportedHandshakeType(handshakeType)
-        case .certificateURL:
-            throw TLSRecordFactoryError.unsupportedHandshakeType(handshakeType)
-        case .certificateStatus:
-            throw TLSRecordFactoryError.unsupportedHandshakeType(handshakeType)
         case .newSessionTicket:
             throw TLSRecordFactoryError.unsupportedHandshakeType(handshakeType)
         case .endOfEarlyData:

@@ -14,13 +14,6 @@ enum TLSHandshakeType: UInt8 {
     case certificateRequest = 0x0D
     case certificateVerify = 0x0F
     case finished = 0x14
-
-    // TLS 1.0 - 1.2 only, not in TLS 1.3
-    case serverKeyExchange = 12
-    case serverHelloDone = 14
-    case clientKeyExchange = 16
-    case certificateURL = 21
-    case certificateStatus = 22
     
     // new in TLS 1.3
     case newSessionTicket = 4           // TLS 1.3
