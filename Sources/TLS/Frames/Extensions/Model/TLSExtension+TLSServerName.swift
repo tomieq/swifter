@@ -1,0 +1,48 @@
+//
+//  TLSExtension+TLSServerName.swift
+//  Swifter
+//
+//  Created by Tomasz on 15/05/2025.
+//
+import Foundation
+
+extension TLSExtension {
+    var asServerName: [TLSServerName]? {
+        get throws {
+            guard self.type == .serverName else { return nil }
+            print("Raw TLSServerName: \(rawBody.hexString.chunked(by: 2).joined(separator: " "))")
+            return try TLSServerNameFactory(rawBody: rawBody).serverNames
+        }
+    }
+}
+
+fileprivate class TLSServerNameFactory {
+    let serverNames: [TLSServerName]
+    
+    init(rawBody: Data) throws {
+        var names: [TLSServerName] = []
+        
+        let bodyLenght = rawBody.uInt16
+        guard bodyLenght > 3 else {
+            throw TLSKeyShareFactoryError.invalidByteCount
+        }
+        var offset = 2
+        while offset < rawBody.count {
+            // 2 bytes - name type
+            // 1 byte - name length
+            // n bytes - name
+            let nameType = TLSServerNameType(rawValue: rawBody[offset...].uInt16)
+            offset += 2
+            let nameSize = rawBody[offset...].uInt8
+            offset += 1
+            // TODO implement some safe range functionality
+            let nameRange = offset..<(offset + Int(nameSize))
+            let name = String(data: rawBody[nameRange], encoding: .utf8)
+            offset += Int(nameSize)
+            if let nameType, let name {
+                names.append(TLSServerName(nameType: nameType, serverName: name))
+            }
+        }
+        self.serverNames = names
+    }
+}

@@ -8,6 +8,20 @@ import SwiftExtensions
 import Foundation
 import Crypto
 
+/*
+ TLS 1.3
+ >>> ClientHello
+ 
+ ### The TLS version mess
+ TLSRecord's version always is set to 1.0
+ TLSClientHello's version is always set to 1.2
+ The real supported version offered by the client in is the extension TLSSupportedVersion
+ 
+ most clients choose algorithm x25519 for KeyShare extension (Curve25519)
+ 
+ 
+ 
+ */
 enum TLSHandlerError: Error {
     case notImplemented(String)
 }
@@ -48,8 +62,16 @@ class TLSHandler {
         
         // what can go wrong:
         // client sends unsupported ciphers
-        // client sends keyShare in unsupported group
+        // client sends keyShare with unsupported group
         // client sends unsupported TLS version
+        
+        /// https://datatracker.ietf.org/doc/html/rfc6066#page-6
+        ///  server may response with unrecognizedName
+        guard let serverName = (try clientHello.extensions.compactMap{ try $0.asServerName }.first) else {
+            try terminateWithAlert(.unrecognizedName)
+            return
+        }
+        print("serverName: \(serverName.first?.serverName)")
 
         let sharedKey = try clientHello.extensions.compactMap { try $0.asClientHelloKeyShare }
         print("sharedKey: \(sharedKey)")
