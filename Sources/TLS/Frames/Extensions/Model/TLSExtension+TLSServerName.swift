@@ -21,24 +21,19 @@ fileprivate class TLSServerNameFactory {
     
     init(rawBody: Data) throws {
         var names: [TLSServerName] = []
+        var rawBody = rawBody
         
-        let bodyLenght = rawBody.uInt16
+        let bodyLenght = try rawBody.consume(bytes: 2).uInt16
         guard bodyLenght > 3 else {
             throw TLSKeyShareFactoryError.invalidByteCount
         }
-        var offset = 2
-        while offset < rawBody.count {
+        while rawBody.isEmpty.not {
             // 2 bytes - name type
             // 1 byte - name length
             // n bytes - name
-            let nameType = TLSServerNameType(rawValue: rawBody[offset...].uInt16)
-            offset += 2
-            let nameSize = rawBody[offset...].uInt8
-            offset += 1
-            // TODO implement some safe range functionality
-            let nameRange = offset..<(offset + Int(nameSize))
-            let name = String(data: rawBody[nameRange], encoding: .utf8)
-            offset += Int(nameSize)
+            let nameType = TLSServerNameType(rawValue: try rawBody.consume(bytes: 2).uInt16)
+            let nameSize = try rawBody.consume(bytes: 1).uInt8
+            let name = String(data: rawBody.consume(bytes: Int(nameSize)), encoding: .utf8)
             if let nameType, let name {
                 names.append(TLSServerName(nameType: nameType, serverName: name))
             }

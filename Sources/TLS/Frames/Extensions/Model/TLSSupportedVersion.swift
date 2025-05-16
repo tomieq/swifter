@@ -29,10 +29,10 @@ struct TLSSupportedVersion {
         guard data.count == expectedLength else {
             throw TLSSupportedVersionsError.invalidBytesSize(expected: Int(expectedLength), received: data.count)
         }
-        versions = (0..<lenght/2).compactMap { index in
+        versions = try (0..<lenght/2).compactMap { index in
             let offset = Int(1 + index * 2)
-            let bytes = data.bytes[offset...]
-            return TLSVersion(rawValue: bytes.array.data.uInt16)
+            let bytes = data.slice(offset...)
+            return TLSVersion(rawValue: try bytes.uInt16)
         }
     }
 }

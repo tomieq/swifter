@@ -26,23 +26,19 @@ fileprivate class TLSKeyShareFactory {
     
     init(rawBody: Data) throws {
         var keys: [TLSKeyShare] = []
+        var rawBody = rawBody
         
-        let bodyLenght = rawBody.uInt16
+        let bodyLenght = try rawBody.consume(bytes: 2).uInt16
         guard bodyLenght > 3 else {
             throw TLSKeyShareFactoryError.invalidByteCount
         }
-        var offset = 2
-        while offset < rawBody.count {
+        while rawBody.isEmpty.not {
             // 2 bytes - named group
             // 2 bytes - key length
             // n bytes - key
-            let namedGroup = TLSNamedGroup(rawValue: rawBody[offset...].uInt16)
-            offset += 2
-            let keySize = rawBody[offset...].uInt16
-            offset += 2
-            let keyRange = offset..<(offset + Int(keySize))
-            let key = rawBody[keyRange]
-            offset += Int(keySize)
+            let namedGroup = TLSNamedGroup(rawValue: try rawBody.consume(bytes: 2).uInt16)
+            let keySize = try rawBody.consume(bytes: 2).uInt16
+            let key = rawBody.consume(bytes: Int(keySize))
             if let namedGroup {
                 keys.append(TLSKeyShare(namedGroup: namedGroup, key: key))
             }
