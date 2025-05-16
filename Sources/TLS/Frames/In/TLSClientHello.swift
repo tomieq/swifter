@@ -29,19 +29,6 @@ class TLSClientHello: TLSRecordBody {
     }
 }
 
-// MARK: parsed TLSExtensions
-extension TLSClientHello {
-    var supportedVersions: [TLSVersion] {
-        get throws {
-            try extensions.filter {
-                $0.type == .supportedVersions
-            }
-            .map { try TLSSupportedVersion(data: $0.rawBody).versions }
-            .first ?? []
-        }
-    }
-}
-
 extension TLSClientHello: CustomStringConvertible {
     var description: String {
         "TLSClientHello version: \(legacyVersion)"

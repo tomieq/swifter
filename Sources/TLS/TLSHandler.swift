@@ -71,19 +71,17 @@ class TLSHandler {
             try terminateWithAlert(.unrecognizedName)
             return
         }
-        print("serverName: \(serverName.first?.serverName)")
+        print("serverName: \(serverName.first?.serverName ?? "nil")")
 
         let sharedKey = try clientHello.extensions.compactMap { try $0.asClientHelloKeyShare }
         print("sharedKey: \(sharedKey)")
         //print("sharedKey: \(sharedKey.key.bytes.chunked(by: 2).map{ $0.data.hexString }.joined(separator: " "))")
         
-        let supportedVersions = try clientHello.supportedVersions
-        print("supportedVersions: \(supportedVersions)")
-        let chosenVersion = supportedVersions.first ?? clientHello.legacyVersion
+        let supportedVersions = try clientHello.extensions.compactMap{ try $0.asSupportedVersions }.first
+        print("supportedVersions: \(supportedVersions ?? [])")
+        let chosenVersion = supportedVersions?.first ?? clientHello.legacyVersion
         print("chosen version: \(chosenVersion)")
         
-        let chosenVersionExtension = TLSSupportedVersion(versions: [chosenVersion]).asExtension
-
         
         /*
         let serverKeyPair = Curve25519.KeyAgreement.PrivateKey()
@@ -111,7 +109,7 @@ class TLSHandler {
                                          sessionID: clientHello.sessionID,
                                          chosenCipher: .TLS_AES_128_GCM_SHA256,
                                          compressionMethod: .null,
-                                         extensions: [chosenVersionExtension])
+                                         extensions: [])
         let response = TLSRecord(recordType: .handshake, version: record.version, body: serverHello)
         try stream.writeUInt8(response.serialised.bytes)
         print("\(stream.outputCache.hexString.chunked(by: 2).joined(separator: " "))")
