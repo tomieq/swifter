@@ -83,11 +83,11 @@ class TLSHandler {
         print("chosen version: \(chosenVersion)")
         
         
-        /*
+        
         let serverKeyPair = Curve25519.KeyAgreement.PrivateKey()
         let serverPublicKey = serverKeyPair.publicKey.rawRepresentation  // 32 bajty
         let serverPrivateKey = serverKeyPair.rawRepresentation
-        
+        /*
         let clientPublicKeyRaw = sharedKey.key
         
         let clientPubKey = try Curve25519.KeyAgreement.PublicKey(rawRepresentation: clientPublicKeyRaw)
@@ -104,15 +104,22 @@ class TLSHandler {
 //
 //        let aesKey = derived.withUnsafeBytes { Data($0) } // lub SymmetricKey
         */
+        
+        let supportedVersionExtension = TLSExtension(type: .supportedVersions, rawBody: TLSVersion.v1_3.rawValue.data)
+        let keyShareExtension = TLSKeyShare(namedGroup: .x25519, key: serverPublicKey).asExtension
         let serverHello = TLSServerHello(legacyVersion: .v1_2,
-                                         random: try TLSRandom.hrr,
+                                         random: clientHello.random,//try TLSRandom.hrr,
                                          sessionID: clientHello.sessionID,
                                          chosenCipher: .TLS_AES_128_GCM_SHA256,
                                          compressionMethod: .null,
-                                         extensions: [])
+                                         extensions: [
+                                            supportedVersionExtension,
+                                            keyShareExtension
+                                         ])
         let response = TLSRecord(recordType: .handshake, version: record.version, body: serverHello)
         try stream.writeUInt8(response.serialised.bytes)
         print("\(stream.outputCache.hexString.chunked(by: 2).joined(separator: " "))")
+        print("\(stream.outputCache.hexString)")
         let record2 = try TLSRecordFactory.parse(stream: self.stream)
         print("IN: \(record2) body: \(record2.body)")
     }

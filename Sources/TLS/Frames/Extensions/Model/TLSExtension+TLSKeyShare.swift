@@ -29,7 +29,7 @@ fileprivate class TLSKeyShareFactory {
         var rawBody = rawBody
         
         let bodyLenght = try rawBody.consume(bytes: 2).uInt16
-        guard bodyLenght > 3 else {
+        guard bodyLenght > 3, bodyLenght == rawBody.count else {
             throw TLSKeyShareFactoryError.invalidByteCount
         }
         while rawBody.isEmpty.not {

@@ -32,9 +32,9 @@ class TLSServerHello: TLSRecordBody {
 extension TLSServerHello: TLSOutMessage {
     var serialised: Data {
         
-        var extensionResult = Data()
-        extensions.filter{ $0.type == .keyShare }.forEach {
-            extensionResult.append($0.serialised)
+        var extensionsBody = Data()
+        extensions.forEach {
+            extensionsBody.append($0.serialised)
         }
         
         let message = legacyVersion.rawValue.data
@@ -43,8 +43,8 @@ extension TLSServerHello: TLSOutMessage {
             .appending(sessionID)
             .appending(chosenCipher.rawValue.data)
             .appending(compressionMethod.rawValue.data)
-            .appending(UInt16(extensionResult.count).data)
-            .appending(extensionResult)
+            .appending(UInt16(extensionsBody.count).data)
+            .appending(extensionsBody)
         
         let result = handshakeType.rawValue.data
             .appending(message.count.threeBytes)

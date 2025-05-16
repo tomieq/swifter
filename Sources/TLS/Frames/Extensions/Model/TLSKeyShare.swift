@@ -20,6 +20,7 @@ extension TLSKeyShare: CustomStringConvertible {
 extension TLSKeyShare: TLSOutMessage {
     var serialised: Data {
         namedGroup.rawValue.data
+            .appending(UInt16(key.count).data)
             .appending(key)
     }
 }
