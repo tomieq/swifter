@@ -26,3 +26,9 @@ enum TLSExtensionType: UInt16 {
     
     case secureRenegotiationInfo = 0xff01
 }
+
+extension TLSExtensionType {
+    var string: String {
+        "\(self)".components(separatedBy: ".").last ?? "\(self)"
+    }
+}

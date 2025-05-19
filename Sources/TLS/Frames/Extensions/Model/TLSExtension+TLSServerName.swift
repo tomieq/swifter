@@ -10,7 +10,6 @@ extension TLSExtension {
     var asServerName: [TLSServerName]? {
         get throws {
             guard self.type == .serverName else { return nil }
-            print("Raw TLSServerName: \(rawBody.hexString.chunked(by: 2).joined(separator: " "))")
             return try TLSServerNameFactory(rawBody: rawBody).serverNames
         }
     }

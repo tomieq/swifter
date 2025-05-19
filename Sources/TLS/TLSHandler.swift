@@ -58,7 +58,8 @@ class TLSHandler {
             try terminateWithAlert(.handshakeFailure)
             return
         }
-        print("Incoming extensions: \(clientHello.extensions.compactMap{ $0.type })")
+        print("Incoming extensions: \(clientHello.extensions.compactMap{ $0.type?.string })")
+        print("Supported cipher suites: \(clientHello.supportedCiphers.map { $0.string })")
         
         // what can go wrong:
         // client sends unsupported ciphers
@@ -67,11 +68,11 @@ class TLSHandler {
         
         /// https://datatracker.ietf.org/doc/html/rfc6066#page-6
         ///  server may response with unrecognizedName
-        guard let serverName = (try clientHello.extensions.compactMap{ try $0.asServerName }.first) else {
-            try terminateWithAlert(.unrecognizedName)
-            return
+        if let serverName = (try clientHello.extensions.compactMap{ try $0.asServerName }.first) {
+            //try terminateWithAlert(.unrecognizedName)
+            print("serverName: \(serverName.first?.serverName ?? "nil")")
         }
-        print("serverName: \(serverName.first?.serverName ?? "nil")")
+        
 
         let sharedKey = try clientHello.extensions.compactMap { try $0.asClientHelloKeyShare }
         print("sharedKey: \(sharedKey)")
