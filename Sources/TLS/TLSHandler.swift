@@ -51,8 +51,8 @@ class TLSHandler {
         print("--------- Incoming connection from \(stream.peerIP ?? "nil")")
         
         let record = try TLSRecordFactory.parse(stream: self.stream)
-        print("IN: \(record) body: \(record.body)")
-        print("\(stream.inputCache.hexString.chunked(by: 2).joined(separator: " "))")
+//        print("IN: \(record) body: \(record.body)")
+//        print("\(stream.inputCache.hexString.chunked(by: 2).joined(separator: " "))")
         guard let clientHello = record.body as? TLSClientHello else {
             print("Expected TLSClientHello but received \(type(of: record.body))")
             try terminateWithAlert(.handshakeFailure)
@@ -60,6 +60,7 @@ class TLSHandler {
         }
         print("Incoming extensions: \(clientHello.extensions.compactMap{ $0.type?.string })")
         print("Supported cipher suites: \(clientHello.supportedCiphers.map { $0.string })")
+        print("Supported groups: \(try clientHello.extensions.compactMap{ try $0.asSupportedGroups }.first?.map { $0.string } ?? [])")
         
         // what can go wrong:
         // client sends unsupported ciphers
@@ -76,7 +77,6 @@ class TLSHandler {
 
         let sharedKey = try clientHello.extensions.compactMap { try $0.asClientHelloKeyShare }
         print("sharedKey: \(sharedKey)")
-        //print("sharedKey: \(sharedKey.key.bytes.chunked(by: 2).map{ $0.data.hexString }.joined(separator: " "))")
         
         let supportedVersions = try clientHello.extensions.compactMap{ try $0.asSupportedVersions }.first
         print("supportedVersions: \(supportedVersions ?? [])")
