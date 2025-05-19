@@ -79,10 +79,6 @@ class TLSHandler {
         
         let supportedVersions = try clientHello.extensions.compactMap{ try $0.asSupportedVersions }.first
         print("supportedVersions: \(supportedVersions ?? [])")
-        let chosenVersion = supportedVersions?.first ?? clientHello.legacyVersion
-        print("chosen version: \(chosenVersion)")
-        
-        
         
         let serverKeyPair = Curve25519.KeyAgreement.PrivateKey()
         let serverPublicKey = serverKeyPair.publicKey.rawRepresentation  // 32 bajty
@@ -105,8 +101,10 @@ class TLSHandler {
 //        let aesKey = derived.withUnsafeBytes { Data($0) } // lub SymmetricKey
         */
         
-        let supportedVersionExtension = TLSExtension(type: .supportedVersions, rawBody: TLSVersion.v1_3.rawValue.data)
-        let keyShareExtension = TLSKeyShare(namedGroup: .x25519, key: serverPublicKey).asExtension
+        let supportedVersionExtension = TLSExtension(type: .supportedVersions,
+                                                     rawBody: TLSVersion.v1_3.rawValue.data)
+        let keyShareExtension = TLSKeyShare(namedGroup: .x25519,
+                                            key: serverPublicKey).asExtension
         let serverHello = TLSServerHello(legacyVersion: .v1_2,
                                          random: clientHello.random,//try TLSRandom.hrr,
                                          sessionID: clientHello.sessionID,
@@ -116,10 +114,15 @@ class TLSHandler {
                                             supportedVersionExtension,
                                             keyShareExtension
                                          ])
-        let response = TLSRecord(recordType: .handshake, version: record.version, body: serverHello)
-        try stream.writeUInt8(response.serialised.bytes)
-        print("\(stream.outputCache.hexString.chunked(by: 2).joined(separator: " "))")
-        print("\(stream.outputCache.hexString)")
+        let serverHelloRecord = TLSRecord(recordType: .handshake, version: record.version, body: serverHello)
+        try stream.writeUInt8(serverHelloRecord.serialised.bytes)
+        
+        let changeCipherSpecRecord = TLSRecord(recordType: .changeCipherSpec, version: .v1_2, body: TLSChangeCipherSpec())
+        try stream.writeUInt8(changeCipherSpecRecord.serialised.bytes)
+        
+//        print("\(stream.outputCache.hexString.chunked(by: 2).joined(separator: " "))")
+//        print("\(stream.outputCache.hexString)")
+        stream.close()
         let record2 = try TLSRecordFactory.parse(stream: self.stream)
         print("IN: \(record2) body: \(record2.body)")
     }

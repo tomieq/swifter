@@ -56,8 +56,6 @@ enum TLSRecordFactory {
             throw TLSRecordFactoryError.unsupportedHandshakeType(handshakeType)
         case .clientHello:
             return try Self.assembleClientHello(stream: stream)
-        case .serverHello:
-            throw TLSRecordFactoryError.unsupportedHandshakeType(handshakeType)
         case .certificate:
             throw TLSRecordFactoryError.unsupportedHandshakeType(handshakeType)
         case .certificateRequest:
@@ -76,7 +74,7 @@ enum TLSRecordFactory {
             throw TLSRecordFactoryError.unsupportedHandshakeType(handshakeType)
         case .keyUpdate:
             throw TLSRecordFactoryError.unsupportedHandshakeType(handshakeType)
-        case .messageHash:
+        default:
             throw TLSRecordFactoryError.unsupportedHandshakeType(handshakeType)
         }
         
