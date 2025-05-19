@@ -29,6 +29,10 @@ fileprivate class TLSNamedGroupFactory {
             return
         }
         var rawBody = rawBody
+        let lenght = try rawBody.consume(bytes: 2).uInt16
+        guard rawBody.count == lenght else {
+            throw TLSNamedGroupFactoryError.invalidBytesSize(expected: Int(lenght), received: rawBody.count)
+        }
         var groups: [TLSNamedGroup] = []
         while rawBody.isEmpty.not {
             if let group = TLSNamedGroup(rawValue: try rawBody.consume(bytes: 2).uInt16) {
