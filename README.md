@@ -13,7 +13,7 @@ I forked this repo to adjust the library to my needs. I refactored a little, rem
 Tiny http server engine written in [Swift](https://developer.apple.com/swift/) programming language.
 
 ### Branches
-`* 3.0.0` - latest release
+`* 3.1.0` - latest release
 
 
 ### How to start?
@@ -399,7 +399,7 @@ import PackageDescription
 let package = Package(
     name: "MyServer",
     dependencies: [
-        .package(url: "https://github.com/tomieq/swifter.git", .upToNextMajor(from: "3.0.0"))
+        .package(url: "https://github.com/tomieq/swifter.git", .upToNextMajor(from: "3.1.0"))
     ]
 )
 ```
