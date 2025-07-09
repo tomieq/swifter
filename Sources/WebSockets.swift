@@ -24,7 +24,7 @@ public func websocket(
         guard let secWebSocketKey = request.headers["sec-websocket-key"] else {
             return .badRequest(.text("Invalid value of 'Sec-Websocket-Key' header: \(request.headers["sec-websocket-key"] ?? "unknown")"))
         }
-        let protocolSessionClosure: ((Socket) -> Void) = { socket in
+        let protocolSessionClosure: ((SecureSocket) -> Void) = { socket in
             let session = WebSocketSession(socket)
             var fragmentedOpCode = WebSocketSession.OpCode.close
             var payload = [UInt8]() // Used for fragmented frames.
@@ -156,9 +156,9 @@ public class WebSocketSession: Hashable, Equatable {
         public var payload = [UInt8]()
     }
 
-    public let socket: Socket
+    public let socket: SecureSocket
 
-    public init(_ socket: Socket) {
+    public init(_ socket: SecureSocket) {
         self.socket = socket
     }
 
@@ -282,10 +282,10 @@ public class WebSocketSession: Hashable, Equatable {
     }
 
     public func hash(into hasher: inout Hasher) {
-        hasher.combine(socket)
+        hasher.combine(socket.raw)
     }
 }
 
 public func == (webSocketSession1: WebSocketSession, webSocketSession2: WebSocketSession) -> Bool {
-    return webSocketSession1.socket == webSocketSession2.socket
+    return webSocketSession1.socket.raw == webSocketSession2.socket.raw
 }

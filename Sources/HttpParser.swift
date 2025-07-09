@@ -24,7 +24,7 @@ public class HttpParser {
         self.bodyLimit = bodyLimit
     }
 
-    public func readHttpRequest(_ socket: Socket) throws -> HttpRequest {
+    public func readHttpRequest(_ socket: SecureSocket) throws -> HttpRequest {
         let statusLine = try socket.readLine()
         let statusLineTokens = statusLine.components(separatedBy: " ")
         if statusLineTokens.count < 3 {
@@ -68,11 +68,11 @@ public class HttpParser {
         return url.addingPercentEncoding(withAllowedCharacters: urlAllowed) ?? url
     }
 
-    private func readBody(_ socket: Socket, size: Int) throws -> [UInt8] {
+    private func readBody(_ socket: SecureSocket, size: Int) throws -> [UInt8] {
         try socket.read(length: size)
     }
 
-    private func readHeaders(_ socket: Socket) throws -> [String: String] {
+    private func readHeaders(_ socket: SecureSocket) throws -> [String: String] {
         var headers = [String: String]()
         while case let headerLine = try socket.readLine(), !headerLine.isEmpty {
             let headerTokens = headerLine.split(separator: ":", maxSplits: 1, omittingEmptySubsequences: true).map(String.init)

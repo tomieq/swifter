@@ -9,7 +9,7 @@ import Foundation
 import Dispatch
 
 public protocol HttpServerIODelegate: AnyObject {
-    func socketConnectionReceived(_ socket: Socket)
+    func socketConnectionReceived(_ socket: SecureSocket)
 }
 
 open class HttpServerIO {
@@ -19,6 +19,7 @@ open class HttpServerIO {
     public var globalHeaders = HttpResponseHeaders()
     public var requestBodyLimit: RequestBodyLimit = .unlimited
     public let metrics = ConnectionMetrics()
+    public var secureSocketType: SecureSocket.Type = DefaultSecureSocket.self
     let instantRequestHandler = HttpInstantResponseHandler()
     public var globalErrorHandler: HttpGlobalErrorHandler? {
         set {
@@ -134,7 +135,8 @@ open class HttpServerIO {
 
     private func handleConnection(_ socket: Socket) {
         let parser = HttpParser(bodyLimit: requestBodyLimit)
-        while self.operating, let request = try? parser.readHttpRequest(socket) {
+        let tlsSocket = secureSocketType.init(socket)
+        while self.operating, let request = try? parser.readHttpRequest(tlsSocket) {
             metrics.notify(.traffic(socketID: socket.id))
             let request = request
             let responseHeaders = HttpResponseHeaders()
@@ -145,7 +147,7 @@ open class HttpServerIO {
             var keepConnection = false
             do {
                 if self.operating {
-                    keepConnection = try self.respond(socket, 
+                    keepConnection = try self.respond(tlsSocket,
                                                       request: request,
                                                       response: response,
                                                       customHeaders: responseHeaders)
@@ -155,19 +157,19 @@ open class HttpServerIO {
                 break
             }
             if let session = response.socketSession() {
-                delegate?.socketConnectionReceived(socket)
+                delegate?.socketConnectionReceived(tlsSocket)
                 metrics.notify(.webSocketSessionStarted(socketID: socket.id))
-                session(socket)
+                session(tlsSocket)
                 break
             }
             if !keepConnection { break }
         }
-        socket.close()
+        tlsSocket.close()
     }
 
     private struct InnerWriteContext: HttpResponseBodyWriter {
 
-        let socket: Socket
+        let socket: SecureSocket
 
         func write(_ file: String.File) throws {
             try socket.writeFile(file)
@@ -190,7 +192,7 @@ open class HttpServerIO {
         }
     }
 
-    private func respond(_ socket: Socket,
+    private func respond(_ socket: SecureSocket,
                          request: HttpRequest,
                          response: HttpResponse,
                          customHeaders: HttpResponseHeaders) throws -> Bool {
@@ -237,9 +239,9 @@ open class HttpServerIO {
         }
         responseHeader.append("\r\n")
 
-        socket.transferCounter.startCounting()
+        socket.raw.transferCounter.startCounting()
         defer {
-            request.partialSummary.responseSize = socket.transferCounter.transfer
+            request.partialSummary.responseSize = socket.raw.transferCounter.transfer
         }
         try socket.writeUTF8(responseHeader)
 

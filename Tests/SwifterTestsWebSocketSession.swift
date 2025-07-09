@@ -10,15 +10,19 @@ import XCTest
 
 class SwifterTestsWebSocketSession: XCTestCase {
 
-    class TestSocket: Socket {
+    class TestSocket: DefaultSecureSocket {
         var content = [UInt8]()
         var offset = 0
 
         init(_ content: [UInt8]) {
-            super.init(socketFileDescriptor: -1)
+            super.init(Socket(socketFileDescriptor: -1))
             self.content.append(contentsOf: content)
         }
-
+        
+        required init(_ socket: Socket) {
+            fatalError("init(_:) has not been implemented")
+        }
+        
         override func read() throws -> UInt8 {
             if offset < content.count {
                 let value = self.content[offset]
