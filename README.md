@@ -300,6 +300,25 @@ server.get["restricted"] = { request, _ in
 }
 ```
 `DigestAuthentication` creates a proper challenge response, so it is a throwing function (throws proper `HttpInstantResponse`).
+### Enable CORS
+Cross domain access is controlled by proper headers:
+```swift
+server.options["hls/*"] = { request, responseHeaders in
+    if let origin = request.headers[.origin] {
+        responseHeaders.addHeader(.accessControlAllowOrigin, origin)
+        responseHeaders.addHeader(.accessControlAllowMethods, "GET, POST, PUT, DELETE, OPTIONS")
+        responseHeaders.addHeader(.accessControlAllowHeaders, "Content-Type, Authorization")
+    }
+    return .noContent
+}
+
+server.get["hls/:segment"] = { request, responseHeaders in
+    if let origin = request.headers[.origin] {
+        responseHeaders.addHeader(.accessControlAllowOrigin, origin)
+    }
+    ... serve the files
+}
+```
 ### How to add metric tracking
 `HttpRequest` has `onFinished` closure that will be executed after request is finished
 ```swift
