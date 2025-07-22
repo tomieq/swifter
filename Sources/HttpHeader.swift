@@ -23,6 +23,9 @@ public enum HttpHeader: String {
     case cacheControl = "Cache-Control"
     case setCookie = "Set-Cookie"
     case location = "Location"
+    case accessControlAllowOrigin = "Access-Control-Allow-Origin"
+    case accessControlAllowMethods = "Access-Control-Allow-Methods"
+    case accessControlAllowHeaders = "Access-Control-Allow-Headers"
 }
 
 extension HttpHeader: CustomStringConvertible {
