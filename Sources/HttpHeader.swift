@@ -7,6 +7,7 @@
 
 public enum HttpHeader: String {
     // incoming
+    case origin = "Origin"
     case accept = "Accept"
     case acceptEncoding = "Accept-Encoding"
     case acceptLanguage = "Accept-Language"
