@@ -17,7 +17,7 @@ public class BasicAuthentication {
 
     public func authorizedUser(_ request: HttpRequest) -> String? {
         
-        if let authorization = request.headers.get("Authorization"), authorization.starts(with: "Basic") {
+        if let authorization = request.headers[.authorization], authorization.starts(with: "Basic") {
 
             guard let data = authorization.trimming("Basic ").data(using: .utf8),
                   let decoded = Data(base64Encoded: data),

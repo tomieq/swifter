@@ -16,14 +16,14 @@ public enum HttpFileResponse {
             throw HttpInstantResponse(response: .notFound())
         }
         let headers = HttpResponseHeaders()
-        headers.addHeader("Content-Type", absolutePath.mimeType)
+        headers.addHeader(.contentType, absolutePath.mimeType)
         if let clientCache = clientCache {
             headers.setClientCache(clientCache)
         }
 
         if let attr = try? FileManager.default.attributesOfItem(atPath: absolutePath),
            let fileSize = attr[FileAttributeKey.size] as? UInt64 {
-            headers.addHeader("Content-Length", String(fileSize))
+            headers.addHeader(.contentLength, String(fileSize))
         }
         throw HttpInstantResponse(response: .raw(200, "OK", { writer in
             try writer.write(file)

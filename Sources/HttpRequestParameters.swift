@@ -52,3 +52,11 @@ public class HttpRequestParams {
         return try URLFormDecoder().decode(T.self, from: data)
     }
 }
+
+public class HttpRequestHeaderParams: HttpRequestParams {
+    public subscript(_ header: HttpHeader) -> String? {
+        get {
+            self.storage.first { $0.0 == header.rawValue }?.1 ?? self.storage.first { $0.0.lowercased() == header.rawValue.lowercased() }?.1
+        }
+    }
+}

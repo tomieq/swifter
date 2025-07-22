@@ -20,7 +20,7 @@ public class HttpRequest {
     public lazy var multiPart: [HttpMultiPart] = {
         HttpMultiPartParser.parseMultiPartFormData(self)
     }()
-    public var headers = HttpRequestParams([:])
+    public var headers = HttpRequestHeaderParams([:])
     public var cookies = HttpRequestParams([:])
     public var body = HttpRequestBody([])
     public var clientIP: String? = ""

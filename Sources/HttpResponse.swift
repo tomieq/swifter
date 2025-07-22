@@ -177,7 +177,7 @@ public enum HttpResponse {
             guard let body = body else { break }
             self.addContentType(headers: headers, body: body)
         case .movedPermanently(let location), .movedTemporarily(let location), .found(let location):
-            headers.addHeader("Location", location)
+            headers.addHeader(.location, location)
         case .notModified, .noContent, .raw(_, _, _):
             break
         }
@@ -187,17 +187,17 @@ public enum HttpResponse {
     func addContentType(headers: HttpResponseHeaders, body: HttpResponseBody) {
         switch body {
         case .json, .jsonString:
-            headers.addHeader("Content-Type", "application/json; charset=utf-8")
+            headers.addHeader(.contentType, "application/json; charset=utf-8")
         case .html:
-            headers.addHeader("Content-Type", "text/html; charset=utf-8")
+            headers.addHeader(.contentType, "text/html; charset=utf-8")
         case .text:
-            headers.addHeader("Content-Type", "text/plain; charset=utf-8")
+            headers.addHeader(.contentType, "text/plain; charset=utf-8")
         case .js:
-            headers.addHeader("Content-Type", "text/javascript; charset=utf-8")
+            headers.addHeader(.contentType, "text/javascript; charset=utf-8")
         case .css:
-            headers.addHeader("Content-Type", "text/css")
+            headers.addHeader(.contentType, "text/css")
         case .data(_, let contentType):
-            headers.addHeader("Content-Type", contentType ?? "")
+            headers.addHeader(.contentType, contentType ?? "")
         default:
             break
         }

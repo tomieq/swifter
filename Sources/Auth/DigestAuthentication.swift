@@ -33,7 +33,7 @@ public class DigestAuthentication {
 
     public func authorizedUser(_ request: HttpRequest) throws -> String {
         
-        if let authorization = request.headers.get("Authorization"), authorization.starts(with: "Digest") {
+        if let authorization = request.headers[.authorization], authorization.starts(with: "Digest") {
 
             var values: [String: String] = [:]
             authorization.split(",").forEach { line in

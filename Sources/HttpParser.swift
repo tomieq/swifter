@@ -37,7 +37,7 @@ public class HttpParser {
         let urlComponents = URLComponents(string: encodedPath)
         request.path = urlComponents?.path ?? ""
         request.queryParams = HttpRequestParams(urlComponents?.queryItems?.map { ($0.name, $0.value ?? "") })
-        request.headers = HttpRequestParams(try readHeaders(socket))
+        request.headers = HttpRequestHeaderParams(try readHeaders(socket))
         request.headers["cookie"]?.split(";")
             .map{ $0.trimmingCharacters(in: .whitespaces) }
             .map { $0.split("=") }
