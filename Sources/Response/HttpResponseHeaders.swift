@@ -13,6 +13,8 @@ public class HttpResponseHeaders {
         return self.storage
     }
     
+    public init() {}
+    
     @discardableResult
     public func addHeader(_ name: CustomStringConvertible, _ value: CustomStringConvertible) -> HttpResponseHeaders {
         self.storage.append((name.description, value.description))
@@ -58,8 +60,10 @@ public class HttpResponseHeaders {
     }
     
     @discardableResult
-    public func merge(_ other: HttpResponseHeaders) -> HttpResponseHeaders {
-        self.storage.append(contentsOf: other.storage)
+    public func merge(_ other: HttpResponseHeaders?) -> HttpResponseHeaders {
+        if let other {
+            self.storage.append(contentsOf: other.storage)
+        }
         return self
     }
 }

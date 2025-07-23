@@ -12,57 +12,8 @@ public enum SerializationError: Error {
     case notSupported
 }
 
-public protocol HttpResponseBodyWriter {
-    func write(_ file: String.File) throws
-    func write(_ data: [UInt8]) throws
-    func write(_ data: ArraySlice<UInt8>) throws
-    func write(_ data: NSData) throws
-    func write(_ data: Data) throws
-}
 
-public enum HttpResponseBody {
-    
-    case json(Encodable)
-    case jsonString(CustomStringConvertible)
-    case html(CustomStringConvertible)
-    case text(CustomStringConvertible)
-    case js(CustomStringConvertible)
-    case css(CustomStringConvertible)
-    case data(Data, contentType: String? = nil)
-    case custom(Any, (Any) throws -> String)
-    
-    func content() -> HttpReposenceContent {
-        do {
-            switch self {
-            case .json(let object):
-                let data = object.toJson() ?? Data()
-                return (.fixedSize(data.count), {
-                    try $0.write(data)
-                })
-            case .text(let body), .jsonString(let body), .html(let body), .js(let body), .css(let body):
-                let data = [UInt8](body.description.utf8)
-                return (.fixedSize(data.count), {
-                    try $0.write(data)
-                })
-            case .data(let data, _):
-                return (.fixedSize(data.count), {
-                    try $0.write(data)
-                })
-            case .custom(let object, let closure):
-                let serialised = try closure(object)
-                let data = [UInt8](serialised.utf8)
-                return (.fixedSize(data.count), {
-                    try $0.write(data)
-                })
-            }
-        } catch {
-            let data = [UInt8]("Serialisation error: \(error)".utf8)
-            return (.fixedSize(data.count), {
-                try $0.write(data)
-            })
-        }
-    }
-}
+
 
 // swiftlint:disable cyclomatic_complexity
 public enum HttpResponse {
@@ -159,7 +110,7 @@ public enum HttpResponse {
         }
     }
     
-    public func autoHeaders() -> HttpResponseHeaders {
+    public var responseHeaders: HttpResponseHeaders {
         let headers = HttpResponseHeaders()
         switch self {
         case .switchProtocols(let switchHeaders, _):
@@ -167,7 +118,7 @@ public enum HttpResponse {
                 headers.addHeader(header.name, header.value)
             }
         case .ok(let body):
-            self.addContentType(headers: headers, body: body)
+            body.addHeader(to: headers)
         case .badRequest(let body), .created(let body), .accepted(let body),
                 .unauthorized(let body), .forbidden(let body), .notFound(let body),
                 .methodNotAllowed(let body), .notAcceptable(let body), .conflict(let body),
@@ -175,53 +126,39 @@ public enum HttpResponse {
                 .tooEarly(let body), .tooManyRequests(let body), .internalServerError(let body),
                 .notImplemented(let body), .badGateway(let body), .serviceUnavailable(let body),
                 .gatewayTimeout(let body):
-            guard let body = body else { break }
-            self.addContentType(headers: headers, body: body)
+            body?.addHeader(to: headers)
         case .movedPermanently(let location), .movedTemporarily(let location), .found(let location):
             headers.addHeader(.location, location)
-        case .notModified, .noContent, .raw(_, _, _):
+        case .notModified, .noContent, .raw:
             break
         }
         return headers
     }
     
-    func addContentType(headers: HttpResponseHeaders, body: HttpResponseBody) {
-        switch body {
-        case .json, .jsonString:
-            headers.addHeader(.contentType, "application/json; charset=utf-8")
-        case .html:
-            headers.addHeader(.contentType, "text/html; charset=utf-8")
-        case .text:
-            headers.addHeader(.contentType, "text/plain; charset=utf-8")
-        case .js:
-            headers.addHeader(.contentType, "text/javascript; charset=utf-8")
-        case .css:
-            headers.addHeader(.contentType, "text/css")
-        case .data(_, let contentType):
-            headers.addHeader(.contentType, contentType ?? "")
-        default:
-            break
-        }
-    }
-    
-    func content() -> HttpReposenceContent {
+    func packet() -> HttpResponsePacket {
         switch self {
         case .ok(let body):
-            return body.content()
-        case .badRequest(let body), .created(let body), .accepted(let body),
-                .unauthorized(let body), .forbidden(let body), .notFound(let body),
-                .methodNotAllowed(let body), .notAcceptable(let body), .conflict(let body),
-                .contentTooLarge(let body), .iAmTeapot(let body),.locked(let body),
-                .tooEarly(let body), .tooManyRequests(let body), .internalServerError(let body),
-                .notImplemented(let body), .badGateway(let body), .serviceUnavailable(let body),
-                .gatewayTimeout(let body):
-            return body?.content() ?? (.closeConection, nil)
+            HttpResponsePacket(rawBody: body.raw, connection: .keepAlive)
+            
+        case .created(let body), .accepted(let body), .unauthorized(let body),
+                .notFound(let body), .methodNotAllowed(let body), .conflict(let body),
+                .locked(let body), .tooEarly(let body), .internalServerError(let body),
+                .notImplemented(let body), .badGateway(let body):
+            HttpResponsePacket(rawBody: body?.raw, connection: body == nil ? .closeConection : .keepAlive)
+            
+        case .badRequest(let body), .forbidden(let body), .notAcceptable(let body),
+                .tooManyRequests(let body), .contentTooLarge(let body), .iAmTeapot(let body),
+                .serviceUnavailable(let body), .gatewayTimeout(let body):
+            HttpResponsePacket(rawBody: body?.raw, connection: .closeConection)
+            
         case .raw(_, _, let writer):
-            return (.keepAlive, writer)
-        case .movedPermanently, .movedTemporarily, .found, .noContent:
-            return (.closeConection, nil)
-        case .switchProtocols, .notModified:
-            return (.keepAlive, nil)
+            HttpResponsePacket(rawBody: HttpResponseBodyRaw(.unknown, writer), connection: .keepAlive)
+            
+        case .movedPermanently, .movedTemporarily, .noContent:
+            HttpResponsePacket(rawBody: nil, connection: .closeConection)
+            
+        case .switchProtocols, .notModified, .found:
+            HttpResponsePacket(rawBody: nil, connection: .keepAlive)
         }
     }
     
@@ -248,12 +185,4 @@ func == (inLeft: HttpResponse, inRight: HttpResponse) -> Bool {
     return inLeft.statusCode == inRight.statusCode
 }
 
-fileprivate extension Encodable {
-    func toJson() -> Data? {
-        do {
-            return try JSONEncoder().encode(self)
-        } catch {
-            return nil
-        }
-    }
-}
+

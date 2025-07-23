@@ -204,13 +204,13 @@ open class HttpServerIO {
 
         responseHeader.append("HTTP/1.1 \(response.statusCode) \(response.reasonPhrase)\r\n")
 
-        let content = response.content()
+        let packet = response.packet()
 
-        if case .fixedSize(let length) = content.type {
+        if case .fixedSize(let length) = packet.rawBody?.length {
             responseHeader.append("Content-Length: \(length)\r\n")
         }
-
-        if keepAlive && content.type.keepSocketOpen {
+        
+        if keepAlive, packet.connection.keepSocketOpen {
             responseHeader.append("Connection: keep-alive\r\n")
         } else {
             responseHeader.append("Connection: close\r\n")
@@ -222,7 +222,7 @@ open class HttpServerIO {
             responseHeader.append("\(header.name): \(header.value)\r\n")
             sendHeaders.append(header.name.lowercased())
         }
-        response.autoHeaders().raw.forEach { header in
+        response.responseHeaders.raw.forEach { header in
             if !sendHeaders.contains(header.name.lowercased()) {
                 responseHeader.append("\(header.name): \(header.value)\r\n")
             }
@@ -243,11 +243,11 @@ open class HttpServerIO {
         }
         try socket.writeUTF8(responseHeader)
 
-        if let writeClosure = content.write {
+        if let writeClosure = packet.rawBody?.write {
             let context = InnerWriteContext(socket: socket)
             try writeClosure(context)
         }
 
-        return keepAlive && content.type.keepSocketOpen
+        return keepAlive && packet.connection.keepSocketOpen
     }
 }

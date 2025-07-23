@@ -31,7 +31,7 @@ class SwifterTestsHttpResponseBody: XCTestCase {
     private func verify(input: Encodable, output expectedOutput: String, line: UInt = #line) {
         let response: HttpResponseBody = .json(input)
 
-        guard let writer = response.content().1 else {
+        guard let writer = response.raw.write else {
             XCTFail(line: line)
             return
         }
