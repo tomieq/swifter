@@ -206,11 +206,11 @@ open class HttpServerIO {
 
         let content = response.content()
 
-        if content.length >= 0 {
-            responseHeader.append("Content-Length: \(content.length)\r\n")
+        if case .fixedSize(let length) = content.type {
+            responseHeader.append("Content-Length: \(length)\r\n")
         }
 
-        if keepAlive && content.length != -1 {
+        if keepAlive && content.type.keepSocketOpen {
             responseHeader.append("Connection: keep-alive\r\n")
         } else {
             responseHeader.append("Connection: close\r\n")
@@ -248,6 +248,6 @@ open class HttpServerIO {
             try writeClosure(context)
         }
 
-        return keepAlive && content.length != -1
+        return keepAlive && content.type.keepSocketOpen
     }
 }

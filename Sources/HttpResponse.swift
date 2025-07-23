@@ -20,10 +20,8 @@ public protocol HttpResponseBodyWriter {
     func write(_ data: Data) throws
 }
 
-typealias HttpReposenceContent = (length: Int, write: ((HttpResponseBodyWriter) throws -> Void)?)
-
 public enum HttpResponseBody {
-
+    
     case json(Encodable)
     case jsonString(CustomStringConvertible)
     case html(CustomStringConvertible)
@@ -32,34 +30,34 @@ public enum HttpResponseBody {
     case css(CustomStringConvertible)
     case data(Data, contentType: String? = nil)
     case custom(Any, (Any) throws -> String)
-
+    
     func content() -> HttpReposenceContent {
         do {
             switch self {
             case .json(let object):
                 let data = object.toJson() ?? Data()
-                return (data.count, {
+                return (.fixedSize(data.count), {
                     try $0.write(data)
                 })
             case .text(let body), .jsonString(let body), .html(let body), .js(let body), .css(let body):
                 let data = [UInt8](body.description.utf8)
-                return (data.count, {
+                return (.fixedSize(data.count), {
                     try $0.write(data)
                 })
             case .data(let data, _):
-                return (data.count, {
+                return (.fixedSize(data.count), {
                     try $0.write(data)
                 })
             case .custom(let object, let closure):
                 let serialised = try closure(object)
                 let data = [UInt8](serialised.utf8)
-                return (data.count, {
+                return (.fixedSize(data.count), {
                     try $0.write(data)
                 })
             }
         } catch {
             let data = [UInt8]("Serialisation error: \(error)".utf8)
-            return (data.count, {
+            return (.fixedSize(data.count), {
                 try $0.write(data)
             })
         }
@@ -68,7 +66,7 @@ public enum HttpResponseBody {
 
 // swiftlint:disable cyclomatic_complexity
 public enum HttpResponse {
-
+    
     case switchProtocols(HttpResponseHeaders, (Socket) -> Void)
     case ok(HttpResponseBody)
     case created(HttpResponseBody? = nil)
@@ -96,7 +94,7 @@ public enum HttpResponse {
     case serviceUnavailable(HttpResponseBody? = nil)
     case gatewayTimeout(HttpResponseBody? = nil)
     case raw(Int, String, ((HttpResponseBodyWriter) throws -> Void)? )
-
+    
     public var statusCode: Int {
         switch self {
         case .switchProtocols         : return 101
@@ -128,7 +126,7 @@ public enum HttpResponse {
         case .raw(let code, _, _)     : return code
         }
     }
-
+    
     public var reasonPhrase: String {
         switch self {
         case .switchProtocols          : return "Switching Protocols"
@@ -160,7 +158,7 @@ public enum HttpResponse {
         case .raw(_, let phrase, _)    : return phrase
         }
     }
-
+    
     public func autoHeaders() -> HttpResponseHeaders {
         let headers = HttpResponseHeaders()
         switch self {
@@ -170,12 +168,13 @@ public enum HttpResponse {
             }
         case .ok(let body):
             self.addContentType(headers: headers, body: body)
-        case .badRequest(let body), .created(let body), .accepted(let body), .unauthorized(let body), .forbidden(let body),
-             .notFound(let body), .methodNotAllowed(let body), .notAcceptable(let body), .conflict(let body),
-             .contentTooLarge(let body), .iAmTeapot(let body),
-             .locked(let body), .tooEarly(let body), .tooManyRequests(let body), .internalServerError(let body),
-             .notImplemented(let body), .badGateway(let body), .serviceUnavailable(let body),
-             .gatewayTimeout(let body):
+        case .badRequest(let body), .created(let body), .accepted(let body),
+                .unauthorized(let body), .forbidden(let body), .notFound(let body),
+                .methodNotAllowed(let body), .notAcceptable(let body), .conflict(let body),
+                .contentTooLarge(let body), .iAmTeapot(let body),.locked(let body),
+                .tooEarly(let body), .tooManyRequests(let body), .internalServerError(let body),
+                .notImplemented(let body), .badGateway(let body), .serviceUnavailable(let body),
+                .gatewayTimeout(let body):
             guard let body = body else { break }
             self.addContentType(headers: headers, body: body)
         case .movedPermanently(let location), .movedTemporarily(let location), .found(let location):
@@ -204,25 +203,28 @@ public enum HttpResponse {
             break
         }
     }
-
+    
     func content() -> HttpReposenceContent {
         switch self {
         case .ok(let body):
             return body.content()
-        case .badRequest(let body), .created(let body), .accepted(let body), .unauthorized(let body), .forbidden(let body),
-             .notFound(let body), .methodNotAllowed(let body), .notAcceptable(let body), .conflict(let body),
-             .contentTooLarge(let body), .iAmTeapot(let body),
-             .locked(let body), .tooEarly(let body), .tooManyRequests(let body), .internalServerError(let body),
-             .notImplemented(let body), .badGateway(let body), .serviceUnavailable(let body),
-             .gatewayTimeout(let body):
-            return body?.content() ?? (-1, nil)
+        case .badRequest(let body), .created(let body), .accepted(let body),
+                .unauthorized(let body), .forbidden(let body), .notFound(let body),
+                .methodNotAllowed(let body), .notAcceptable(let body), .conflict(let body),
+                .contentTooLarge(let body), .iAmTeapot(let body),.locked(let body),
+                .tooEarly(let body), .tooManyRequests(let body), .internalServerError(let body),
+                .notImplemented(let body), .badGateway(let body), .serviceUnavailable(let body),
+                .gatewayTimeout(let body):
+            return body?.content() ?? (.closeConection, nil)
         case .raw(_, _, let writer):
-            return (-1, writer)
-        case .movedPermanently, .movedTemporarily, .found, .switchProtocols, .noContent, .notModified:
-            return (-1, nil)
+            return (.keepAlive, writer)
+        case .movedPermanently, .movedTemporarily, .found, .noContent:
+            return (.closeConection, nil)
+        case .switchProtocols, .notModified:
+            return (.keepAlive, nil)
         }
     }
-
+    
     func socketSession() -> ((Socket) -> Void)? {
         switch self {
         case .switchProtocols(_, let handler) : return handler
