@@ -20,6 +20,8 @@ public protocol HttpResponseBodyWriter {
     func write(_ data: Data) throws
 }
 
+typealias HttpReposenceContent = (length: Int, write: ((HttpResponseBodyWriter) throws -> Void)?)
+
 public enum HttpResponseBody {
 
     case json(Encodable)
@@ -31,7 +33,7 @@ public enum HttpResponseBody {
     case data(Data, contentType: String? = nil)
     case custom(Any, (Any) throws -> String)
 
-    func content() -> (Int, ((HttpResponseBodyWriter) throws -> Void)?) {
+    func content() -> HttpReposenceContent {
         do {
             switch self {
             case .json(let object):
@@ -123,7 +125,7 @@ public enum HttpResponse {
         case .badGateway              : return 502
         case .serviceUnavailable      : return 503
         case .gatewayTimeout          : return 504
-        case .raw(let code, _, _)  : return code
+        case .raw(let code, _, _)     : return code
         }
     }
 
@@ -203,7 +205,7 @@ public enum HttpResponse {
         }
     }
 
-    func content() -> (length: Int, write: ((HttpResponseBodyWriter) throws -> Void)?) {
+    func content() -> HttpReposenceContent {
         switch self {
         case .ok(let body):
             return body.content()
@@ -216,7 +218,7 @@ public enum HttpResponse {
             return body?.content() ?? (-1, nil)
         case .raw(_, _, let writer):
             return (-1, writer)
-        default:
+        case .movedPermanently, .movedTemporarily, .found, .switchProtocols, .noContent, .notModified:
             return (-1, nil)
         }
     }
