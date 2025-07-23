@@ -7,6 +7,15 @@
 
 import Foundation
 
+public enum ConnectionStrategy {
+    /// the socket will remain open after serving the request
+    case forceKeepAlive
+    /// the socket will be closed after serving the request
+    case forceCloseOnFinish
+    /// the decision whether to close or keep the socket open will vary depending on the response code
+    case auto
+}
+
 public class HttpRequest {
 
     public let id = UUID()
@@ -25,7 +34,7 @@ public class HttpRequest {
     public var cookies = HttpRequestParams([:])
     public var body = HttpRequestBody([])
     public var clientIP: String? = ""
-    public var disableKeepAlive: Bool = false
+    public var connectionStrategy: ConnectionStrategy = .auto
     private var onFinishedClosures: [(HttpRequestSummary) -> Void] = []
     public var session: HttpSession?
     let partialSummary = HttpRequestPartialSummary()
@@ -78,8 +87,8 @@ public class HttpRequest {
         }
     }
 
-    public func clientSupportsKeepAlive() -> Bool {
-        if let value = self.headers["connection"] {
+    public var clientSupportsKeepAlive: Bool {
+        if let value = self.headers[.connection] {
             return "keep-alive" == value.trimmingCharacters(in: .whitespaces).lowercased()
         }
         return false

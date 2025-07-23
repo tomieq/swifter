@@ -143,18 +143,13 @@ open class HttpServerIO {
             request.pathParams = HttpRequestParams(params)
             let response = self.instantRequestHandler.watch(request, responseHeaders, handler)
             request.partialSummary.responseCode = response.statusCode
-            var keepConnection = request.clientSupportsKeepAlive()
-            if request.disableKeepAlive {
-                keepConnection = false
-            }
-
+            var keepConnection = false
             do {
                 if self.operating {
                     keepConnection = try self.respond(socket, 
                                                       request: request,
                                                       response: response,
-                                                      customHeaders: responseHeaders,
-                                                      keepAlive: keepConnection)
+                                                      customHeaders: responseHeaders)
                 }
             } catch {
                 print("Failed to send response: \(error)")
@@ -199,8 +194,7 @@ open class HttpServerIO {
     private func respond(_ socket: Socket,
                          request: HttpRequest,
                          response: HttpResponse,
-                         customHeaders: HttpResponseHeaders,
-                         keepAlive: Bool) throws -> Bool {
+                         customHeaders: HttpResponseHeaders) throws -> Bool {
         guard self.operating else { return false }
 
         // Some web-socket clients (like Jetfire) expects to have header section in a single packet.
@@ -216,7 +210,8 @@ open class HttpServerIO {
             responseHeader.append("Content-Length: \(length)\r\n")
         }
         
-        if keepAlive, packet.connection.keepSocketOpen {
+        let keepAlive = shouldKeepConnectionAlive(request: request, packet: packet)
+        if keepAlive {
             responseHeader.append("Connection: keep-alive\r\n")
         } else {
             responseHeader.append("Connection: close\r\n")
@@ -254,6 +249,25 @@ open class HttpServerIO {
             try writeClosure(context)
         }
 
-        return keepAlive && packet.connection.keepSocketOpen
+        return keepAlive
+    }
+    
+    private func shouldKeepConnectionAlive(request: HttpRequest, packet: HttpResponsePacket) -> Bool {
+        guard request.clientSupportsKeepAlive else {
+            return false
+        }
+        switch request.connectionStrategy {
+        case .forceKeepAlive:
+            return true
+        case .forceCloseOnFinish:
+            return false
+        case .auto:
+            switch packet.connection {
+            case .keepAlive:
+                return true
+            case .closeConection:
+                return false
+            }
+        }
     }
 }
