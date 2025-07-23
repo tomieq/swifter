@@ -30,7 +30,7 @@ public class HttpParser {
         if statusLineTokens.count < 3 {
             throw HttpParserError.invalidStatusLine(statusLine)
         }
-        let request = HttpRequest()
+        let request = HttpRequest(socketID: socket.id)
         request.clientIP = socket.peerIP
         request.method = HttpMethod(statusLineTokens[0]) ?? .unknown
         let encodedPath = self.escapingInvalidURL(statusLineTokens[1])

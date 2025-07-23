@@ -9,7 +9,8 @@ import Foundation
 
 public class HttpRequest {
 
-    public var id = UUID()
+    public let id = UUID()
+    public let socketID: UUID
     public var method: HttpMethod = .unknown
     public var path: String = ""
     public var pathParams = HttpRequestParams([:])
@@ -27,14 +28,17 @@ public class HttpRequest {
     public var disableKeepAlive: Bool = false
     private var onFinishedClosures: [(HttpRequestSummary) -> Void] = []
     public var session: HttpSession?
-    var partialSummary = HttpRequestPartialSummary()
+    let partialSummary = HttpRequestPartialSummary()
     private let creationTime = DispatchTime.now()
 
-    public init() {}
+    public init(socketID: UUID) {
+        self.socketID = socketID
+    }
     deinit {
         let nanoTime = DispatchTime.now().uptimeNanoseconds - creationTime.uptimeNanoseconds
         let elapsedTimeInSeconds = Double(nanoTime) / 1_000_000_000
         let summary = HttpRequestSummary(requestID: self.id,
+                                         socketID: self.socketID,
                                          responseCode: self.partialSummary.responseCode,
                                          responseSize: DataSize(self.partialSummary.responseSize),
                                          durationInSeconds: elapsedTimeInSeconds)

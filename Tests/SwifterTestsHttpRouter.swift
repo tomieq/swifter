@@ -131,7 +131,7 @@ class SwifterTestsHttpRouter: XCTestCase {
 
     func testHttpRouterHandlesOverlappingPaths() throws {
 
-        let request = HttpRequest()
+        let request = HttpRequest(socketID: UUID())
 
         let staticRouteExpectation = expectation(description: "Static Route")
         var foundStaticRoute = false
@@ -166,7 +166,7 @@ class SwifterTestsHttpRouter: XCTestCase {
 
     func testHttpRouterHandlesOverlappingPathsInDynamicRoutes() throws {
 
-        let request = HttpRequest()
+        let request = HttpRequest(socketID: UUID())
 
         let firstVariableRouteExpectation = expectation(description: "First Variable Route")
         var foundFirstVariableRoute = false
@@ -201,7 +201,7 @@ class SwifterTestsHttpRouter: XCTestCase {
 
     func testHttpRouterShouldHandleOverlappingRoutesInTrail() throws {
 
-        let request = HttpRequest()
+        let request = HttpRequest(socketID: UUID())
 
         let firstVariableRouteExpectation = expectation(description: "First Variable Route")
         var foundFirstVariableRoute = false
@@ -250,7 +250,7 @@ class SwifterTestsHttpRouter: XCTestCase {
 
     func testHttpRouterHandlesOverlappingPathsInDynamicRoutesInTheMiddle() throws {
 
-        let request = HttpRequest()
+        let request = HttpRequest(socketID: UUID())
 
         let firstVariableRouteExpectation = expectation(description: "First Variable Route")
         var foundFirstVariableRoute = false

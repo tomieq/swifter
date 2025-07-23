@@ -327,6 +327,7 @@ server.middleware.append { request, header in
     request.onFinished { summary in
         // finish tracking
         // id is unique UUID for this request
+        // socketID is unique UUID for socket handling request
         // responseCode is the http code that was returned to client
         // responseSize is expressed in DataSize
         // durationInSeconds is the time in seconds
@@ -334,12 +335,6 @@ server.middleware.append { request, header in
     }
     return nil
 }
-```
-If you want readable response size, use:
-```swift
-    request.onFinished { summary in
-        print("Response size\(summary.responseSizeInBytes.readableSizeWithUnit)")
-    }
 ```
 ### Selective middleware
 If you want add middleware for selective endpoints, you can use single wildcard (`*`) for single level matching or double wildcard (`**`) for greedy matching:
@@ -360,12 +355,31 @@ server.middleware["resticted/*/resource"] = { request, header in
 ### Socket metrics
 If you are interested in watching amount of open sockets/connected clients, you can do it by 
 ```swift
-server.metrics.onOpenConnectionsChanged = { number in
-    print("amount of connections: \(number)")
-}
+    server.metrics.onConnectionChange = { stats in
+        print("open connections: \(stats.openConnections), event: \(stats.event)")
+    }
 /// or statically
 print("amount of connections: \(server.metrics.openConnections)")
 ```
+### Manual socket closing for ones beign open too long
+As Swifter supports `Http/1.1` the socket might be open in Keep Alive mode for a very long time until client closes it. 
+That might lead to some attacks. If you want to manage the socket lifecycle, you may listen to events and even close some
+sockets manually. You can e.g. detect inactivity on a socket and close after some time. Possible events: `connected`, `traffic`, `webSocketSessionStarted`, `disconnected`.  
+```swift
+    server.metrics.onConnectionChange = { stats in
+        print("open connections: \(stats.openConnections), event: \(stats.event)")
+        
+        switch stats.event {
+        case .connected(let socketID):
+            DispatchQueue.global().asyncAfter(deadline: .now() + 1) {
+                print("Try closing socket \(socketID)")
+                server.close(socketID: socketID)
+            }
+            default : break
+        }
+    }
+``` 
+If you want to link socket with client's IP (for example to know whether one client opened too many sockets), the best way is to do so by filtering incoming request by socketID and then use either `peerIP` or `xForwardedFor` header when server is behind Application Proxy. 
 ### Session Data
 If you want to initialize some data in middleware that should be shared with endpoint, use `session` attribute that can carry `HttpSession` object type:
 ```swift

@@ -7,20 +7,45 @@
 
 import Foundation
 
-public class ConnectionMetrics {
-    enum SocketAction {
-        case opened
-        case closed
-        
-        var diff: Int {
-            switch self {
-            case .opened:
-                return 1
-            case .closed:
-                return -1
-            }
+public enum ConnectionEvent {
+    case connected(socketID: UUID)
+    case traffic(socketID: UUID)
+    case webSocketSessionStarted(socketID: UUID)
+    case disconnected(socketID: UUID)
+    
+    var diff: Int {
+        switch self {
+        case .connected:
+            return 1
+        case .disconnected:
+            return -1
+        default :
+            return 0
         }
     }
+}
+
+extension ConnectionEvent: CustomStringConvertible {
+    public var description: String {
+        switch self {
+        case .connected(let socketID):
+            return "Connected socket \(socketID)"
+        case .disconnected(let socketID):
+            return "Disconnected socket \(socketID)"
+        case .traffic(let socketID):
+            return "Traffic on socket \(socketID)"
+        case .webSocketSessionStarted(let socketID):
+            return "WebSocketSessionStarted on socket \(socketID)"
+        }
+    }
+}
+
+public struct ConnectionChange {
+    public let openConnections: Int
+    public let event: ConnectionEvent
+}
+
+public class ConnectionMetrics {
     private let queue = DispatchQueue(label: "swifter.metrics.queue", attributes: .concurrent)
     private var openSockets = 0
     public var openConnections: Int {
@@ -30,14 +55,16 @@ public class ConnectionMetrics {
             }
         }
     }
-    public var onOpenConnectionsChanged: ((Int) -> Void)?
+    public var onConnectionChange: ((ConnectionChange) -> Void)?
 
-    func socket(_ action: SocketAction) {
+    func notify(_ event: ConnectionEvent) {
         self.queue.async(flags: .barrier) {
-            self.openSockets += action.diff
+            self.openSockets += event.diff
             let newValue = self.openSockets
-            DispatchQueue.global().async {
-                self.onOpenConnectionsChanged?(newValue)
+            if let onConnectionChange = self.onConnectionChange {
+                DispatchQueue.global().async {
+                    onConnectionChange(ConnectionChange(openConnections: newValue, event: event))
+                }
             }
         }
     }

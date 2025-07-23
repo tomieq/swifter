@@ -109,7 +109,7 @@ class MiddlewareRouterTests: XCTestCase {
     
     private func invokeHandlers(path: String) {
         router.layers(path: path).forEach {
-            _ = try? $0(HttpRequest(), HttpResponseHeaders())
+            _ = try? $0(HttpRequest(socketID: UUID()), HttpResponseHeaders())
         }
     }
     

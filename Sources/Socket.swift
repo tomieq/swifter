@@ -24,6 +24,7 @@ public enum SocketError: Error {
 // swiftlint: disable identifier_name
 open class Socket: Hashable, Equatable {
 
+    let id = UUID()
     let socketFileDescriptor: Int32
     private var shutdown = false
     let transferCounter = TransferCounter()

@@ -75,6 +75,10 @@ open class HttpServerIO {
     public func isIPv4() throws -> Bool {
         return try socket.isIPv4()
     }
+    
+    public func close(socketID: UUID) {
+        sockets.first { $0.id == socketID }?.close()
+    }
 
     deinit {
         stop()
@@ -99,9 +103,9 @@ open class HttpServerIO {
                         strongSelf.sockets.insert(socket)
                     }
 
-                    strongSelf.metrics.socket(.opened)
+                    strongSelf.metrics.notify(.connected(socketID: socket.id))
                     strongSelf.handleConnection(socket)
-                    strongSelf.metrics.socket(.closed)
+                    strongSelf.metrics.notify(.disconnected(socketID: socket.id))
                     strongSelf.queue.async {
                         strongSelf.sockets.remove(socket)
                     }
@@ -132,6 +136,7 @@ open class HttpServerIO {
     private func handleConnection(_ socket: Socket) {
         let parser = HttpParser(bodyLimit: requestBodyLimit)
         while self.operating, let request = try? parser.readHttpRequest(socket) {
+            metrics.notify(.traffic(socketID: socket.id))
             let request = request
             let responseHeaders = HttpResponseHeaders()
             let (params, handler) = self.dispatch(request, responseHeaders)
@@ -157,6 +162,7 @@ open class HttpServerIO {
             }
             if let session = response.socketSession() {
                 delegate?.socketConnectionReceived(socket)
+                metrics.notify(.webSocketSessionStarted(socketID: socket.id))
                 session(socket)
                 break
             }

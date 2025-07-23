@@ -16,7 +16,7 @@ class HttpRequestTests: XCTestCase {
             let user: String
             let password: Int
         }
-        let request = HttpRequest()
+        let request = HttpRequest(socketID: UUID())
         request.headers = HttpRequestHeaderParams(["content-type":"application/x-www-form-urlencoded"])
         request.body = HttpRequestBody([UInt8]("user=John&password=1234".data(using: .utf8)!))
         let formData: FormData? = try request.formData.decode()
@@ -30,7 +30,7 @@ class HttpRequestTests: XCTestCase {
             let start: Int
             let query: String
         }
-        let request = HttpRequest()
+        let request = HttpRequest(socketID: UUID())
         request.queryParams = HttpRequestParams(["limit": "10", "query": "Warsaw", "start": "900"])
         let search: Search? = try request.queryParams.decode()
         XCTAssertEqual(search?.limit, 10)

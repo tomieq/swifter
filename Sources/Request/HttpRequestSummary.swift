@@ -9,6 +9,7 @@ import Foundation
 
 public struct HttpRequestSummary {
     public let requestID: UUID
+    public let socketID: UUID
     public let responseCode: Int
     public let responseSize: DataSize
     public let durationInSeconds: Double
