@@ -248,7 +248,6 @@ open class HttpServerIO {
             let context = InnerWriteContext(socket: socket)
             try writeClosure(context)
         }
-
         return keepAlive
     }
     

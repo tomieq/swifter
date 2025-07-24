@@ -45,6 +45,7 @@ public struct ConnectionChange {
     public let event: ConnectionEvent
 }
 
+public typealias ConnectionChangeHandler = (ConnectionChange) -> Void
 public class ConnectionMetrics {
     private let queue = DispatchQueue(label: "swifter.metrics.queue", attributes: .concurrent)
     private var openSockets = 0
@@ -55,15 +56,18 @@ public class ConnectionMetrics {
             }
         }
     }
-    public var onConnectionChange: ((ConnectionChange) -> Void)?
+    public var onConnectionChange: [ConnectionChangeHandler] = []
 
     func notify(_ event: ConnectionEvent) {
-        self.queue.async(flags: .barrier) {
+        self.queue.async(flags: .barrier) { [unowned self] in
             self.openSockets += event.diff
             let newValue = self.openSockets
-            if let onConnectionChange = self.onConnectionChange {
-                DispatchQueue.global().async {
-                    onConnectionChange(ConnectionChange(openConnections: newValue, event: event))
+            if !self.onConnectionChange.isEmpty {
+                DispatchQueue.global().async { [unowned self] in
+                    let notification = ConnectionChange(openConnections: newValue, event: event)
+                    for listener in self.onConnectionChange {
+                        listener(notification)
+                    }
                 }
             }
         }
