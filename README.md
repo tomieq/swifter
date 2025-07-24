@@ -37,6 +37,10 @@ print("Server started on port \(try server.port)")
 import Dispatch
 dispatchMain()
 ```
+or
+```swift
+RunLoop.main.run()
+```
 
 ### How to share files?
 ```swift
@@ -355,9 +359,9 @@ server.middleware["resticted/*/resource"] = { request, header in
 ### Socket metrics
 If you are interested in watching amount of open sockets/connected clients, you can do it by 
 ```swift
-    server.metrics.onConnectionChange = { stats in
+    server.metrics.subscribers.append( { stats in
         print("open connections: \(stats.openConnections), event: \(stats.event)")
-    }
+    })
 /// or statically
 print("amount of connections: \(server.metrics.openConnections)")
 ```
@@ -366,7 +370,7 @@ As Swifter supports `Http/1.1` the socket might be open in Keep Alive mode for a
 That might lead to some attacks. If you want to manage the socket lifecycle, you may listen to events and even close some
 sockets manually. You can e.g. detect inactivity on a socket and close after some time. Possible events: `connected`, `traffic`, `webSocketSessionStarted`, `disconnected`.  
 ```swift
-    server.metrics.onConnectionChange = { stats in
+    server.metrics.subscribers.append( { stats in
         print("open connections: \(stats.openConnections), event: \(stats.event)")
         
         switch stats.event {
@@ -377,9 +381,17 @@ sockets manually. You can e.g. detect inactivity on a socket and close after som
             }
             default : break
         }
-    }
+    })
 ``` 
-If you want to link socket with client's IP (for example to know whether one client opened too many sockets), the best way is to do so by filtering incoming request by socketID and then use either `peerIP` or `xForwardedFor` header when server is behind Application Proxy. 
+If you want to link socket with client's IP (for example to know whether one client opened too many sockets), the best way is to do so by filtering incoming request by socketID and then use either `peerIP` or `xForwardedFor` header when server is behind Application Proxy.
+### Automatic socket closing due to inactivity
+```swift
+    let server = HttpServer()
+    let socketGuard = ConnectionLifetimeGuard(server: server, socketLifeTime: 10)
+```
+When using `ConnectionLifetimeGuard` unused socket are closed after 10 seconds od inacivity.
+
+Info: Registering to `server.metrics.subscribers` or using `ConnectionLifetimeGuard` may have impact on server's performance. Tests with `ab` tool revealed that at 20.000 requests the response time is 4x or more slower when watching sockets. You need to decide whether to clean the dangling sockets or rather focus on performance. 
 ### Session Data
 If you want to initialize some data in middleware that should be shared with endpoint, use `session` attribute that can carry `HttpSession` object type:
 ```swift

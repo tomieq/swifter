@@ -47,25 +47,26 @@ public struct ConnectionChange {
 
 public typealias ConnectionChangeHandler = (ConnectionChange) -> Void
 public class ConnectionMetrics {
-    private let queue = DispatchQueue(label: "swifter.metrics.queue", attributes: .concurrent)
+    private let accessQueue = DispatchQueue(label: "swifter.metrics.queue", attributes: .concurrent)
+    private let notificationQueue = DispatchQueue(label: "swifter.metrics.queue")
     private var openSockets = 0
     public var openConnections: Int {
         get {
-            self.queue.sync {
+            self.accessQueue.sync {
                 openSockets
             }
         }
     }
-    public var onConnectionChange: [ConnectionChangeHandler] = []
+    public var subscribers: [ConnectionChangeHandler] = []
 
     func notify(_ event: ConnectionEvent) {
-        self.queue.async(flags: .barrier) { [unowned self] in
+        self.accessQueue.async(flags: .barrier) { [unowned self] in
             self.openSockets += event.diff
             let newValue = self.openSockets
-            if !self.onConnectionChange.isEmpty {
-                DispatchQueue.global().async { [unowned self] in
+            if !self.subscribers.isEmpty {
+                notificationQueue.async { [unowned self] in
                     let notification = ConnectionChange(openConnections: newValue, event: event)
-                    for listener in self.onConnectionChange {
+                    for listener in self.subscribers {
                         listener(notification)
                     }
                 }

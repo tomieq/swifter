@@ -15,7 +15,7 @@ public class ConnectionLifetimeGuard {
     public init(server: HttpServer, socketLifeTime: TimeInterval = 10) {
         self.server = server
         self.socketLifeTime = socketLifeTime
-        server.metrics.onConnectionChange.append( { [weak self] change in
+        server.metrics.subscribers.append( { [weak self] change in
             switch change.event {
             case .connected(let socketID), .traffic(let socketID):
                 self?.socketActivity[socketID] = Date()

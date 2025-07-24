@@ -102,7 +102,6 @@ open class HttpServerIO {
                     strongSelf.queue.async {
                         strongSelf.sockets.insert(socket)
                     }
-
                     strongSelf.metrics.notify(.connected(socketID: socket.id))
                     strongSelf.handleConnection(socket)
                     strongSelf.metrics.notify(.disconnected(socketID: socket.id))
