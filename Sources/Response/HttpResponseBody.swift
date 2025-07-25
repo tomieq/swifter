@@ -52,7 +52,7 @@ public enum HttpResponseBody {
         case .xml:
             headers.addHeader(.contentType, "text/xml; charset=utf-8")
         case .data(_, let contentType):
-            if let contentType {
+            if let contentType = contentType {
                 headers.addHeader(.contentType, contentType)
             }
         }

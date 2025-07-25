@@ -61,7 +61,7 @@ public class HttpResponseHeaders {
     
     @discardableResult
     public func merge(_ other: HttpResponseHeaders?) -> HttpResponseHeaders {
-        if let other {
+        if let other = other {
             self.storage.append(contentsOf: other.storage)
         }
         return self

@@ -138,27 +138,27 @@ public enum HttpResponse {
     func packet() -> HttpResponsePacket {
         switch self {
         case .ok(let body):
-            HttpResponsePacket(rawBody: body.raw, connection: .keepAlive)
+            return HttpResponsePacket(rawBody: body.raw, connection: .keepAlive)
             
         case .created(let body), .accepted(let body), .unauthorized(let body),
                 .notFound(let body), .methodNotAllowed(let body), .conflict(let body),
                 .locked(let body), .tooEarly(let body), .internalServerError(let body),
                 .notImplemented(let body), .badGateway(let body):
-            HttpResponsePacket(rawBody: body?.raw, connection: body == nil ? .closeConection : .keepAlive)
+            return HttpResponsePacket(rawBody: body?.raw, connection: body == nil ? .closeConection : .keepAlive)
             
         case .badRequest(let body), .forbidden(let body), .notAcceptable(let body),
                 .tooManyRequests(let body), .contentTooLarge(let body), .iAmTeapot(let body),
                 .serviceUnavailable(let body), .gatewayTimeout(let body):
-            HttpResponsePacket(rawBody: body?.raw, connection: .closeConection)
+            return HttpResponsePacket(rawBody: body?.raw, connection: .closeConection)
             
         case .raw(_, _, let writer):
-            HttpResponsePacket(rawBody: HttpResponseBodyRaw(.unknown, writer), connection: .keepAlive)
+            return HttpResponsePacket(rawBody: HttpResponseBodyRaw(.unknown, writer), connection: .keepAlive)
             
         case .movedPermanently, .movedTemporarily, .noContent:
-            HttpResponsePacket(rawBody: nil, connection: .closeConection)
+            return HttpResponsePacket(rawBody: nil, connection: .closeConection)
             
         case .switchProtocols, .notModified, .found:
-            HttpResponsePacket(rawBody: nil, connection: .keepAlive)
+            return HttpResponsePacket(rawBody: nil, connection: .keepAlive)
         }
     }
     
