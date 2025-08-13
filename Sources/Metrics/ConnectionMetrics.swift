@@ -60,7 +60,8 @@ public class ConnectionMetrics {
     public var subscribers: [ConnectionChangeHandler] = []
 
     func notify(_ event: ConnectionEvent) {
-        self.accessQueue.async(flags: .barrier) { [unowned self] in
+        self.accessQueue.async(flags: .barrier) { [weak self] in
+            guard let self else { return }
             self.openSockets += event.diff
             let newValue = self.openSockets
             if !self.subscribers.isEmpty {
