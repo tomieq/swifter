@@ -8,6 +8,7 @@ import Foundation
 
 public protocol SecureSocket {
     init(_ socket: Socket)
+    var id: UUID { get }
     var raw: Socket { get }
     func readLine() throws -> String
     func read() throws -> UInt8
@@ -25,6 +26,7 @@ public protocol SecureSocket {
 class DefaultSecureSocket: SecureSocket {
     
     private let socket: Socket
+    let id: UUID = UUID()
     
     var raw: Socket {
         socket

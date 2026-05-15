@@ -14,7 +14,7 @@ public enum SerializationError: Error {
 
 // swiftlint:disable cyclomatic_complexity
 public enum HttpResponse {
-    case switchProtocols(HttpResponseHeaders, (Socket) -> Void)
+    case switchProtocols(HttpResponseHeaders, (SecureSocket) -> Void)
     case processing(HttpResponseBody?)
     case ok(HttpResponseBody)
     case created(HttpResponseBody? = nil)
@@ -137,7 +137,7 @@ public enum HttpResponse {
         }
     }
 
-    func socketSession() -> ((Socket) -> Void)? {
+    func socketSession() -> ((SecureSocket) -> Void)? {
         switch self {
         case .switchProtocols(_, let handler): return handler
         default: return nil
