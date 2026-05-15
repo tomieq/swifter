@@ -12,13 +12,10 @@ public enum SerializationError: Error {
     case notSupported
 }
 
-
-
-
 // swiftlint:disable cyclomatic_complexity
 public enum HttpResponse {
-    
     case switchProtocols(HttpResponseHeaders, (Socket) -> Void)
+    case processing(HttpResponseBody?)
     case ok(HttpResponseBody)
     case created(HttpResponseBody? = nil)
     case accepted(HttpResponseBody? = nil)
@@ -44,11 +41,12 @@ public enum HttpResponse {
     case badGateway(HttpResponseBody? = nil)
     case serviceUnavailable(HttpResponseBody? = nil)
     case gatewayTimeout(HttpResponseBody? = nil)
-    case raw(Int, String, ((HttpResponseBodyWriter) throws -> Void)? )
-    
+    case raw(Int, String, ((HttpResponseBodyWriter) throws -> Void)?)
+
     public var statusCode: Int {
         switch self {
         case .switchProtocols         : return 101
+        case .processing(_)           : return 102
         case .ok                      : return 200
         case .created                 : return 201
         case .accepted                : return 202
@@ -77,39 +75,14 @@ public enum HttpResponse {
         case .raw(let code, _, _)     : return code
         }
     }
-    
+
     public var reasonPhrase: String {
         switch self {
-        case .switchProtocols          : return "Switching Protocols"
-        case .ok                       : return "OK"
-        case .created                  : return "Created"
-        case .accepted                 : return "Accepted"
-        case .noContent                : return "No Content"
-        case .movedPermanently         : return "Moved Permanently"
-        case .movedTemporarily         : return "Moved Temporarily"
-        case .found                    : return "Found"
-        case .notModified              : return "Not Modified"
-        case .badRequest               : return "Bad Request"
-        case .unauthorized             : return "Unauthorized"
-        case .forbidden                : return "Forbidden"
-        case .notFound                 : return "Not Found"
-        case .methodNotAllowed         : return "Method Not Allowed"
-        case .notAcceptable            : return "Not Acceptable"
-        case .conflict                 : return "Conflict"
-        case .contentTooLarge          : return "Content Too Large"
-        case .iAmTeapot                : return "I'm a teapot"
-        case .locked                   : return "Locked"
-        case .tooEarly                 : return "Too Early"
-        case .tooManyRequests          : return "Too Many Requests"
-        case .internalServerError      : return "Internal Server Error"
-        case .notImplemented           : return "Not Implemented"
-        case .badGateway               : return "Bad Gateway"
-        case .serviceUnavailable       : return "Service Unavailable"
-        case .gatewayTimeout           : return "Gateway Timeout"
-        case .raw(_, let phrase, _)    : return phrase
+        case .raw(_, let phrase, _): return phrase
+        default: return HttpCode.description(for: self.statusCode) ?? "fatal error"
         }
     }
-    
+
     public var responseHeaders: HttpResponseHeaders {
         let headers = HttpResponseHeaders()
         switch self {
@@ -119,13 +92,13 @@ public enum HttpResponse {
             }
         case .ok(let body):
             body.addHeader(to: headers)
-        case .badRequest(let body), .created(let body), .accepted(let body),
-                .unauthorized(let body), .forbidden(let body), .notFound(let body),
-                .methodNotAllowed(let body), .notAcceptable(let body), .conflict(let body),
-                .contentTooLarge(let body), .iAmTeapot(let body),.locked(let body),
-                .tooEarly(let body), .tooManyRequests(let body), .internalServerError(let body),
-                .notImplemented(let body), .badGateway(let body), .serviceUnavailable(let body),
-                .gatewayTimeout(let body):
+        case .processing(let body), .badRequest(let body), .created(let body), .accepted(let body),
+             .unauthorized(let body), .forbidden(let body), .notFound(let body),
+             .methodNotAllowed(let body), .notAcceptable(let body), .conflict(let body),
+             .contentTooLarge(let body), .iAmTeapot(let body), .locked(let body),
+             .tooEarly(let body), .tooManyRequests(let body), .internalServerError(let body),
+             .notImplemented(let body), .badGateway(let body), .serviceUnavailable(let body),
+             .gatewayTimeout(let body):
             body?.addHeader(to: headers)
         case .movedPermanently(let location), .movedTemporarily(let location), .found(let location):
             headers.addHeader(.location, location)
@@ -134,55 +107,55 @@ public enum HttpResponse {
         }
         return headers
     }
-    
+
     func packet() -> HttpResponsePacket {
         switch self {
         case .ok(let body):
             return HttpResponsePacket(rawBody: body.raw, connection: .keepAlive)
-            
-        case .created(let body), .accepted(let body), .unauthorized(let body),
-                .notFound(let body), .methodNotAllowed(let body), .conflict(let body),
-                .locked(let body), .tooEarly(let body), .internalServerError(let body),
-                .notImplemented(let body), .badGateway(let body):
+
+        case .processing(let body),
+
+             .created(let body), .accepted(let body), .unauthorized(let body),
+             .notFound(let body), .methodNotAllowed(let body), .conflict(let body),
+             .locked(let body), .tooEarly(let body), .internalServerError(let body),
+             .notImplemented(let body), .badGateway(let body):
             return HttpResponsePacket(rawBody: body?.raw, connection: body == nil ? .closeConection : .keepAlive)
-            
+
         case .badRequest(let body), .forbidden(let body), .notAcceptable(let body),
-                .tooManyRequests(let body), .contentTooLarge(let body), .iAmTeapot(let body),
-                .serviceUnavailable(let body), .gatewayTimeout(let body):
+             .tooManyRequests(let body), .contentTooLarge(let body), .iAmTeapot(let body),
+             .serviceUnavailable(let body), .gatewayTimeout(let body):
             return HttpResponsePacket(rawBody: body?.raw, connection: .closeConection)
-            
+
         case .raw(_, _, let writer):
             return HttpResponsePacket(rawBody: HttpResponseBodyRaw(.unknown, writer), connection: .keepAlive)
-            
+
         case .movedPermanently, .movedTemporarily, .noContent:
             return HttpResponsePacket(rawBody: nil, connection: .closeConection)
-            
+
         case .switchProtocols, .notModified, .found:
             return HttpResponsePacket(rawBody: nil, connection: .keepAlive)
         }
     }
-    
+
     func socketSession() -> ((Socket) -> Void)? {
         switch self {
-        case .switchProtocols(_, let handler) : return handler
+        case .switchProtocols(_, let handler): return handler
         default: return nil
         }
     }
 }
 
 /**
-    Makes it possible to compare handler responses with '==', but
-	ignores any associated values. This should generally be what
-	you want. E.g.:
+ Makes it possible to compare handler responses with '==', but
+ ignores any associated values. This should generally be what
+ you want. E.g.:
 
-    let resp = handler(updatedRequest)
-        if resp == .NotFound {
-        print("Client requested not found: \(request.url)")
-    }
-*/
+ let resp = handler(updatedRequest)
+ if resp == .NotFound {
+ print("Client requested not found: \(request.url)")
+ }
+ */
 
 func == (inLeft: HttpResponse, inRight: HttpResponse) -> Bool {
     return inLeft.statusCode == inRight.statusCode
 }
-
-
