@@ -436,6 +436,14 @@ server.globalErrorHandler = { _, _ in
     .internalServerError()
 }
 ```
+### TLS support
+With package https://github.com/tomieq/swifterTLS you can add TLS 1.3 support
+```swift
+let server = HttpServer()
+server.secureSocketFactory = { socket in
+    TLSSocket(socket, tlsConfiguration: tlsConfiguration)
+}
+```
 
 ### Swift Package Manager.
 ```swift
@@ -444,7 +452,7 @@ import PackageDescription
 let package = Package(
     name: "MyServer",
     dependencies: [
-        .package(url: "https://github.com/tomieq/swifter.git", .upToNextMajor(from: "3.1.0"))
+        .package(url: "https://github.com/tomieq/swifter.git", .upToNextMajor(from: "3.2.0"))
     ]
 )
 ```
