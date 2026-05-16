@@ -13,8 +13,8 @@ public func shareFile(_ path: String) -> HttpRequestHandler {
             let mimeType = path.mimeType
             responseHeaders.addHeader(.contentType, mimeType)
             if let attr = try? FileManager.default.attributesOfItem(atPath: path),
-                let fileSize = attr[FileAttributeKey.size] as? UInt64 {
-                responseHeaders.addHeader(.contentLength,  String(fileSize))
+               let fileSize = attr[FileAttributeKey.size] as? UInt64 {
+                responseHeaders.addHeader(.contentLength, String(fileSize))
             }
             return .raw(200, "OK", { writer in
                 try? writer.write(file)
@@ -47,7 +47,7 @@ public func shareFilesFromDirectory(_ directoryPath: String, defaults: [String] 
             responseHeaders.addHeader(.contentType, mimeType)
 
             if let attr = try? FileManager.default.attributesOfItem(atPath: filePath),
-                let fileSize = attr[FileAttributeKey.size] as? UInt64 {
+               let fileSize = attr[FileAttributeKey.size] as? UInt64 {
                 responseHeaders.addHeader(.contentLength, String(fileSize))
             }
 

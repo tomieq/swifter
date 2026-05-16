@@ -23,60 +23,59 @@ public protocol SecureSocket {
 }
 
 class DefaultSecureSocket: SecureSocket {
-    
     private let socket: Socket
     let id: UUID = UUID()
-    
+
     var raw: Socket {
-        socket
+        self.socket
     }
 
     init(_ socket: Socket) {
         self.socket = socket
     }
-    
+
     func read() throws -> UInt8 {
-        try socket.read()
+        try self.socket.read()
     }
-    
+
     func readLine() throws -> String {
-        try socket.readLine()
+        try self.socket.readLine()
     }
-    
+
     func read(length: Int) throws -> [UInt8] {
-        try socket.read(length: length)
+        try self.socket.read(length: length)
     }
-    
+
     func writeUTF8(_ string: String) throws {
-        try socket.writeUTF8(string)
+        try self.socket.writeUTF8(string)
     }
-    
+
     func writeUInt8(_ data: [UInt8]) throws {
-        try socket.writeUInt8(data)
+        try self.socket.writeUInt8(data)
     }
-    
+
     func writeUInt8(_ data: ArraySlice<UInt8>) throws {
-        try socket.writeUInt8(data)
+        try self.socket.writeUInt8(data)
     }
-    
+
     func writeData(_ data: Data) throws {
-        try socket.writeData(data)
+        try self.socket.writeData(data)
     }
-    
+
     func writeData(_ data: NSData) throws {
-        try socket.writeData(data)
+        try self.socket.writeData(data)
     }
-    
+
     func writeFile(_ file: String.File) throws {
-        try socket.writeFile(file)
+        try self.socket.writeFile(file)
     }
-    
+
     func close() {
-        socket.close()
+        self.socket.close()
     }
-    
+
     var peerIP: String? {
-        socket.peerIP
+        self.socket.peerIP
     }
 }
 
@@ -88,6 +87,6 @@ extension DefaultSecureSocket: Equatable {
 
 extension DefaultSecureSocket: Hashable {
     func hash(into hasher: inout Hasher) {
-        hasher.combine(socket)
+        hasher.combine(self.socket)
     }
 }

@@ -12,14 +12,14 @@ public enum ConnectionEvent {
     case traffic(socketID: UUID)
     case webSocketSessionStarted(socketID: UUID)
     case disconnected(socketID: UUID)
-    
+
     var diff: Int {
         switch self {
         case .connected:
             return 1
         case .disconnected:
             return -1
-        default :
+        default:
             return 0
         }
     }
@@ -53,10 +53,11 @@ public class ConnectionMetrics {
     public var openConnections: Int {
         get {
             self.accessQueue.sync {
-                openSockets
+                self.openSockets
             }
         }
     }
+
     public var subscribers: [ConnectionChangeHandler] = []
 
     func notify(_ event: ConnectionEvent) {
@@ -65,7 +66,7 @@ public class ConnectionMetrics {
             self.openSockets += event.diff
             let newValue = self.openSockets
             if !self.subscribers.isEmpty {
-                notificationQueue.async { [unowned self] in
+                self.notificationQueue.async { [unowned self] in
                     let notification = ConnectionChange(openConnections: newValue, event: event)
                     for listener in self.subscribers {
                         listener(notification)

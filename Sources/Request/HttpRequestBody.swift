@@ -15,21 +15,21 @@ public enum HttpRequestBodyStatus {
 public class HttpRequestBody {
     public let raw: [UInt8]
     public let status: HttpRequestBodyStatus
-    
+
     public var string: String? {
-        String(bytes: raw, encoding: .utf8)
+        String(bytes: self.raw, encoding: .utf8)
     }
-    
+
     public var data: Data {
-        Data(raw)
+        Data(self.raw)
     }
-    
+
     init(_ raw: [UInt8], status: HttpRequestBodyStatus = .ok) {
         self.raw = raw
         self.status = status
     }
 
     public func decode<T: Decodable>() throws -> T {
-        try JSONDecoder().decode(T.self, from: data)
+        try JSONDecoder().decode(T.self, from: self.data)
     }
 }

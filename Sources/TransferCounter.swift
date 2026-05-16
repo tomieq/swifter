@@ -9,16 +9,16 @@ import Foundation
 
 class TransferCounter {
     private var transferredBytes: UInt64 = 0
-    
+
     var transfer: UInt64 {
-        transferredBytes
+        self.transferredBytes
     }
 
     func startCounting() {
-        transferredBytes = 0
+        self.transferredBytes = 0
     }
-    
+
     func countBytes(_ bytes: UInt64) {
-        transferredBytes += bytes
+        self.transferredBytes += bytes
     }
 }

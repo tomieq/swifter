@@ -8,7 +8,7 @@
 enum HttpConnectionContinuation {
     case keepAlive
     case closeConection
-    
+
     var keepSocketOpen: Bool {
         switch self {
         case .keepAlive:

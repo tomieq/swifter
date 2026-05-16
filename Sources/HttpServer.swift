@@ -8,39 +8,38 @@
 import Foundation
 
 open class HttpServer: HttpServerIO {
-
     let router = HttpRouter()
 
     public override init() {
-        self.delete  = MethodRoute(method: .DELETE, router: router)
-        self.patch   = MethodRoute(method: .PATCH, router: router)
-        self.head    = MethodRoute(method: .HEAD, router: router)
-        self.post    = MethodRoute(method: .POST, router: router)
-        self.get     = MethodRoute(method: .GET, router: router)
-        self.put     = MethodRoute(method: .PUT, router: router)
-        self.connect = MethodRoute(method: .CONNECT, router: router)
-        self.options = MethodRoute(method: .OPTIONS, router: router)
-        self.trace   = MethodRoute(method: .TRACE, router: router)
+        self.delete = MethodRoute(method: .DELETE, router: self.router)
+        self.patch = MethodRoute(method: .PATCH, router: self.router)
+        self.head = MethodRoute(method: .HEAD, router: self.router)
+        self.post = MethodRoute(method: .POST, router: self.router)
+        self.get = MethodRoute(method: .GET, router: self.router)
+        self.put = MethodRoute(method: .PUT, router: self.router)
+        self.connect = MethodRoute(method: .CONNECT, router: self.router)
+        self.options = MethodRoute(method: .OPTIONS, router: self.router)
+        self.trace = MethodRoute(method: .TRACE, router: self.router)
     }
 
     public var delete, patch, head, post, get, put, connect, options, trace: MethodRoute
 
     public subscript(path: CustomStringConvertible) -> HttpRequestHandler? {
         set {
-            router.register(nil, path: path.description, handler: newValue)
+            self.router.register(nil, path: path.description, handler: newValue)
         }
         get { return nil }
     }
 
     public subscript(webPath: WebPath) -> HttpRequestHandler? {
         set {
-            router.register(nil, path: webPath.path, handler: newValue)
+            self.router.register(nil, path: webPath.path, handler: newValue)
         }
         get { return nil }
     }
 
     public var routes: [String] {
-        return router.routes()
+        return self.router.routes()
     }
 
     public var notFoundHandler: HttpRequestHandler?
@@ -48,9 +47,9 @@ open class HttpServer: HttpServerIO {
     public var middleware = Middleware()
 
     override open func dispatch(_ request: HttpRequest, _ responseHeaders: HttpResponseHeaders) -> ([String: String], HttpRequestHandler) {
-        for layer in middleware.general + middleware.router.layers(path: request.path) {
+        for layer in self.middleware.general + self.middleware.router.layers(path: request.path) {
             if let response = self.instantRequestHandler.watch(request, responseHeaders, layer) {
-                return ([:], { (_, _) in response })
+                return ([:], { _, _ in response })
             }
         }
         if let result = router.route(request.method, path: request.path) {
@@ -67,7 +66,7 @@ open class HttpServer: HttpServerIO {
         public let router: HttpRouter
         public subscript(path: CustomStringConvertible) -> HttpRequestHandler? {
             set {
-                router.register(method, path: path.description, handler: newValue)
+                self.router.register(self.method, path: path.description, handler: newValue)
             }
             get { return nil }
         }

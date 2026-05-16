@@ -17,7 +17,7 @@ enum HttpMultiPartParser {
         var boundary: String?
         contentTypeHeaderTokens.forEach({
             let tokens = $0.components(separatedBy: "=")
-            if let key = tokens.first, key == "boundary" && tokens.count == 2 {
+            if let key = tokens.first, key == "boundary", tokens.count == 2 {
                 boundary = tokens.last
             }
         })
@@ -38,11 +38,11 @@ enum HttpMultiPartParser {
 
     private static func nextMultiPart(_ generator: inout IndexingIterator<[UInt8]>, boundary: String, isFirst: Bool) -> HttpMultiPart? {
         if isFirst {
-            guard nextUTF8MultiPartLine(&generator) == boundary else {
+            guard self.nextUTF8MultiPartLine(&generator) == boundary else {
                 return nil
             }
         } else {
-            let /* ignore */ _ = nextUTF8MultiPartLine(&generator)
+            /* ignore */ _ = self.nextUTF8MultiPartLine(&generator)
         }
         var headers = [String: String]()
         while let line = nextUTF8MultiPartLine(&generator), !line.isEmpty {
@@ -79,13 +79,13 @@ enum HttpMultiPartParser {
         let boundaryArray = [UInt8](boundary.utf8)
         var matchOffset = 0
         while let x = generator.next() {
-            matchOffset = ( x == boundaryArray[matchOffset] ? matchOffset + 1 : 0 )
+            matchOffset = (x == boundaryArray[matchOffset] ? matchOffset + 1 : 0)
             body.append(x)
             if matchOffset == boundaryArray.count {
                 #if swift(>=4.2)
-                body.removeSubrange(body.count-matchOffset ..< body.count)
+                body.removeSubrange(body.count - matchOffset..<body.count)
                 #else
-                body.removeSubrange(CountableRange<Int>(body.count-matchOffset ..< body.count))
+                body.removeSubrange(CountableRange<Int>(body.count - matchOffset..<body.count))
                 #endif
                 if body.last == Self.NL {
                     body.removeLast()

@@ -11,7 +11,7 @@ public enum CacheTime {
     case minutes(Int)
     case hours(Int)
     case days(Int)
-    
+
     var rawSeconds: Int {
         switch self {
         case .noCache:

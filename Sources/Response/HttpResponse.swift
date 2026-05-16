@@ -45,34 +45,34 @@ public enum HttpResponse {
 
     public var statusCode: Int {
         switch self {
-        case .switchProtocols         : return 101
-        case .processing(_)           : return 102
-        case .ok                      : return 200
-        case .created                 : return 201
-        case .accepted                : return 202
-        case .noContent               : return 204
-        case .movedPermanently        : return 301
-        case .found                   : return 302
-        case .notModified             : return 304
-        case .movedTemporarily        : return 307
-        case .badRequest              : return 400
-        case .unauthorized            : return 401
-        case .forbidden               : return 403
-        case .notFound                : return 404
-        case .methodNotAllowed        : return 405
-        case .notAcceptable           : return 406
-        case .conflict                : return 409
-        case .contentTooLarge         : return 413
-        case .iAmTeapot               : return 418
-        case .locked                  : return 423
-        case .tooEarly                : return 425
-        case .tooManyRequests         : return 429
-        case .internalServerError     : return 500
-        case .notImplemented          : return 501
-        case .badGateway              : return 502
-        case .serviceUnavailable      : return 503
-        case .gatewayTimeout          : return 504
-        case .raw(let code, _, _)     : return code
+        case .switchProtocols: return 101
+        case .processing(_): return 102
+        case .ok: return 200
+        case .created: return 201
+        case .accepted: return 202
+        case .noContent: return 204
+        case .movedPermanently: return 301
+        case .found: return 302
+        case .notModified: return 304
+        case .movedTemporarily: return 307
+        case .badRequest: return 400
+        case .unauthorized: return 401
+        case .forbidden: return 403
+        case .notFound: return 404
+        case .methodNotAllowed: return 405
+        case .notAcceptable: return 406
+        case .conflict: return 409
+        case .contentTooLarge: return 413
+        case .iAmTeapot: return 418
+        case .locked: return 423
+        case .tooEarly: return 425
+        case .tooManyRequests: return 429
+        case .internalServerError: return 500
+        case .notImplemented: return 501
+        case .badGateway: return 502
+        case .serviceUnavailable: return 503
+        case .gatewayTimeout: return 504
+        case .raw(let code, _, _): return code
         }
     }
 

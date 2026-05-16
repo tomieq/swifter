@@ -1,7 +1,7 @@
 //
 //  HttpParser.swift
 //  Swifter
-// 
+//
 //  Copyright (c) 2014-2016 Damian Kołakowski. All rights reserved.
 //
 
@@ -37,7 +37,7 @@ public class HttpParser {
         let urlComponents = URLComponents(string: encodedPath)
         request.path = urlComponents?.path ?? ""
         request.queryParams = HttpRequestParams(urlComponents?.queryItems?.map { ($0.name, $0.value ?? "") })
-        request.headers = HttpRequestHeaderParams(try readHeaders(socket))
+        request.headers = HttpRequestHeaderParams(try self.readHeaders(socket))
         request.headers["cookie"]?.split(";")
             .map{ $0.trimmingCharacters(in: .whitespaces) }
             .map { $0.split("=") }
@@ -46,18 +46,19 @@ public class HttpParser {
                     request.cookies.storage.append((data[0], data[1]))
                 }
             }
-        
+
         if let contentLength = request.headers["content-length"], let contentLengthValue = Int(contentLength), contentLengthValue >= 0 {
             if case .limit(let dataSize) = bodyLimit, dataSize.count < contentLengthValue {
                 let msg = "Incoming body size \(DataSize(contentLengthValue)) exceeds current server \(bodyLimit)"
                 print(msg)
                 request.body = HttpRequestBody([], status: .exceededLimit(bodySize: DataSize(contentLengthValue)))
             } else {
-                request.body = HttpRequestBody(try readBody(socket, size: contentLengthValue))
+                request.body = HttpRequestBody(try self.readBody(socket, size: contentLengthValue))
             }
         }
         return request
     }
+
     /// only escaping invalid chars，valid encodedPath keep untouched
     private func escapingInvalidURL(_ url: String) -> String {
         var urlAllowed: CharacterSet {

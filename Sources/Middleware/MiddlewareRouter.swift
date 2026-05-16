@@ -8,7 +8,6 @@ import Foundation
 
 class MiddlewareRouter {
     private class Node {
-
         /// The children nodes that form the route
         var nodes = [String: Node]()
 
@@ -23,11 +22,11 @@ class MiddlewareRouter {
 
     /// The Queue to handle the thread safe access to the routes
     private let queue = DispatchQueue(label: "swifter.httpserverio.middlewarerouter")
-    
+
     var routes: [String] {
         var routes = [String]()
-        for (_, child) in rootNode.nodes {
-            routes.append(contentsOf: routesForNode(child))
+        for (_, child) in self.rootNode.nodes {
+            routes.append(contentsOf: self.routesForNode(child))
         }
         return routes
     }
@@ -38,19 +37,19 @@ class MiddlewareRouter {
             result.append(prefix)
         }
         for (key, child) in node.nodes {
-            result.append(contentsOf: routesForNode(child, prefix: prefix + "/" + key))
+            result.append(contentsOf: self.routesForNode(child, prefix: prefix + "/" + key))
         }
         return result
     }
 
     func register(path: String, handler: HttpMiddlewareHandler?) {
         let path = "/" + path.trimmedSlashes
-        let pathSegments = stripQuery(path).split("/")
+        let pathSegments = self.stripQuery(path).split("/")
         var pathSegmentsGenerator = pathSegments.makeIterator()
-        let node = inflate(rootNode, generator: &pathSegmentsGenerator)
+        let node = self.inflate(self.rootNode, generator: &pathSegmentsGenerator)
         node.handler = handler
     }
-    
+
     private func inflate(_ node: Node, generator: inout IndexingIterator<[String]>) -> Node {
         var currentNode = node
         while let pathSegment = generator.next() {
@@ -65,25 +64,24 @@ class MiddlewareRouter {
         currentNode.isEndOfRoute = true
         return currentNode
     }
-    
+
     func layers(path: String) -> [HttpMiddlewareHandler] {
-        return queue.sync {
-            let pathSegments = stripQuery(path).split("/")
+        return self.queue.sync {
+            let pathSegments = self.stripQuery(path).split("/")
             var pathSegmentsGenerator = pathSegments.makeIterator()
-            return findHandler(&rootNode, generator: &pathSegmentsGenerator)
+            return self.findHandler(&self.rootNode, generator: &pathSegmentsGenerator)
         }
     }
 
     private func findHandler(_ node: inout Node, generator: inout IndexingIterator<[String]>) -> [HttpMiddlewareHandler] {
-
         var matchedRoutes = [Node]()
         let pattern = generator.map { $0 }
-        findHandler(node, pattern: pattern, matchedNodes: &matchedRoutes, index: 0)
+        self.findHandler(node, pattern: pattern, matchedNodes: &matchedRoutes, index: 0)
         return matchedRoutes.compactMap {
             $0.handler
         }
     }
-    
+
     private func findHandler(_ node: Node, pattern: [String], matchedNodes: inout [Node], index: Int) {
         if index < pattern.count, let pathToken = pattern[index].removingPercentEncoding {
             let currentIndex = index + 1
@@ -99,22 +97,22 @@ class MiddlewareRouter {
                     while currentIndex < pattern.count, let pathToken = pattern[currentIndex].removingPercentEncoding {
                         currentIndex += 1
                         if registeredPaths.contains(pathToken) {
-                            findHandler(greedyNode.nodes[pathToken]!, pattern: pattern, matchedNodes: &matchedNodes, index: currentIndex)
+                            self.findHandler(greedyNode.nodes[pathToken]!, pattern: pattern, matchedNodes: &matchedNodes, index: currentIndex)
                         }
                     }
                 }
             }
-            
+
             if let node = node.nodes["*"] {
-                findHandler(node, pattern: pattern, matchedNodes: &matchedNodes, index: currentIndex)
+                self.findHandler(node, pattern: pattern, matchedNodes: &matchedNodes, index: currentIndex)
             }
-            
+
             if pathToken != "*", pathToken != "**", let node = node.nodes[pathToken] {
-                findHandler(node, pattern: pattern, matchedNodes: &matchedNodes, index: currentIndex)
+                self.findHandler(node, pattern: pattern, matchedNodes: &matchedNodes, index: currentIndex)
             }
         }
 
-        if node.isEndOfRoute && index == pattern.count {
+        if node.isEndOfRoute, index == pattern.count {
             // if it's the last element and the path to match is done then it's a pattern matching
             matchedNodes.append(node)
         }
