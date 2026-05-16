@@ -11,11 +11,11 @@ public class ConnectionLifetimeGuard {
     let server: HttpServer
     let socketLifeTime: TimeInterval
     var socketActivity = ThreadSafeCache<UUID, Date>()
-    
+
     public init(server: HttpServer, socketLifeTime: TimeInterval = 10) {
         self.server = server
         self.socketLifeTime = socketLifeTime
-        server.metrics.subscribers.append( { [weak self] change in
+        server.metrics.subscribers.append({ [weak self] change in
             switch change.event {
             case .connected(let socketID), .traffic(let socketID):
                 self?.socketActivity[socketID] = Date()
@@ -25,18 +25,18 @@ public class ConnectionLifetimeGuard {
         })
         self.schedulePruning()
     }
-    
+
     func pruneStaleSockets() {
-        let staleSockets = socketActivity.all
-            .filter { $0.value < Date().addingTimeInterval(-1 * socketLifeTime) }
+        let staleSockets = self.socketActivity.all
+            .filter { $0.value < Date().addingTimeInterval(-1 * self.socketLifeTime) }
             .map { $0.key }
         for socketID in staleSockets {
             self.server.close(socketID: socketID)
         }
     }
-    
+
     func schedulePruning() {
-        DispatchQueue.global().asyncAfter(deadline: .now() + socketLifeTime) {
+        DispatchQueue.global().asyncAfter(deadline: .now() + self.socketLifeTime) {
             self.pruneStaleSockets()
             self.schedulePruning()
         }

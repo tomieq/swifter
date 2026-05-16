@@ -24,7 +24,7 @@ public func websocket(
         guard let secWebSocketKey = request.headers["sec-websocket-key"] else {
             return .badRequest(.text("Invalid value of 'Sec-Websocket-Key' header: \(request.headers["sec-websocket-key"] ?? "unknown")"))
         }
-        let protocolSessionClosure: ((Socket) -> Void) = { socket in
+        let protocolSessionClosure: ((SecureSocket) -> Void) = { socket in
             let session = WebSocketSession(socket)
             var fragmentedOpCode = WebSocketSession.OpCode.close
             var payload = [UInt8]() // Used for fragmented frames.
@@ -94,7 +94,7 @@ public func websocket(
                     }
                 case .pong:
                     if let handlePong = pong {
-                       handlePong(session, frame.payload)
+                        handlePong(session, frame.payload)
                     }
                 }
             }
@@ -110,7 +110,7 @@ public func websocket(
 
             do {
                 try read()
-            } catch let error {
+            } catch {
                 switch error {
                 case WebSocketSession.Control.close:
                     // Normal close
@@ -142,7 +142,6 @@ public func websocket(
 }
 
 public class WebSocketSession: Hashable, Equatable {
-
     public enum WsError: Error { case unknownOpCode(String), unMaskedFrame(String), protocolError(String), invalidUTF8(String) }
     public enum OpCode: UInt8 { case `continue` = 0x00, close = 0x08, ping = 0x09, pong = 0x0A, text = 0x01, binary = 0x02 }
     public enum Control: Error { case close }
@@ -156,9 +155,9 @@ public class WebSocketSession: Hashable, Equatable {
         public var payload = [UInt8]()
     }
 
-    public let socket: Socket
+    public let socket: SecureSocket
 
-    public init(_ socket: Socket) {
+    public init(_ socket: SecureSocket) {
         self.socket = socket
     }
 
@@ -181,7 +180,7 @@ public class WebSocketSession: Hashable, Equatable {
 
     public func writeFrame(_ data: ArraySlice<UInt8>, _ op: OpCode, _ fin: Bool = true) {
         let finAndOpCode = UInt8(fin ? 0x80 : 0x00) | op.rawValue
-        let maskAndLngth = encodeLengthAndMaskFlag(UInt64(data.count), false)
+        let maskAndLngth = self.encodeLengthAndMaskFlag(UInt64(data.count), false)
         do {
             try self.socket.writeUInt8([finAndOpCode])
             try self.socket.writeUInt8(maskAndLngth)
@@ -192,7 +191,7 @@ public class WebSocketSession: Hashable, Equatable {
     }
 
     public func writeCloseFrame() {
-        writeFrame(ArraySlice("".utf8), .close)
+        self.writeFrame(ArraySlice("".utf8), .close)
     }
 
     private func encodeLengthAndMaskFlag(_ len: UInt64, _ masked: Bool) -> [UInt8] {
@@ -227,8 +226,7 @@ public class WebSocketSession: Hashable, Equatable {
         frm.rsv1 = fst & 0x40
         frm.rsv2 = fst & 0x20
         frm.rsv3 = fst & 0x10
-        guard frm.rsv1 == 0 && frm.rsv2 == 0 && frm.rsv3 == 0
-            else {
+        guard frm.rsv1 == 0 && frm.rsv2 == 0 && frm.rsv3 == 0 else {
             throw WsError.protocolError("Reserved frame bit has not been negociated.")
         }
         let opc = fst & 0x0F
@@ -272,9 +270,9 @@ public class WebSocketSession: Hashable, Equatable {
             len = UInt64(littleEndian: b0 | b1 | b2 | b3 | b4 | b5 | b6 | b7)
         }
 
-        let mask = [try socket.read(), try socket.read(), try socket.read(), try socket.read()]
-        //Read payload all at once, then apply mask (calling `socket.read` byte-by-byte is super slow).
-        frm.payload = try socket.read(length: Int(len))
+        let mask = [try socket.read(), try self.socket.read(), try self.socket.read(), try self.socket.read()]
+        // Read payload all at once, then apply mask (calling `socket.read` byte-by-byte is super slow).
+        frm.payload = try self.socket.read(length: Int(len))
         for index in 0..<len {
             frm.payload[Int(index)] ^= mask[Int(index % 4)]
         }
@@ -282,10 +280,10 @@ public class WebSocketSession: Hashable, Equatable {
     }
 
     public func hash(into hasher: inout Hasher) {
-        hasher.combine(socket)
+        hasher.combine(self.socket.raw)
     }
 }
 
 public func == (webSocketSession1: WebSocketSession, webSocketSession2: WebSocketSession) -> Bool {
-    return webSocketSession1.socket == webSocketSession2.socket
+    return webSocketSession1.socket.raw == webSocketSession2.socket.raw
 }

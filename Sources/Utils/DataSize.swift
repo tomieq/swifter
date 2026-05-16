@@ -13,7 +13,7 @@ public enum DataSize {
     case MB(Double)
     case GB(Double)
     case TB(Double)
-    
+
     public init(_ bytes: Double) {
         guard bytes > 0 else {
             self = .B(0)
@@ -22,26 +22,26 @@ public enum DataSize {
         let i = floor(log(bytes) / log(Self.base))
         let value = bytes / pow(Self.base, i)
         switch i {
-        case 0:     self = .B(value)
-        case 1:     self = .KB(value)
-        case 2:     self = .MB(value)
-        case 3:     self = .GB(value)
-        default:    self = .TB(value)
+        case 0: self = .B(value)
+        case 1: self = .KB(value)
+        case 2: self = .MB(value)
+        case 3: self = .GB(value)
+        default: self = .TB(value)
         }
     }
-    
+
     public init(_ data: Data) {
         self = .init(Double(data.count))
     }
-    
+
     public init(_ number: Int) {
         self = .init(Double(number))
     }
-    
+
     public init(_ number: UInt64) {
         self = .init(Double(number))
     }
-    
+
     public var count: Int {
         switch self {
         case .B(let value):
@@ -67,7 +67,7 @@ extension DataSize: CustomStringConvertible {
         numberFormatter.numberStyle = .decimal
         numberFormatter.decimalSeparator = "."
         numberFormatter.maximumFractionDigits = 0
-        
+
         switch self {
         case .B(let value):
             return numberFormatter.string(from: value.nsNumber)! + " B"

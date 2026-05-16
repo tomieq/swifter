@@ -8,7 +8,6 @@
 import Foundation
 
 extension String {
-
     public enum FileError: Error {
         case error(Int32)
     }
@@ -23,11 +22,11 @@ extension String {
         }
 
         public func close() {
-            fclose(pointer)
+            fclose(self.pointer)
         }
 
         public func seek(_ offset: Int) -> Bool {
-            return (fseek(pointer, offset, SEEK_SET) == 0)
+            return fseek(self.pointer, offset, SEEK_SET) == 0
         }
 
         public func read(_ data: inout [UInt8]) throws -> Int {
@@ -69,26 +68,26 @@ extension String {
     public static var pathSeparator = "/"
 
     public func openNewForWriting() throws -> File {
-        return try openFileForMode(self, "wb")
+        return try self.openFileForMode(self, "wb")
     }
 
     public func openForReading() throws -> File {
-        return try openFileForMode(self, "rb")
+        return try self.openFileForMode(self, "rb")
     }
 
     public func openForWritingAndReading() throws -> File {
-        return try openFileForMode(self, "r+b")
+        return try self.openFileForMode(self, "r+b")
     }
 
     public func openFileForMode(_ path: String, _ mode: String) throws -> File {
         guard let file = path.withCString({ pathPointer in mode.withCString({ fopen(pathPointer, $0) }) }) else {
             throw FileError.error(errno)
         }
-        return File(file, size: filesize(path))
+        return File(file, size: self.filesize(path))
     }
-    
+
     private func filesize(_ path: String) -> UInt64 {
-        var attributes: [FileAttributeKey : Any]? {
+        var attributes: [FileAttributeKey: Any]? {
             try? FileManager.default.attributesOfItem(atPath: path)
         }
         return attributes?[.size] as? UInt64 ?? UInt64(0)
@@ -120,17 +119,17 @@ extension String {
         var results = [String]()
         while let ent = readdir(dir) {
             var name = ent.pointee.d_name
-            let fileName = withUnsafePointer(to: &name) { (ptr) -> String? in
+            let fileName = withUnsafePointer(to: &name) { ptr -> String? in
                 #if os(Linux)
-                  return String(validatingUTF8: ptr.withMemoryRebound(to: CChar.self, capacity: Int(ent.pointee.d_reclen), { (ptrc) -> [CChar] in
+                return String(validatingUTF8: ptr.withMemoryRebound(to: CChar.self, capacity: Int(ent.pointee.d_reclen), { ptrc -> [CChar] in
                     return [CChar](UnsafeBufferPointer(start: ptrc, count: 256))
-                  }))
+                }))
                 #else
-                    var buffer = ptr.withMemoryRebound(to: CChar.self, capacity: Int(ent.pointee.d_reclen), { (ptrc) -> [CChar] in
-                      return [CChar](UnsafeBufferPointer(start: ptrc, count: Int(ent.pointee.d_namlen)))
-                    })
-                    buffer.append(0)
-                    return String(validatingUTF8: buffer)
+                var buffer = ptr.withMemoryRebound(to: CChar.self, capacity: Int(ent.pointee.d_reclen), { ptrc -> [CChar] in
+                    return [CChar](UnsafeBufferPointer(start: ptrc, count: Int(ent.pointee.d_namlen)))
+                })
+                buffer.append(0)
+                return String(validatingUTF8: buffer)
                 #endif
             }
             if let fileName = fileName {
@@ -140,7 +139,7 @@ extension String {
         return results
     }
 
-    private func withStat<T>(_ closure: ((stat?) throws -> T)) throws -> T {
+    private func withStat<T>(_ closure: (stat?) throws -> T) throws -> T {
         return try self.withCString({
             var statBuffer = stat()
             if stat($0, &statBuffer) == 0 {

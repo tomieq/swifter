@@ -10,7 +10,7 @@ import Foundation
 public struct HttpInstantResponse: Error {
     let response: HttpResponse
     let headers: HttpResponseHeaders
-    
+
     public init(response: HttpResponse, headers: HttpResponseHeaders? = nil) {
         self.response = response
         self.headers = headers ?? HttpResponseHeaders()

@@ -7,7 +7,6 @@
 import Foundation
 
 public enum HttpResponseBody {
-    
     case json(Encodable)
     case jsonString(CustomStringConvertible)
     case html(CustomStringConvertible)
@@ -16,7 +15,7 @@ public enum HttpResponseBody {
     case css(CustomStringConvertible)
     case xml(CustomStringConvertible)
     case data(Data, contentType: String? = nil)
-    
+
     var raw: HttpResponseBodyRaw {
         switch self {
         case .json(let object):
@@ -25,7 +24,7 @@ public enum HttpResponseBody {
                 try $0.write(data)
             })
         case .text(let body), .jsonString(let body), .html(let body),
-                .js(let body), .css(let body), .xml(let body):
+             .js(let body), .css(let body), .xml(let body):
             let data = [UInt8](body.description.utf8)
             return HttpResponseBodyRaw(.fixedSize(data.count), {
                 try $0.write(data)
@@ -36,7 +35,7 @@ public enum HttpResponseBody {
             })
         }
     }
-    
+
     func addHeader(to headers: HttpResponseHeaders) {
         switch self {
         case .json, .jsonString:

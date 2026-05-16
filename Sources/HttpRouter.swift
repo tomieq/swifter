@@ -12,11 +12,9 @@ public typealias HttpMiddlewareHandler = (HttpRequest, HttpResponseHeaders) thro
 public typealias HttpGlobalErrorHandler = (Error, HttpRequest, HttpResponseHeaders) -> HttpResponse
 
 open class HttpRouter {
-
     public init() {}
 
     private class Node {
-
         /// The children nodes that form the route
         var nodes = [String: Node]()
 
@@ -34,8 +32,8 @@ open class HttpRouter {
 
     public func routes() -> [String] {
         var routes = [String]()
-        for (_, child) in rootNode.nodes {
-            routes.append(contentsOf: routesForNode(child))
+        for (_, child) in self.rootNode.nodes {
+            routes.append(contentsOf: self.routesForNode(child))
         }
         return routes
     }
@@ -46,28 +44,27 @@ open class HttpRouter {
             result.append(prefix)
         }
         for (key, child) in node.nodes {
-            result.append(contentsOf: routesForNode(child, prefix: prefix + "/" + key))
+            result.append(contentsOf: self.routesForNode(child, prefix: prefix + "/" + key))
         }
         return result
     }
 
     public func register(_ method: HttpMethod?, path: String, handler: HttpRequestHandler?) {
         let path = path.first == "/" ? path : "/" + path
-        var pathSegments = stripQuery(path).split("/")
+        var pathSegments = self.stripQuery(path).split("/")
         if let method = method {
             pathSegments.insert(method.rawValue, at: 0)
         } else {
             pathSegments.insert("*", at: 0)
         }
         var pathSegmentsGenerator = pathSegments.makeIterator()
-        inflate(&rootNode, generator: &pathSegmentsGenerator).handler = handler
+        self.inflate(&self.rootNode, generator: &pathSegmentsGenerator).handler = handler
     }
 
     public func route(_ method: HttpMethod?, path: String) -> ([String: String], HttpRequestHandler)? {
-
-        return queue.sync {
+        return self.queue.sync {
             if let method = method {
-                let pathSegments = (method.rawValue + "/" + stripQuery(path)).split("/")
+                let pathSegments = (method.rawValue + "/" + self.stripQuery(path)).split("/")
                 var pathSegmentsGenerator = pathSegments.makeIterator()
                 var params = [String: String]()
                 if let handler = findHandler(rootNode, params: &params, generator: &pathSegmentsGenerator) {
@@ -75,7 +72,7 @@ open class HttpRouter {
                 }
             }
 
-            let pathSegments = ("*/" + stripQuery(path)).split("/")
+            let pathSegments = ("*/" + self.stripQuery(path)).split("/")
             var pathSegmentsGenerator = pathSegments.makeIterator()
             var params = [String: String]()
             if let handler = findHandler(rootNode, params: &params, generator: &pathSegmentsGenerator) {
@@ -87,7 +84,6 @@ open class HttpRouter {
     }
 
     private func inflate(_ node: inout Node, generator: inout IndexingIterator<[String]>) -> Node {
-
         var currentNode = node
 
         while let pathSegment = generator.next() {
@@ -104,11 +100,10 @@ open class HttpRouter {
     }
 
     private func findHandler(_ node: Node, params: inout [String: String], generator: inout IndexingIterator<[String]>) -> (HttpRequestHandler)? {
-
         var matchedRoutes = [Node]()
         let pattern = generator.map { $0 }
 
-        findHandler(node, params: &params, pattern: pattern, matchedNodes: &matchedRoutes, index: 0)
+        self.findHandler(node, params: &params, pattern: pattern, matchedNodes: &matchedRoutes, index: 0)
         return matchedRoutes.first?.handler
     }
 
@@ -123,13 +118,11 @@ open class HttpRouter {
     ///   - index: The index of current position in the generator
     ///   - count: The number of elements if the route to match
     private func findHandler(_ node: Node, params: inout [String: String], pattern: [String], matchedNodes: inout [Node], index: Int) {
-
         if index < pattern.count, let pathToken = pattern[index].removingPercentEncoding {
-
             var currentIndex = index + 1
             let variableNodes = node.nodes.filter { $0.0.first == ":" }
             if let variableNode = variableNodes.first {
-                if currentIndex == pattern.count && variableNode.1.isEndOfRoute {
+                if currentIndex == pattern.count, variableNode.1.isEndOfRoute {
                     // if it's the last element of the pattern and it's a variable, stop the search and
                     // append a tail as a value for the variable.
                     let tail = pattern[currentIndex..<pattern.count].joined(separator: "/")
@@ -143,15 +136,15 @@ open class HttpRouter {
                     return
                 }
                 params[variableNode.0.trimmedSemicolon] = pathToken
-                findHandler(node.nodes[variableNode.0]!, params: &params, pattern: pattern, matchedNodes: &matchedNodes, index: currentIndex)
+                self.findHandler(node.nodes[variableNode.0]!, params: &params, pattern: pattern, matchedNodes: &matchedNodes, index: currentIndex)
             }
 
             if let node = node.nodes[pathToken] {
-                findHandler(node, params: &params, pattern: pattern, matchedNodes: &matchedNodes, index: currentIndex)
+                self.findHandler(node, params: &params, pattern: pattern, matchedNodes: &matchedNodes, index: currentIndex)
             }
 
             if let node = node.nodes["*"] {
-                findHandler(node, params: &params, pattern: pattern, matchedNodes: &matchedNodes, index: currentIndex)
+                self.findHandler(node, params: &params, pattern: pattern, matchedNodes: &matchedNodes, index: currentIndex)
             }
 
             if let startStarNode = node.nodes["**"] {
@@ -164,13 +157,13 @@ open class HttpRouter {
                 while currentIndex < pattern.count, let pathToken = pattern[currentIndex].removingPercentEncoding {
                     currentIndex += 1
                     if startStarNodeKeys.contains(pathToken) {
-                        findHandler(startStarNode.nodes[pathToken]!, params: &params, pattern: pattern, matchedNodes: &matchedNodes, index: currentIndex)
+                        self.findHandler(startStarNode.nodes[pathToken]!, params: &params, pattern: pattern, matchedNodes: &matchedNodes, index: currentIndex)
                     }
                 }
             }
         }
 
-        if node.isEndOfRoute && index == pattern.count {
+        if node.isEndOfRoute, index == pattern.count {
             // if it's the last element and the path to match is done then it's a pattern matching
             matchedNodes.append(node)
             return
@@ -186,7 +179,6 @@ open class HttpRouter {
 }
 
 extension String {
-
     func split(_ separator: Character) -> [String] {
         return self.split { $0 == separator }.map(String.init)
     }
@@ -194,7 +186,7 @@ extension String {
     var trimmedSemicolon: String {
         self.trimmingCharacters(in: CharacterSet(arrayLiteral: ":"))
     }
-    
+
     var trimmedSlashes: String {
         self.trimmingCharacters(in: CharacterSet(arrayLiteral: "/"))
     }

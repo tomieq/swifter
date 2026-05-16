@@ -12,12 +12,12 @@ public class DigestAuthentication {
     let realm: String
     // credentials provider returns password for user
     let credentialsProvider: (String) -> String?
-    
+
     public init(realm: String, credentialsProvider: @escaping (String) -> String?) {
         self.realm = realm
         self.credentialsProvider = credentialsProvider
     }
-    
+
     private func generateChallenge(_ request: HttpRequest) -> HttpInstantResponse {
         let responseHeaders = HttpResponseHeaders()
         let challenge = [
@@ -32,9 +32,7 @@ public class DigestAuthentication {
     }
 
     public func authorizedUser(_ request: HttpRequest) throws -> String {
-        
         if let authorization = request.headers[.authorization], authorization.starts(with: "Digest") {
-
             var values: [String: String] = [:]
             authorization.split(",").forEach { line in
                 guard let equalSignIndex = line.firstIndex(of: "=") else { return }
@@ -42,7 +40,7 @@ public class DigestAuthentication {
                 let value = String(line.suffix(from: equalSignIndex).dropFirst()).trimming("\"")
                 values[key] = value
             }
-            guard values["realm"] == realm else {
+            guard values["realm"] == self.realm else {
                 throw HttpInstantResponse(response: .unauthorized(.text("realm mismatch")))
             }
             guard let uri = values["uri"], uri.starts(with: request.path) else {
@@ -51,12 +49,12 @@ public class DigestAuthentication {
             guard let username = values["Digest username"] else {
                 throw HttpInstantResponse(response: .unauthorized(.text("no username")))
             }
-            guard let serverNonce = values["nonce"], let clientNonce = values["cnonce"], 
-                    let counter = values["nc"], let qualityOfProtection = values["qop"] else {
+            guard let serverNonce = values["nonce"], let clientNonce = values["cnonce"],
+                  let counter = values["nc"], let qualityOfProtection = values["qop"] else {
                 throw HttpInstantResponse(response: .unauthorized(.text("missing authorization values")))
             }
             guard let password = credentialsProvider(username) else {
-                throw generateChallenge(request)
+                throw self.generateChallenge(request)
             }
             let ha1 = "\(username):\(realm):\(password)".utf8.md5
             let ha2 = "\(request.method.rawValue):\(uri)".utf8.md5
@@ -65,6 +63,6 @@ public class DigestAuthentication {
                 return username
             }
         }
-        throw generateChallenge(request)
+        throw self.generateChallenge(request)
     }
 }

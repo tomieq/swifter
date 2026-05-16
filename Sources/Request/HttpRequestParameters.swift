@@ -13,20 +13,20 @@ public enum HttpRequestParamsError: Error {
 
 public class HttpRequestParams {
     var storage: [(String, String)] = []
-    
+
     public var list: [(String, String)] {
         self.storage
     }
-    
-    public var dict: [String:String] {
-        var result = [String:String]()
+
+    public var dict: [String: String] {
+        var result = [String: String]()
         for (key, value) in self.storage {
             result[key] = value
         }
         return result
     }
-    
-    init(_ params: [String : String]?) {
+
+    init(_ params: [String: String]?) {
         guard let params = params else { return }
         self.storage = params.map{ ($0.key, $0.value) }
     }

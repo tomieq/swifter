@@ -114,13 +114,12 @@ struct MimeType {
         "wmv": "video/x-ms-wmv",
         "avi": "video/x-msvideo"
     ]
-    
 }
 
 extension String {
     public var mimeType: String {
         guard let fileExtension = self.components(separatedBy: CharacterSet(charactersIn: "."))
-                                  .last?.lowercased() else {
+            .last?.lowercased() else {
             return MimeType.defaultMimeType
         }
         return MimeType.mimeTypes[fileExtension] ?? MimeType.defaultMimeType

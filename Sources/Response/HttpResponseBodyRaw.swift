@@ -22,13 +22,9 @@ public protocol HttpResponseBodyWriter {
 struct HttpResponseBodyRaw {
     let length: HttpResponseBodySize
     let write: ((HttpResponseBodyWriter) throws -> Void)?
-    
+
     init(_ length: HttpResponseBodySize, _ write: ((HttpResponseBodyWriter) throws -> Void)?) {
         self.length = length
         self.write = write
     }
 }
-
-
-
-

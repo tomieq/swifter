@@ -9,16 +9,16 @@ import Foundation
 import Dispatch
 
 public protocol HttpServerIODelegate: AnyObject {
-    func socketConnectionReceived(_ socket: Socket)
+    func socketConnectionReceived(_ socket: SecureSocket)
 }
 
 open class HttpServerIO {
-
     public weak var delegate: HttpServerIODelegate?
     public var name = "Swifter"
     public var globalHeaders = HttpResponseHeaders()
     public var requestBodyLimit: RequestBodyLimit = .unlimited
     public let metrics = ConnectionMetrics()
+    public var secureSocketFactory: ((Socket) -> SecureSocket?) = { DefaultSecureSocket($0) }
     let instantRequestHandler = HttpInstantResponseHandler()
     public var globalErrorHandler: HttpGlobalErrorHandler? {
         set {
@@ -41,11 +41,11 @@ open class HttpServerIO {
 
     public private(set) var state: HttpServerIOState {
         get {
-            return HttpServerIOState(rawValue: stateValue)!
+            return HttpServerIOState(rawValue: self.stateValue)!
         }
         set(state) {
             #if !os(Linux)
-            OSAtomicCompareAndSwapInt(self.state.rawValue, state.rawValue, &stateValue)
+            OSAtomicCompareAndSwapInt(self.state.rawValue, state.rawValue, &self.stateValue)
             #else
             self.stateValue = state.rawValue
             #endif
@@ -68,16 +68,16 @@ open class HttpServerIO {
 
     public var port: Int {
         get throws {
-            return Int(try socket.port)
+            return Int(try self.socket.port)
         }
     }
 
     public func isIPv4() throws -> Bool {
-        return try socket.isIPv4()
+        return try self.socket.isIPv4()
     }
-    
+
     public func close(socketID: UUID) {
-        sockets.first { $0.id == socketID }?.close()
+        self.sockets.first { $0.id == socketID }?.close()
     }
 
     deinit {
@@ -87,9 +87,9 @@ open class HttpServerIO {
     @available(macOS 10.10, *)
     public func start(_ port: in_port_t = 8080, forceIPv4: Bool = false, priority: DispatchQoS.QoSClass = DispatchQoS.QoSClass.background) throws {
         guard !self.operating else { return }
-        stop()
+        self.stop()
         self.state = .starting
-        let address = forceIPv4 ? listenAddressIPv4 : listenAddressIPv6
+        let address = forceIPv4 ? self.listenAddressIPv4 : self.listenAddressIPv6
         self.socket = try Socket.tcpSocketForListen(port, forceIPv4, SOMAXCONN, address)
         self.state = .running
         DispatchQueue.global(qos: priority).async { [weak self] in
@@ -124,7 +124,7 @@ open class HttpServerIO {
             }
             self.sockets.removeAll(keepingCapacity: true)
         }
-        socket.close()
+        self.socket.close()
         self.state = .stopped
     }
 
@@ -133,9 +133,15 @@ open class HttpServerIO {
     }
 
     private func handleConnection(_ socket: Socket) {
+        guard let tlsSocket = secureSocketFactory(socket) else {
+            print("Closing connection. SecureSocket in nil")
+            socket.close()
+            return
+        }
+
         let parser = HttpParser(bodyLimit: requestBodyLimit)
-        while self.operating, let request = try? parser.readHttpRequest(socket) {
-            metrics.notify(.traffic(socketID: socket.id))
+        while self.operating, let request = try? parser.readHttpRequest(tlsSocket) {
+            self.metrics.notify(.traffic(socketID: socket.id))
             let request = request
             let responseHeaders = HttpResponseHeaders()
             let (params, handler) = self.dispatch(request, responseHeaders)
@@ -145,7 +151,7 @@ open class HttpServerIO {
             var keepConnection = false
             do {
                 if self.operating {
-                    keepConnection = try self.respond(socket, 
+                    keepConnection = try self.respond(tlsSocket,
                                                       request: request,
                                                       response: response,
                                                       customHeaders: responseHeaders)
@@ -155,42 +161,41 @@ open class HttpServerIO {
                 break
             }
             if let session = response.socketSession() {
-                delegate?.socketConnectionReceived(socket)
-                metrics.notify(.webSocketSessionStarted(socketID: socket.id))
-                session(socket)
+                self.delegate?.socketConnectionReceived(tlsSocket)
+                self.metrics.notify(.webSocketSessionStarted(socketID: socket.id))
+                session(tlsSocket)
                 break
             }
             if !keepConnection { break }
         }
-        socket.close()
+        tlsSocket.close()
     }
 
     private struct InnerWriteContext: HttpResponseBodyWriter {
-
-        let socket: Socket
+        let socket: SecureSocket
 
         func write(_ file: String.File) throws {
-            try socket.writeFile(file)
+            try self.socket.writeFile(file)
         }
 
         func write(_ data: [UInt8]) throws {
-            try write(ArraySlice(data))
+            try self.write(ArraySlice(data))
         }
 
         func write(_ data: ArraySlice<UInt8>) throws {
-            try socket.writeUInt8(data)
+            try self.socket.writeUInt8(data)
         }
 
         func write(_ data: NSData) throws {
-            try socket.writeData(data)
+            try self.socket.writeData(data)
         }
 
         func write(_ data: Data) throws {
-            try socket.writeData(data)
+            try self.socket.writeData(data)
         }
     }
 
-    private func respond(_ socket: Socket,
+    private func respond(_ socket: SecureSocket,
                          request: HttpRequest,
                          response: HttpResponse,
                          customHeaders: HttpResponseHeaders) throws -> Bool {
@@ -208,8 +213,8 @@ open class HttpServerIO {
         if case .fixedSize(let length) = packet.rawBody?.length {
             responseHeader.append("Content-Length: \(length)\r\n")
         }
-        
-        let keepAlive = shouldKeepConnectionAlive(request: request, packet: packet)
+
+        let keepAlive = self.shouldKeepConnectionAlive(request: request, packet: packet)
         if keepAlive {
             responseHeader.append("Connection: keep-alive\r\n")
         } else {
@@ -237,9 +242,9 @@ open class HttpServerIO {
         }
         responseHeader.append("\r\n")
 
-        socket.transferCounter.startCounting()
+        socket.raw.transferCounter.startCounting()
         defer {
-            request.partialSummary.responseSize = socket.transferCounter.transfer
+            request.partialSummary.responseSize = socket.raw.transferCounter.transfer
         }
         try socket.writeUTF8(responseHeader)
 
@@ -249,7 +254,7 @@ open class HttpServerIO {
         }
         return keepAlive
     }
-    
+
     private func shouldKeepConnectionAlive(request: HttpRequest, packet: HttpResponsePacket) -> Bool {
         guard request.clientSupportsKeepAlive else {
             return false

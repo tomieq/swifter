@@ -13,7 +13,7 @@ class SwifterTestsHttpParser: XCTestCase {
     /// A specialized Socket which creates a linked socket pair with a pipe, and
     /// immediately writes in fixed data. This enables tests to static fixture
     /// data into the regular Socket flow.
-    class TestSocket: Socket {
+    class TestSocket: DefaultSecureSocket {
         init(_ content: String) {
             /// Create an array to hold the read and write sockets that pipe creates
             var fds = [Int32](repeating: 0, count: 2)
@@ -46,7 +46,7 @@ class SwifterTestsHttpParser: XCTestCase {
             Darwin.close(fdWrite) // the super instance will close fdRead in deinit!
             #endif
 
-            super.init(socketFileDescriptor: fdRead)
+            super.init(Socket(socketFileDescriptor: fdRead))
         }
     }
 

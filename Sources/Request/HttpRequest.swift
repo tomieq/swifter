@@ -17,7 +17,6 @@ public enum ConnectionStrategy {
 }
 
 public class HttpRequest {
-
     public let id = UUID()
     public let socketID: UUID
     public var method: HttpMethod = .unknown
@@ -27,9 +26,11 @@ public class HttpRequest {
     public lazy var formData: HttpRequestParams = {
         HttpRequestParams(self.parseUrlencodedForm())
     }()
+
     public lazy var multiPart: [HttpMultiPart] = {
         HttpMultiPartParser.parseMultiPartFormData(self)
     }()
+
     public var headers = HttpRequestHeaderParams([:])
     public var cookies = HttpRequestParams([:])
     public var body = HttpRequestBody([])
@@ -43,6 +44,7 @@ public class HttpRequest {
     public init(socketID: UUID) {
         self.socketID = socketID
     }
+
     deinit {
         let nanoTime = DispatchTime.now().uptimeNanoseconds - creationTime.uptimeNanoseconds
         let elapsedTimeInSeconds = Double(nanoTime) / 1_000_000_000
@@ -53,7 +55,7 @@ public class HttpRequest {
                                          durationInSeconds: elapsedTimeInSeconds)
         self.onFinishedClosures.forEach { $0(summary) }
     }
-    
+
     public func onFinished(_ closure: @escaping (HttpRequestSummary) -> Void) {
         self.onFinishedClosures.append(closure)
     }
@@ -89,7 +91,7 @@ public class HttpRequest {
 
     public var clientSupportsKeepAlive: Bool {
         if let value = self.headers[.connection] {
-            return "keep-alive" == value.trimmingCharacters(in: .whitespaces).lowercased()
+            return value.trimmingCharacters(in: .whitespaces).lowercased() == "keep-alive"
         }
         return false
     }

@@ -8,14 +8,13 @@
 import Foundation
 
 public struct BasicKey: CodingKey {
-
     public init(_ string: String) {
-        stringValue = string
+        self.stringValue = string
     }
 
     public init(_ int: Int) {
-        intValue = int
-        stringValue = int.description
+        self.intValue = int
+        self.stringValue = int.description
     }
 
     public init?(stringValue: String) {
@@ -24,7 +23,7 @@ public struct BasicKey: CodingKey {
 
     public init?(intValue: Int) {
         self.intValue = intValue
-        stringValue = intValue.description
+        self.stringValue = intValue.description
     }
 
     public var stringValue: String
