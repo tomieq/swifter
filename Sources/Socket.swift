@@ -206,7 +206,7 @@ open class Socket: Hashable, Equatable {
         return characters
     }
     
-    lazy var peerIP: String? = {
+    public lazy var peerIP: String? = {
         var addr = sockaddr_storage()
         var addrLen = socklen_t(MemoryLayout<sockaddr_storage>.size)
         
