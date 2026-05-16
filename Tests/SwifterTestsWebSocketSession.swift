@@ -19,10 +19,6 @@ class SwifterTestsWebSocketSession: XCTestCase {
             self.content.append(contentsOf: content)
         }
         
-        required init(_ socket: Socket) {
-            fatalError("init(_:) has not been implemented")
-        }
-        
         override func read() throws -> UInt8 {
             if offset < content.count {
                 let value = self.content[offset]

@@ -19,7 +19,7 @@ open class HttpServerIO {
     public var globalHeaders = HttpResponseHeaders()
     public var requestBodyLimit: RequestBodyLimit = .unlimited
     public let metrics = ConnectionMetrics()
-    public var secureSocketType: SecureSocket.Type = DefaultSecureSocket.self
+    public var secureSocketFactory: ((Socket) throws -> SecureSocket) = { DefaultSecureSocket($0) }
     let instantRequestHandler = HttpInstantResponseHandler()
     public var globalErrorHandler: HttpGlobalErrorHandler? {
         set {
@@ -134,8 +134,17 @@ open class HttpServerIO {
     }
 
     private func handleConnection(_ socket: Socket) {
+        
+        let tlsSocket: SecureSocket
+        do {
+            tlsSocket = try secureSocketFactory(socket)
+        } catch {
+            print("Closing connection. SecureSocket threw error: \(error)")
+            socket.close()
+            return
+        }
+        
         let parser = HttpParser(bodyLimit: requestBodyLimit)
-        let tlsSocket = secureSocketType.init(socket)
         while self.operating, let request = try? parser.readHttpRequest(tlsSocket) {
             metrics.notify(.traffic(socketID: socket.id))
             let request = request

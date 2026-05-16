@@ -48,10 +48,6 @@ class SwifterTestsHttpParser: XCTestCase {
 
             super.init(Socket(socketFileDescriptor: fdRead))
         }
-        
-        required init(_ socket: Socket) {
-            fatalError("init(_:) has not been implemented")
-        }
     }
 
     // swiftlint:disable function_body_length

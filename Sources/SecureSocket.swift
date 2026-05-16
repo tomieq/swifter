@@ -7,7 +7,6 @@
 import Foundation
 
 public protocol SecureSocket {
-    init(_ socket: Socket)
     var id: UUID { get }
     var raw: Socket { get }
     func readLine() throws -> String
@@ -32,7 +31,7 @@ class DefaultSecureSocket: SecureSocket {
         socket
     }
 
-    required init(_ socket: Socket) {
+    init(_ socket: Socket) {
         self.socket = socket
     }
     
