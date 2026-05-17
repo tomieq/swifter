@@ -13,6 +13,8 @@ enum HttpParserError: Error, Equatable {
     case unsupportedTransferEncoding
     case uriTooLong
     case headersTooLarge
+    case invalidChunkSize(String)
+    case bodyTooLarge(Int)
 }
 
 public enum RequestBodyLimit {
@@ -48,15 +50,7 @@ public class HttpParser {
         request.path = urlComponents?.path ?? ""
         request.queryParams = HttpRequestParams(urlComponents?.queryItems?.map { ($0.name, $0.value ?? "") })
         request.headers = HttpRequestHeaderParams(try self.readHeaders(socket))
-        // Reject requests that use chunked transfer-encoding — Swifter does not
-        // implement chunked body parsing. Explicitly failing here lets the
-        // server surface a clear 501 response instead of silently closing the
-        // connection later.
-        if let transferEncoding = request.headers["transfer-encoding"],
-           transferEncoding.lowercased().contains("chunked") {
-            throw HttpParserError.unsupportedTransferEncoding
-        }
-        request.headers["cookie"]?.split(";")
+        request.headers[.cookie]?.split(";")
             .map{ $0.trimmingCharacters(in: .whitespaces) }
             .map { $0.split("=") }
             .forEach { data in
@@ -65,7 +59,17 @@ public class HttpParser {
                 }
             }
 
-        if let contentLength = request.headers["content-length"], let contentLengthValue = Int(contentLength), contentLengthValue >= 0 {
+        if let transferEncoding = request.headers[.transferEncoding] {
+            guard self.usesChunkedTransferEncoding(transferEncoding) else {
+                throw HttpParserError.unsupportedTransferEncoding
+            }
+            do {
+                let bodyBytes = try self.readChunkedBody(socket)
+                request.body = HttpRequestBody(bodyBytes)
+            } catch HttpParserError.bodyTooLarge(let total) {
+                request.body = HttpRequestBody([], status: .exceededLimit(bodySize: DataSize(total)))
+            }
+        } else if let contentLength = request.headers[.contentLength], let contentLengthValue = Int(contentLength), contentLengthValue >= 0 {
             if case .limit(let dataSize) = bodyLimit, dataSize.count < contentLengthValue {
                 let msg = "Incoming body size \(DataSize(contentLengthValue)) exceeds current server \(bodyLimit)"
                 print(msg)
@@ -75,6 +79,57 @@ public class HttpParser {
             }
         }
         return request
+    }
+
+    private func usesChunkedTransferEncoding(_ transferEncoding: String) -> Bool {
+        let tokens = transferEncoding
+            .split(separator: ",")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
+
+        return tokens.count == 1 && tokens.first == "chunked"
+    }
+
+    /// Read a chunked transfer-encoding body from the socket.
+    /// Implements RFC 7230 §4.1 chunked encoding: each chunk begins with
+    /// a hex length, optional extensions, CRLF, data, CRLF. A zero-length
+    /// chunk signals the end, optionally followed by trailer headers and
+    /// a final CRLF.
+    private func readChunkedBody(_ socket: SecureSocket) throws -> [UInt8] {
+        var result = [UInt8]()
+        while true {
+            let sizeLine: String
+            do {
+                sizeLine = try socket.readLine().trimmingCharacters(in: .whitespaces)
+            } catch SocketError.lineTooLong {
+                throw HttpParserError.headersTooLarge
+            }
+            let hexPart = sizeLine.split(separator: ";", maxSplits: 1, omittingEmptySubsequences: true).first.map(String.init) ?? ""
+            guard let chunkSize = Int(hexPart, radix: 16) else {
+                throw HttpParserError.invalidChunkSize(sizeLine)
+            }
+            if chunkSize == 0 {
+                _ = try self.readHeaders(socket)
+                break
+            }
+
+            try self.checkBodyLimit(currentSize: result.count, nextChunkSize: chunkSize)
+            let chunk = try socket.read(length: chunkSize)
+            result.append(contentsOf: chunk)
+
+            let cr = try socket.read()
+            let nl = try socket.read()
+            if cr != 13 || nl != 10 {
+                throw HttpParserError.invalidChunkSize(sizeLine)
+            }
+        }
+        return result
+    }
+
+    private func checkBodyLimit(currentSize: Int, nextChunkSize: Int) throws {
+        guard case .limit(let dataSize) = bodyLimit else { return }
+        if nextChunkSize > dataSize.count - currentSize {
+            throw HttpParserError.bodyTooLarge(currentSize + nextChunkSize)
+        }
     }
 
     /// only escaping invalid chars，valid encodedPath keep untouched

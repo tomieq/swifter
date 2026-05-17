@@ -7,7 +7,7 @@
 
 enum HttpMultiPartParser {
     static func parseMultiPartFormData(_ request: HttpRequest) -> [HttpMultiPart] {
-        guard let contentTypeHeader = request.headers["content-type"] else {
+        guard let contentTypeHeader = request.headers[.contentType] else {
             return []
         }
         let contentTypeHeaderTokens = contentTypeHeader.components(separatedBy: ";").map { $0.trimmingCharacters(in: .whitespaces) }

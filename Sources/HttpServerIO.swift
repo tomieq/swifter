@@ -163,9 +163,6 @@ open class HttpServerIO: @unchecked Sendable {
             var request: HttpRequest
             do {
                 request = try parser.readHttpRequest(tlsSocket)
-            } catch HttpParserError.unsupportedTransferEncoding {
-                self.sendErrorAndClose(tlsSocket, .notImplemented())
-                break
             } catch HttpParserError.uriTooLong {
                 self.sendErrorAndClose(tlsSocket, .uriTooLong())
                 break
@@ -173,6 +170,9 @@ open class HttpServerIO: @unchecked Sendable {
                 self.sendErrorAndClose(tlsSocket, .requestHeaderFieldsTooLarge())
                 break
             } catch HttpParserError.negativeContentLength {
+                self.sendErrorAndClose(tlsSocket, .badRequest())
+                break
+            } catch HttpParserError.invalidChunkSize, HttpParserError.unsupportedTransferEncoding {
                 self.sendErrorAndClose(tlsSocket, .badRequest())
                 break
             } catch {

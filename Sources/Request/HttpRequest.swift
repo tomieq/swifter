@@ -69,8 +69,12 @@ public class HttpRequest {
         return headerValue.components(separatedBy: ",").filter({ $0.trimmingCharacters(in: .whitespaces).lowercased() == token }).count > 0
     }
 
+    public func hasTokenForHeader(_ header: HttpHeader, token: String) -> Bool {
+        return self.hasTokenForHeader(header.rawValue, token: token)
+    }
+
     func parseUrlencodedForm() -> [(String, String)] {
-        guard let contentTypeHeader = headers["content-type"] else {
+        guard let contentTypeHeader = headers[.contentType] else {
             return []
         }
         let contentTypeHeaderTokens = contentTypeHeader.components(separatedBy: ";").map { $0.trimmingCharacters(in: .whitespaces) }

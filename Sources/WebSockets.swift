@@ -15,14 +15,14 @@ public func websocket(
     connected: ((WebSocketSession) -> Void)? = nil,
     disconnected: ((WebSocketSession) -> Void)? = nil) -> HttpRequestHandler {
     return { request, _ in
-        guard request.hasTokenForHeader("upgrade", token: "websocket") else {
-            return .badRequest(.text("Invalid value of 'Upgrade' header: \(request.headers["upgrade"] ?? "unknown")"))
+        guard request.hasTokenForHeader(.upgrade, token: "websocket") else {
+            return .badRequest(.text("Invalid value of 'Upgrade' header: \(request.headers[.upgrade] ?? "unknown")"))
         }
-        guard request.hasTokenForHeader("connection", token: "upgrade") else {
-            return .badRequest(.text("Invalid value of 'Connection' header: \(request.headers["connection"] ?? "unknown")"))
+        guard request.hasTokenForHeader(.connection, token: "upgrade") else {
+            return .badRequest(.text("Invalid value of 'Connection' header: \(request.headers[.connection] ?? "unknown")"))
         }
-        guard let secWebSocketKey = request.headers["sec-websocket-key"] else {
-            return .badRequest(.text("Invalid value of 'Sec-Websocket-Key' header: \(request.headers["sec-websocket-key"] ?? "unknown")"))
+        guard let secWebSocketKey = request.headers[.secWebSocketKey] else {
+            return .badRequest(.text("Invalid value of 'Sec-Websocket-Key' header: \(request.headers[.secWebSocketKey] ?? "unknown")"))
         }
         let protocolSessionClosure: ((SecureSocket) -> Void) = { socket in
             let configuredMax: DataSize = request.serverMaxWebSocketFrameSize ?? WebSocketSession.defaultMaxFrameSize
