@@ -10,7 +10,15 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Run Unit Tests
-        run: swift test
+        run: |
+          set -e
+          swift build --build-tests
+          testbin=$(find .build -name "SwifterPackageTests.xctest" -type f | head -n 1)
+          "$testbin" -l | awk '/^SwifterTests[.]/ { print $1 }' > /tmp/swifter-tests.txt
+          while IFS= read -r testName; do
+            echo "Running $testName"
+            timeout 60s "$testbin" "$testName"
+          done < /tmp/swifter-tests.txt
   Test-Linux-Swift-60:
     runs-on: ubuntu-latest
     container:
@@ -19,7 +27,15 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Run Unit Tests
-        run: swift test
+        run: |
+          set -e
+          swift build --build-tests
+          testbin=$(find .build -name "SwifterPackageTests.xctest" -type f | head -n 1)
+          "$testbin" -l | awk '/^SwifterTests[.]/ { print $1 }' > /tmp/swifter-tests.txt
+          while IFS= read -r testName; do
+            echo "Running $testName"
+            timeout 60s "$testbin" "$testName"
+          done < /tmp/swifter-tests.txt
   Test-Linux-Swift-61:
     runs-on: ubuntu-latest
     container:
@@ -28,7 +44,15 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Run Unit Tests
-        run: swift test
+        run: |
+          set -e
+          swift build --build-tests
+          testbin=$(find .build -name "SwifterPackageTests.xctest" -type f | head -n 1)
+          "$testbin" -l | awk '/^SwifterTests[.]/ { print $1 }' > /tmp/swifter-tests.txt
+          while IFS= read -r testName; do
+            echo "Running $testName"
+            timeout 60s "$testbin" "$testName"
+          done < /tmp/swifter-tests.txt
   Test-Linux-Swift-62:
     runs-on: ubuntu-latest
     container:
@@ -37,4 +61,12 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Run Unit Tests
-        run: swift test
+        run: |
+          set -e
+          swift build --build-tests
+          testbin=$(find .build -name "SwifterPackageTests.xctest" -type f | head -n 1)
+          "$testbin" -l | awk '/^SwifterTests[.]/ { print $1 }' > /tmp/swifter-tests.txt
+          while IFS= read -r testName; do
+            echo "Running $testName"
+            timeout 60s "$testbin" "$testName"
+          done < /tmp/swifter-tests.txt

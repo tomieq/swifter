@@ -7,6 +7,7 @@
 //
 
 import XCTest
+import Foundation
 import Dispatch
 @testable import Swifter
 
@@ -273,18 +274,42 @@ class SwifterTestsHttpRouter: XCTestCase {
 
     private func invoke(_ handler: HttpRequestHandler?, _ request: HttpRequest, _ headers: HttpResponseHeaders) throws {
         let semaphore = DispatchSemaphore(value: 0)
-        var result: Result<HttpResponse?, Error>?
-        Task {
+        let resultStore = InvocationResultStore()
+        let operation = {
             do {
-                result = .success(try await handler?(request, headers))
+                resultStore.store(.success(try await handler?(request, headers)))
             } catch {
-                result = .failure(error)
+                resultStore.store(.failure(error))
             }
             semaphore.signal()
         }
+        #if compiler(>=6.0)
+        Task.detached(operation: operation)
+        #else
+        Task {
+            await operation()
+        }
+        #endif
         semaphore.wait()
-        if case .failure(let error) = result {
+        if case .failure(let error) = resultStore.load() {
             throw error
+        }
+    }
+
+    private final class InvocationResultStore: @unchecked Sendable {
+        private let lock = NSLock()
+        private var result: Result<HttpResponse?, Error>?
+
+        func store(_ result: Result<HttpResponse?, Error>) {
+            self.lock.lock()
+            self.result = result
+            self.lock.unlock()
+        }
+
+        func load() -> Result<HttpResponse?, Error>? {
+            self.lock.lock()
+            defer { self.lock.unlock() }
+            return self.result
         }
     }
 }

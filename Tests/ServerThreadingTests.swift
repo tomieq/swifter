@@ -7,6 +7,7 @@
 //
 
 import XCTest
+import Foundation
 #if os(Linux)
 import FoundationNetworking
 #endif
@@ -38,60 +39,76 @@ class ServerThreadingTests: XCTestCase {
             let binding = ServerBinding.make()
             try self.server.start(binding.port)
 
-            let requestExpectation = expectation(description: "Request should finish.")
-            requestExpectation.expectedFulfillmentCount = 3
+            let requestGroup = DispatchGroup()
+            let statusCodes = LockedValues<Int>()
 
             (1...3).forEach { index in
+                requestGroup.enter()
                 queue.asyncAfter(deadline: .now() + .seconds(index)) {
                     let task = URLSession.shared.executeAsyncTask(hostURL: binding.host, path: path) { _, response, _ in
-                        requestExpectation.fulfill()
                         let statusCode = (response as? HTTPURLResponse)?.statusCode
-                        XCTAssertNotNil(statusCode)
-                        XCTAssertEqual(statusCode, 200, "\(binding.host)")
+                        statusCodes.append(statusCode ?? -1)
+                        requestGroup.leave()
                     }
 
                     task.resume()
                 }
             }
 
+            XCTAssertEqual(requestGroup.wait(timeout: .now() + 10), .success)
+            XCTAssertEqual(statusCodes.values, [200, 200, 200], "\(binding.host)")
+
         } catch {
             XCTFail("\(error)")
         }
-
-        waitForExpectations(timeout: 10, handler: nil)
     }
 
     func testShouldHandleTheSameRequestConcurrently() {
         let path = "/a/:b/c"
         self.server.get[path] = { request, _ in .ok(.html("You asked for " + request.path)) }
 
-        let requestExpectation = expectation(description: "Should handle the request concurrently")
-        requestExpectation.expectedFulfillmentCount = 3
-
         do {
             let binding = ServerBinding.make()
             try self.server.start(binding.port)
             let downloadGroup = DispatchGroup()
+            let statusCodes = LockedValues<Int>()
 
-            DispatchQueue.concurrentPerform(iterations: 3) { _ in
+            (0..<3).forEach { _ in
                 downloadGroup.enter()
+                DispatchQueue.global().async {
+                    let task = URLSession.shared.executeAsyncTask(hostURL: binding.host, path: path) { _, response, _ in
+                        let statusCode = (response as? HTTPURLResponse)?.statusCode
+                        statusCodes.append(statusCode ?? -1)
+                        downloadGroup.leave()
+                    }
 
-                let task = URLSession.shared.executeAsyncTask(hostURL: binding.host, path: path) { _, response, _ in
-                    let statusCode = (response as? HTTPURLResponse)?.statusCode
-                    XCTAssertNotNil(statusCode)
-                    XCTAssertEqual(statusCode, 200)
-                    requestExpectation.fulfill()
-                    downloadGroup.leave()
+                    task.resume()
                 }
-
-                task.resume()
             }
+
+            XCTAssertEqual(downloadGroup.wait(timeout: .now() + 15), .success)
+            XCTAssertEqual(statusCodes.values.sorted(), [200, 200, 200])
 
         } catch {
             XCTFail("\(error)")
         }
+    }
+}
 
-        waitForExpectations(timeout: 15, handler: nil)
+private final class LockedValues<Value>: @unchecked Sendable {
+    private let lock = NSLock()
+    private var storage: [Value] = []
+
+    var values: [Value] {
+        self.lock.lock()
+        defer { self.lock.unlock() }
+        return self.storage
+    }
+
+    func append(_ value: Value) {
+        self.lock.lock()
+        self.storage.append(value)
+        self.lock.unlock()
     }
 }
 

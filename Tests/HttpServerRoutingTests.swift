@@ -45,22 +45,25 @@ class HttpServerRoutingTests: XCTestCase {
         }
         let binding = ServerBinding.make()
         try self.server.start(binding.port)
-        let expectation1 = expectation(description: "")
+        let requestGroup = DispatchGroup()
+        let responses = RoutingLockedValues<String>()
+        requestGroup.enter()
         DefaultSession().runRequest(url: binding.host.appendingPathComponent("users/5")) { _, body in
-            XCTAssertEqual(body, "5")
-            expectation1.fulfill()
+            responses.append(body ?? "")
+            requestGroup.leave()
         }
-        let expectation2 = expectation(description: "")
+        requestGroup.enter()
         DefaultSession().runRequest(url: binding.host.appendingPathComponent("cars/bmw")) { _, body in
-            XCTAssertEqual(body, "mainBMW")
-            expectation2.fulfill()
+            responses.append(body ?? "")
+            requestGroup.leave()
         }
-        let expectation3 = expectation(description: "")
+        requestGroup.enter()
         DefaultSession().runRequest(url: binding.host.appendingPathComponent("cars/bmw/z1"), method: "POST") { _, body in
-            XCTAssertEqual(body, "cabrio")
-            expectation3.fulfill()
+            responses.append(body ?? "")
+            requestGroup.leave()
         }
-        wait(for: [expectation1, expectation2, expectation3], timeout: 2)
+        XCTAssertEqual(requestGroup.wait(timeout: .now() + 2), .success)
+        XCTAssertEqual(responses.values.sorted(), ["5", "cabrio", "mainBMW"])
     }
 
     func testGroupedRoutingByWebPath() throws {
@@ -81,21 +84,41 @@ class HttpServerRoutingTests: XCTestCase {
         }
         let binding = ServerBinding.make()
         try self.server.start(binding.port)
-        let expectation1 = expectation(description: "")
+        let requestGroup = DispatchGroup()
+        let responses = RoutingLockedValues<String>()
+        requestGroup.enter()
         DefaultSession().runRequest(url: binding.host.appendingPathComponent("cars/bmw")) { _, body in
-            XCTAssertEqual(body, "mainBMW")
-            expectation1.fulfill()
+            responses.append(body ?? "")
+            requestGroup.leave()
         }
-        let expectation2 = expectation(description: "")
+        requestGroup.enter()
         DefaultSession().runRequest(url: binding.host.appendingPathComponent("cars/bmw/series1"), method: "POST") { _, body in
-            XCTAssertEqual(body, "post")
-            expectation2.fulfill()
+            responses.append(body ?? "")
+            requestGroup.leave()
         }
-        let expectation3 = expectation(description: "")
+        requestGroup.enter()
         DefaultSession().runRequest(url: binding.host.appendingPathComponent("cars/bmw/series1"), method: "GET") { _, body in
-            XCTAssertEqual(body, "get")
-            expectation3.fulfill()
+            responses.append(body ?? "")
+            requestGroup.leave()
         }
-        wait(for: [expectation1, expectation2, expectation3], timeout: 3)
+        XCTAssertEqual(requestGroup.wait(timeout: .now() + 3), .success)
+        XCTAssertEqual(responses.values.sorted(), ["get", "mainBMW", "post"])
+    }
+}
+
+private final class RoutingLockedValues<Value>: @unchecked Sendable {
+    private let lock = NSLock()
+    private var storage: [Value] = []
+
+    var values: [Value] {
+        self.lock.lock()
+        defer { self.lock.unlock() }
+        return self.storage
+    }
+
+    func append(_ value: Value) {
+        self.lock.lock()
+        self.storage.append(value)
+        self.lock.unlock()
     }
 }

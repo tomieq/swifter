@@ -47,7 +47,6 @@ class HttpInstantResponseTests: XCTestCase {
 
     func testReturningResponseFromAsyncHandler() throws {
         self.server.get["api/v1"] = { _, _ in
-            try await Task.sleep(nanoseconds: 10_000_000)
             return .ok(.text("AsyncOK"))
         }
         let binding = ServerBinding.make()

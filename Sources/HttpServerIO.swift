@@ -175,13 +175,31 @@ open class HttpServerIO: @unchecked Sendable {
                                 _ headers: HttpResponseHeaders,
                                 _ handler: @escaping HttpRequestHandler) -> HttpResponse {
         let semaphore = DispatchSemaphore(value: 0)
-        var response: HttpResponse?
-        Task {
-            response = await self.instantRequestHandler.watch(request, headers, handler)
+        let responseStore = HandlerResponseStore()
+        Task.detached {
+            let response = await self.instantRequestHandler.watch(request, headers, handler)
+            responseStore.store(response)
             semaphore.signal()
         }
         semaphore.wait()
-        return response ?? .internalServerError(.text("Unexpected handler execution failure"))
+        return responseStore.load() ?? .internalServerError(.text("Unexpected handler execution failure"))
+    }
+
+    private final class HandlerResponseStore: @unchecked Sendable {
+        private let lock = NSLock()
+        private var response: HttpResponse?
+
+        func store(_ response: HttpResponse) {
+            self.lock.lock()
+            self.response = response
+            self.lock.unlock()
+        }
+
+        func load() -> HttpResponse? {
+            self.lock.lock()
+            defer { self.lock.unlock() }
+            return self.response
+        }
     }
 
     private struct InnerWriteContext: HttpResponseBodyWriter {
