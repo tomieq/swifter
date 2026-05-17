@@ -8,7 +8,7 @@
 import Foundation
 import Dispatch
 
-public class ThreadSafeCache<K: Hashable, V> {
+public class ThreadSafeCache<K: Hashable, V>: @unchecked Sendable {
     private let queue = DispatchQueue(label: "com.dispatchBarrier.\(UUID())", attributes: .concurrent)
     private var cache: [K: V] = [:]
 
