@@ -31,7 +31,6 @@ class ServerThreadingTests: XCTestCase {
     func testShouldHandleTheRequestInDifferentTimeIntervals() {
         let path = "/a/:b/c"
         let queue = DispatchQueue(label: "com.swifter.threading")
-        let hostURL: URL
 
         self.server.get[path] = { request, _ in .ok(.html("You asked for " + request.path)) }
 
