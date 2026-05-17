@@ -65,7 +65,8 @@ class ServerThreadingTests: XCTestCase {
         let path = "/a/:b/c"
         self.server.get[path] = { request, _ in .ok(.html("You asked for " + request.path)) }
 
-        var requestExpectation: XCTestExpectation? = expectation(description: "Should handle the request concurrently")
+        let requestExpectation = expectation(description: "Should handle the request concurrently")
+        requestExpectation.expectedFulfillmentCount = 3
 
         do {
             let binding = ServerBinding.make()
@@ -79,8 +80,7 @@ class ServerThreadingTests: XCTestCase {
                     let statusCode = (response as? HTTPURLResponse)?.statusCode
                     XCTAssertNotNil(statusCode)
                     XCTAssertEqual(statusCode, 200)
-                    requestExpectation?.fulfill()
-                    requestExpectation = nil
+                    requestExpectation.fulfill()
                     downloadGroup.leave()
                 }
 
@@ -99,7 +99,7 @@ extension URLSession {
     func executeAsyncTask(
         hostURL: URL,
         path: String,
-        completionHandler handler: @escaping (Data?, URLResponse?, Error?) -> Void
+        completionHandler handler: @escaping @Sendable (Data?, URLResponse?, Error?) -> Void
     ) -> URLSessionDataTask {
         return self.dataTask(with: hostURL.appendingPathComponent(path), completionHandler: handler)
     }

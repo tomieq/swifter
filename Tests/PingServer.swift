@@ -43,7 +43,7 @@ struct ServerBinding {
 extension URLSession {
     func pingTask(
         hostURL: URL,
-        completionHandler handler: @escaping (Data?, URLResponse?, Error?) -> Void
+        completionHandler handler: @escaping @Sendable (Data?, URLResponse?, Error?) -> Void
     ) -> URLSessionDataTask {
         return self.dataTask(with: hostURL.appendingPathComponent("/ping"), completionHandler: handler)
     }

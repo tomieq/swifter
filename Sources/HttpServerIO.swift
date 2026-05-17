@@ -12,7 +12,7 @@ public protocol HttpServerIODelegate: AnyObject {
     func socketConnectionReceived(_ socket: SecureSocket)
 }
 
-open class HttpServerIO {
+open class HttpServerIO: @unchecked Sendable {
     public weak var delegate: HttpServerIODelegate?
     public var name = "Swifter"
     public var globalHeaders = HttpResponseHeaders()
@@ -84,7 +84,7 @@ open class HttpServerIO {
         stop()
     }
 
-    @available(macOS 10.10, *)
+    @available(macOS 10.15, iOS 13.0, *)
     public func start(_ port: in_port_t = 8080, forceIPv4: Bool = false, priority: DispatchQoS.QoSClass = DispatchQoS.QoSClass.background) throws {
         guard !self.operating else { return }
         self.stop()
@@ -99,14 +99,14 @@ open class HttpServerIO {
                 DispatchQueue.global(qos: priority).async { [weak self] in
                     guard let strongSelf = self else { return }
                     guard strongSelf.operating else { return }
-                    strongSelf.queue.async {
-                        strongSelf.sockets.insert(socket)
+                    strongSelf.queue.sync {
+                        _ = strongSelf.sockets.insert(socket)
                     }
                     strongSelf.metrics.notify(.connected(socketID: socket.id))
                     strongSelf.handleConnection(socket)
                     strongSelf.metrics.notify(.disconnected(socketID: socket.id))
-                    strongSelf.queue.async {
-                        strongSelf.sockets.remove(socket)
+                    strongSelf.queue.sync {
+                        _ = strongSelf.sockets.remove(socket)
                     }
                 }
             }
@@ -146,7 +146,7 @@ open class HttpServerIO {
             let responseHeaders = HttpResponseHeaders()
             let (params, handler) = self.dispatch(request, responseHeaders)
             request.pathParams = HttpRequestParams(params)
-            let response = self.instantRequestHandler.watch(request, responseHeaders, handler)
+            let response = self.executeHandler(request, responseHeaders, handler)
             request.partialSummary.responseCode = response.statusCode
             var keepConnection = false
             do {
@@ -169,6 +169,19 @@ open class HttpServerIO {
             if !keepConnection { break }
         }
         tlsSocket.close()
+    }
+
+    private func executeHandler(_ request: HttpRequest,
+                                _ headers: HttpResponseHeaders,
+                                _ handler: @escaping HttpRequestHandler) -> HttpResponse {
+        let semaphore = DispatchSemaphore(value: 0)
+        var response: HttpResponse?
+        Task {
+            response = await self.instantRequestHandler.watch(request, headers, handler)
+            semaphore.signal()
+        }
+        semaphore.wait()
+        return response ?? .internalServerError(.text("Unexpected handler execution failure"))
     }
 
     private struct InnerWriteContext: HttpResponseBodyWriter {

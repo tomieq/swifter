@@ -7,7 +7,7 @@
 
 import Foundation
 
-open class HttpServer: HttpServerIO {
+open class HttpServer: HttpServerIO, @unchecked Sendable {
     let router = HttpRouter()
 
     public override init() {

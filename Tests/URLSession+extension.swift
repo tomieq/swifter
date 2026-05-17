@@ -20,7 +20,7 @@ class DefaultSession {
     private func runTask(
         hostURL: URL,
         method: String = "GET",
-        completionHandler handler: @escaping (Data?, URLResponse?, Error?) -> Void
+        completionHandler handler: @escaping @Sendable (Data?, URLResponse?, Error?) -> Void
     ) -> URLSessionDataTask {
         var request = URLRequest(url: hostURL)
         request.httpMethod = method
@@ -36,7 +36,7 @@ class DefaultSession {
      }
      wait(for: [expectation], timeout: 1)
      */
-    func runRequest(url: URL, method: String = "GET", body: ((Int, String?) -> Void)? = nil) {
+    func runRequest(url: URL, method: String = "GET", body: (@Sendable (Int, String?) -> Void)? = nil) {
         self.runTask(hostURL: url, method: method) { data, response, error in
             guard error == nil else {
                 print("runRequest error: \(error.debugDescription)")

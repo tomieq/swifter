@@ -7,6 +7,7 @@
 //
 
 import XCTest
+import Dispatch
 @testable import Swifter
 
 class SwifterTestsHttpRouter: XCTestCase {
@@ -142,12 +143,12 @@ class SwifterTestsHttpRouter: XCTestCase {
         let staticRouteResult = self.router.route(HttpMethod.GET, path: "a/b")
         let staticRouterHandler = staticRouteResult?.1
         XCTAssertNotNil(staticRouteResult)
-        _ = try staticRouterHandler?(request, HttpResponseHeaders())
+        try self.invoke(staticRouterHandler, request, HttpResponseHeaders())
 
         let variableRouteResult = self.router.route(.GET, path: "a/b/c")
         let variableRouterHandler = variableRouteResult?.1
         XCTAssertNotNil(variableRouteResult)
-        _ = try variableRouterHandler?(request, HttpResponseHeaders())
+        try self.invoke(variableRouterHandler, request, HttpResponseHeaders())
 
         waitForExpectations(timeout: 10, handler: nil)
         XCTAssertTrue(foundStaticRoute)
@@ -176,12 +177,12 @@ class SwifterTestsHttpRouter: XCTestCase {
         let firstRouteResult = self.router.route(.GET, path: "a/b")
         let firstRouterHandler = firstRouteResult?.1
         XCTAssertNotNil(firstRouteResult)
-        _ = try firstRouterHandler?(request, HttpResponseHeaders())
+        try self.invoke(firstRouterHandler, request, HttpResponseHeaders())
 
         let secondRouteResult = self.router.route(.GET, path: "a/b/c")
         let secondRouterHandler = secondRouteResult?.1
         XCTAssertNotNil(secondRouteResult)
-        _ = try secondRouterHandler?(request, HttpResponseHeaders())
+        try self.invoke(secondRouterHandler, request, HttpResponseHeaders())
 
         waitForExpectations(timeout: 10, handler: nil)
         XCTAssertTrue(foundFirstVariableRoute)
@@ -218,17 +219,17 @@ class SwifterTestsHttpRouter: XCTestCase {
         let firstRouteResult = self.router.route(.GET, path: "/a")
         let firstRouterHandler = firstRouteResult?.1
         XCTAssertNotNil(firstRouteResult)
-        _ = try firstRouterHandler?(request, HttpResponseHeaders())
+        try self.invoke(firstRouterHandler, request, HttpResponseHeaders())
 
         let secondRouteResult = self.router.route(.GET, path: "/a/b")
         let secondRouterHandler = secondRouteResult?.1
         XCTAssertNotNil(secondRouteResult)
-        _ = try secondRouterHandler?(request, HttpResponseHeaders())
+        try self.invoke(secondRouterHandler, request, HttpResponseHeaders())
 
         let thirdRouteResult = self.router.route(.GET, path: "/a/b/b")
         let thirdRouterHandler = thirdRouteResult?.1
         XCTAssertNotNil(thirdRouteResult)
-        _ = try thirdRouterHandler?(request, HttpResponseHeaders())
+        try self.invoke(thirdRouterHandler, request, HttpResponseHeaders())
 
         waitForExpectations(timeout: 10, handler: nil)
         XCTAssertTrue(foundFirstVariableRoute)
@@ -258,15 +259,32 @@ class SwifterTestsHttpRouter: XCTestCase {
         let firstRouteResult = self.router.route(.GET, path: "/a/b/c/d/e")
         let firstRouterHandler = firstRouteResult?.1
         XCTAssertNotNil(firstRouteResult)
-        _ = try firstRouterHandler?(request, HttpResponseHeaders())
+        try self.invoke(firstRouterHandler, request, HttpResponseHeaders())
 
         let secondRouteResult = self.router.route(.GET, path: "/a/b/f/g")
         let secondRouterHandler = secondRouteResult?.1
         XCTAssertNotNil(secondRouteResult)
-        _ = try secondRouterHandler?(request, HttpResponseHeaders())
+        try self.invoke(secondRouterHandler, request, HttpResponseHeaders())
 
         waitForExpectations(timeout: 10, handler: nil)
         XCTAssertTrue(foundFirstVariableRoute)
         XCTAssertTrue(foundSecondVariableRoute)
+    }
+
+    private func invoke(_ handler: HttpRequestHandler?, _ request: HttpRequest, _ headers: HttpResponseHeaders) throws {
+        let semaphore = DispatchSemaphore(value: 0)
+        var result: Result<HttpResponse?, Error>?
+        Task {
+            do {
+                result = .success(try await handler?(request, headers))
+            } catch {
+                result = .failure(error)
+            }
+            semaphore.signal()
+        }
+        semaphore.wait()
+        if case .failure(let error) = result {
+            throw error
+        }
     }
 }

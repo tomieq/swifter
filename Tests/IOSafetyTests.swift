@@ -34,6 +34,7 @@ class IOSafetyTests: XCTestCase {
     }
 
     #if os(Linux)
+    func testStopWithActiveConnectionsIsSkippedOnLinux() {}
     #else
     func testStopWithActiveConnections() {
         let binding = ServerBinding.make()

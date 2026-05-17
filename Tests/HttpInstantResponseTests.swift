@@ -45,6 +45,21 @@ class HttpInstantResponseTests: XCTestCase {
         wait(for: [expectation], timeout: 1)
     }
 
+    func testReturningResponseFromAsyncHandler() throws {
+        self.server.get["api/v1"] = { _, _ in
+            try await Task.sleep(nanoseconds: 10_000_000)
+            return .ok(.text("AsyncOK"))
+        }
+        let binding = ServerBinding.make()
+        try self.server.start(binding.port)
+        let expectation = expectation(description: "")
+        DefaultSession().runRequest(url: binding.host.appendingPathComponent("api/v1")) { _, body in
+            XCTAssertEqual(body, "AsyncOK")
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 1)
+    }
+
     func testReturningResponseFromMiddleware() throws {
         self.server.get["api/v1"] = { _, _ in
             return .ok(.text("OK"))
