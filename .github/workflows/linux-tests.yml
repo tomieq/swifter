@@ -2,23 +2,6 @@ name: Test Linux Platform
 on: [push]
 
 jobs:
-  Test-Linux-Swift-59:
-    runs-on: ubuntu-latest
-    container:
-      image: swift:5.9
-      options: --cap-add=SYS_PTRACE --security-opt seccomp=unconfined --security-opt apparmor=unconfined
-    steps:
-      - uses: actions/checkout@v2
-      - name: Run Unit Tests
-        run: |
-          set -e
-          swift build --build-tests
-          testbin=$(find .build -name "SwifterPackageTests.xctest" -type f | head -n 1)
-          "$testbin" -l | awk '/^SwifterTests[.]/ { print $1 }' > /tmp/swifter-tests.txt
-          while IFS= read -r testName; do
-            echo "Running $testName"
-            timeout 60s "$testbin" "$testName"
-          done < /tmp/swifter-tests.txt
   Test-Linux-Swift-60:
     runs-on: ubuntu-latest
     container:
@@ -27,15 +10,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Run Unit Tests
-        run: |
-          set -e
-          swift build --build-tests
-          testbin=$(find .build -name "SwifterPackageTests.xctest" -type f | head -n 1)
-          "$testbin" -l | awk '/^SwifterTests[.]/ { print $1 }' > /tmp/swifter-tests.txt
-          while IFS= read -r testName; do
-            echo "Running $testName"
-            timeout 60s "$testbin" "$testName"
-          done < /tmp/swifter-tests.txt
+        run: swift test --scratch-path /tmp/swifter-build-6.0 --no-parallel
   Test-Linux-Swift-61:
     runs-on: ubuntu-latest
     container:
@@ -44,15 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Run Unit Tests
-        run: |
-          set -e
-          swift build --build-tests
-          testbin=$(find .build -name "SwifterPackageTests.xctest" -type f | head -n 1)
-          "$testbin" -l | awk '/^SwifterTests[.]/ { print $1 }' > /tmp/swifter-tests.txt
-          while IFS= read -r testName; do
-            echo "Running $testName"
-            timeout 60s "$testbin" "$testName"
-          done < /tmp/swifter-tests.txt
+        run: swift test --scratch-path /tmp/swifter-build-6.1 --no-parallel
   Test-Linux-Swift-62:
     runs-on: ubuntu-latest
     container:
@@ -61,12 +28,4 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Run Unit Tests
-        run: |
-          set -e
-          swift build --build-tests
-          testbin=$(find .build -name "SwifterPackageTests.xctest" -type f | head -n 1)
-          "$testbin" -l | awk '/^SwifterTests[.]/ { print $1 }' > /tmp/swifter-tests.txt
-          while IFS= read -r testName; do
-            echo "Running $testName"
-            timeout 60s "$testbin" "$testName"
-          done < /tmp/swifter-tests.txt
+        run: swift test --scratch-path /tmp/swifter-build-6.2 --no-parallel

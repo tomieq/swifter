@@ -6,11 +6,11 @@
 //
 
 import Foundation
-import XCTest
+import Testing
 @testable import Swifter
 
-class HttpRequestTests: XCTestCase {
-    func testformData() throws {
+@Suite struct HttpRequestTests {
+    @Test func formData() throws {
         struct FormData: Codable {
             let user: String
             let password: Int
@@ -19,11 +19,11 @@ class HttpRequestTests: XCTestCase {
         request.headers = HttpRequestHeaderParams(["content-type": "application/x-www-form-urlencoded"])
         request.body = HttpRequestBody([UInt8]("user=John&password=1234".data(using: .utf8)!))
         let formData: FormData? = try request.formData.decode()
-        XCTAssertEqual(formData?.user, "John")
-        XCTAssertEqual(formData?.password, 1234)
+        #expect(formData?.user == "John")
+        #expect(formData?.password == 1234)
     }
 
-    func testQueryParams() throws {
+    @Test func queryParams() throws {
         struct Search: Codable {
             let limit: Int
             let start: Int
@@ -32,38 +32,32 @@ class HttpRequestTests: XCTestCase {
         let request = HttpRequest(socketID: UUID())
         request.queryParams = HttpRequestParams(["limit": "10", "query": "Warsaw", "start": "900"])
         let search: Search? = try request.queryParams.decode()
-        XCTAssertEqual(search?.limit, 10)
-        XCTAssertEqual(search?.query, "Warsaw")
-        XCTAssertEqual(search?.start, 900)
+        #expect(search?.limit == 10)
+        #expect(search?.query == "Warsaw")
+        #expect(search?.start == 900)
     }
 
-    func testDecodePathParams() throws {
+    @Test func decodePathParams() async throws {
         struct Book: Codable {
             let id: Int
             let title: String
         }
         let server = HttpServer()
-        var expectedBook: Book?
+        let expectedBook = LockedValue<Book>()
         server.get["book/:id/:title"] = { request, _ in
             guard let book: Book = try? request.pathParams.decode() else {
                 return .badRequest(.text("Invalid url"))
             }
-            expectedBook = book
+            expectedBook.set(book)
             return .ok(.text("Title: \(book.title)"))
         }
         defer {
-            if server.operating {
-                server.stop()
-            }
+            stop(server)
         }
         let binding = ServerBinding.make()
         try server.start(binding.port)
-        let expectation = expectation(description: "description")
-        DefaultSession().runRequest(url: binding.host.appendingPathComponent("book/34/esmeralda")) { _, body in
-            expectation.fulfill()
-        }
-        wait(for: [expectation], timeout: 1)
-        XCTAssertEqual(expectedBook?.id, 34)
-        XCTAssertEqual(expectedBook?.title, "esmeralda")
+        _ = try await DefaultSession().request(url: binding.host.appendingPathComponent("book/34/esmeralda"))
+        #expect(expectedBook.value?.id == 34)
+        #expect(expectedBook.value?.title == "esmeralda")
     }
 }

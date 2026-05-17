@@ -87,16 +87,17 @@ open class HttpServerIO: @unchecked Sendable {
     @available(macOS 10.15, iOS 13.0, *)
     public func start(_ port: in_port_t = 8080, forceIPv4: Bool = false, priority: DispatchQoS.QoSClass = DispatchQoS.QoSClass.background) throws {
         guard !self.operating else { return }
+        let queuePriority = QueuePriority(priority)
         self.stop()
         self.state = .starting
         let address = forceIPv4 ? self.listenAddressIPv4 : self.listenAddressIPv6
         self.socket = try Socket.tcpSocketForListen(port, forceIPv4, SOMAXCONN, address)
         self.state = .running
-        DispatchQueue.global(qos: priority).async { [weak self] in
+        DispatchQueue.global(qos: queuePriority.value).async { [weak self] in
             guard let strongSelf = self else { return }
             guard strongSelf.operating else { return }
             while let socket = try? strongSelf.socket.acceptClientSocket() {
-                DispatchQueue.global(qos: priority).async { [weak self] in
+                DispatchQueue.global(qos: queuePriority.value).async { [weak self] in
                     guard let strongSelf = self else { return }
                     guard strongSelf.operating else { return }
                     strongSelf.queue.sync {
@@ -111,6 +112,14 @@ open class HttpServerIO: @unchecked Sendable {
                 }
             }
             strongSelf.stop()
+        }
+    }
+
+    private final class QueuePriority: @unchecked Sendable {
+        let value: DispatchQoS.QoSClass
+
+        init(_ value: DispatchQoS.QoSClass) {
+            self.value = value
         }
     }
 
@@ -176,13 +185,46 @@ open class HttpServerIO: @unchecked Sendable {
                                 _ handler: @escaping HttpRequestHandler) -> HttpResponse {
         let semaphore = DispatchSemaphore(value: 0)
         let responseStore = HandlerResponseStore()
+        let context = HandlerExecutionContext(instantRequestHandler: self.instantRequestHandler,
+                                              request: request,
+                                              headers: headers,
+                                              handler: handler,
+                                              responseStore: responseStore,
+                                              semaphore: semaphore)
         Task.detached {
-            let response = await self.instantRequestHandler.watch(request, headers, handler)
-            responseStore.store(response)
-            semaphore.signal()
+            await context.execute()
         }
         semaphore.wait()
         return responseStore.load() ?? .internalServerError(.text("Unexpected handler execution failure"))
+    }
+
+    private final class HandlerExecutionContext: @unchecked Sendable {
+        let instantRequestHandler: HttpInstantResponseHandler
+        let request: HttpRequest
+        let headers: HttpResponseHeaders
+        let handler: HttpRequestHandler
+        let responseStore: HandlerResponseStore
+        let semaphore: DispatchSemaphore
+
+        init(instantRequestHandler: HttpInstantResponseHandler,
+             request: HttpRequest,
+             headers: HttpResponseHeaders,
+             handler: @escaping HttpRequestHandler,
+             responseStore: HandlerResponseStore,
+             semaphore: DispatchSemaphore) {
+            self.instantRequestHandler = instantRequestHandler
+            self.request = request
+            self.headers = headers
+            self.handler = handler
+            self.responseStore = responseStore
+            self.semaphore = semaphore
+        }
+
+        func execute() async {
+            let response = await self.instantRequestHandler.watch(self.request, self.headers, self.handler)
+            self.responseStore.store(response)
+            self.semaphore.signal()
+        }
     }
 
     private final class HandlerResponseStore: @unchecked Sendable {

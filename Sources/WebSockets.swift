@@ -35,9 +35,7 @@ public func websocket(
                         if payload.count > 0 {
                             throw WebSocketSession.WsError.protocolError("Continuing fragmented frame cannot have an operation code.")
                         }
-                        var textFramePayload = frame.payload.map { Int8(bitPattern: $0) }
-                        textFramePayload.append(0)
-                        if let text = String(validatingUTF8: textFramePayload) {
+                        if let text = String(data: Data(frame.payload), encoding: .utf8) {
                             handleText(session, text)
                         } else {
                             throw WebSocketSession.WsError.invalidUTF8("")

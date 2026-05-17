@@ -65,7 +65,7 @@ extension String {
         }
     }
 
-    public static var pathSeparator = "/"
+    public static let pathSeparator = "/"
 
     public func openNewForWriting() throws -> File {
         return try self.openFileForMode(self, "wb")
@@ -121,15 +121,17 @@ extension String {
             var name = ent.pointee.d_name
             let fileName = withUnsafePointer(to: &name) { ptr -> String? in
                 #if os(Linux)
-                return String(validatingUTF8: ptr.withMemoryRebound(to: CChar.self, capacity: Int(ent.pointee.d_reclen), { ptrc -> [CChar] in
+                let buffer = ptr.withMemoryRebound(to: CChar.self, capacity: Int(ent.pointee.d_reclen), { ptrc -> [CChar] in
                     return [CChar](UnsafeBufferPointer(start: ptrc, count: 256))
-                }))
+                })
+                let bytes = buffer.prefix { $0 != 0 }.map { UInt8(bitPattern: $0) }
+                return String(data: Data(bytes), encoding: .utf8)
                 #else
-                var buffer = ptr.withMemoryRebound(to: CChar.self, capacity: Int(ent.pointee.d_reclen), { ptrc -> [CChar] in
+                let buffer = ptr.withMemoryRebound(to: CChar.self, capacity: Int(ent.pointee.d_reclen), { ptrc -> [CChar] in
                     return [CChar](UnsafeBufferPointer(start: ptrc, count: Int(ent.pointee.d_namlen)))
                 })
-                buffer.append(0)
-                return String(validatingUTF8: buffer)
+                let bytes = buffer.map { UInt8(bitPattern: $0) }
+                return String(data: Data(bytes), encoding: .utf8)
                 #endif
             }
             if let fileName = fileName {

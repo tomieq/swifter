@@ -7,7 +7,7 @@
 
 import Foundation
 
-public enum ConnectionEvent {
+public enum ConnectionEvent: Sendable {
     case connected(socketID: UUID)
     case traffic(socketID: UUID)
     case webSocketSessionStarted(socketID: UUID)
@@ -40,13 +40,13 @@ extension ConnectionEvent: CustomStringConvertible {
     }
 }
 
-public struct ConnectionChange {
+public struct ConnectionChange: Sendable {
     public let openConnections: Int
     public let event: ConnectionEvent
 }
 
-public typealias ConnectionChangeHandler = (ConnectionChange) -> Void
-public class ConnectionMetrics {
+public typealias ConnectionChangeHandler = @Sendable (ConnectionChange) -> Void
+public class ConnectionMetrics: @unchecked Sendable {
     private let accessQueue = DispatchQueue(label: "swifter.metrics.queue", attributes: .concurrent)
     private let notificationQueue = DispatchQueue(label: "swifter.metrics.queue")
     private var openSockets = 0

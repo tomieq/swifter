@@ -1,31 +1,23 @@
-//
-//  MimeTypesTests.swift
-//  Swifter
-//
-//  Created by Daniel Große on 06.03.18.
-//  Copyright © 2018 Damian Kołakowski. All rights reserved.
-//
+import Testing
 
-import XCTest
-
-class MimeTypeTests: XCTestCase {
-    func testDefaultValue() {
-        XCTAssertEqual("file.null".mimeType, "application/octet-stream")
+@Suite struct MimeTypeTests {
+    @Test func defaultValue() {
+        #expect("file.null".mimeType == "application/octet-stream")
     }
 
-    func testCorrectTypes() {
-        XCTAssertEqual("file.html".mimeType, "text/html")
-        XCTAssertEqual("file.css".mimeType, "text/css")
-        XCTAssertEqual("file.mp4".mimeType, "video/mp4")
-        XCTAssertEqual("file.pptx".mimeType, "application/vnd.openxmlformats-officedocument.presentationml.presentation")
-        XCTAssertEqual("file.war".mimeType, "application/java-archive")
+    @Test func correctTypes() {
+        #expect("file.html".mimeType == "text/html")
+        #expect("file.css".mimeType == "text/css")
+        #expect("file.mp4".mimeType == "video/mp4")
+        #expect("file.pptx".mimeType == "application/vnd.openxmlformats-officedocument.presentationml.presentation")
+        #expect("file.war".mimeType == "application/java-archive")
     }
 
-    func testCaseInsensitivity() {
-        XCTAssertEqual("file.HTML".mimeType, "text/html")
-        XCTAssertEqual("file.cSs".mimeType, "text/css")
-        XCTAssertEqual("file.MP4".mimeType, "video/mp4")
-        XCTAssertEqual("file.PPTX".mimeType, "application/vnd.openxmlformats-officedocument.presentationml.presentation")
-        XCTAssertEqual("FILE.WAR".mimeType, "application/java-archive")
+    @Test func caseInsensitivity() {
+        #expect("file.HTML".mimeType == "text/html")
+        #expect("file.cSs".mimeType == "text/css")
+        #expect("file.MP4".mimeType == "video/mp4")
+        #expect("file.PPTX".mimeType == "application/vnd.openxmlformats-officedocument.presentationml.presentation")
+        #expect("FILE.WAR".mimeType == "application/java-archive")
     }
 }

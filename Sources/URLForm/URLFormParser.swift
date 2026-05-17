@@ -8,7 +8,7 @@
 import Foundation
 
 /// Converts `Data` to `[String: URLFormData]`.
-class URLFormParser {
+final class URLFormParser: Sendable {
     /// Create a new form-urlencoded data parser.
     init() { }
 

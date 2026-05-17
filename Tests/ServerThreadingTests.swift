@@ -6,109 +6,57 @@
 //  Copyright © 2019 Damian Kołakowski. All rights reserved.
 //
 
-import XCTest
 import Foundation
 #if os(Linux)
 import FoundationNetworking
 #endif
+import Testing
 @testable import Swifter
 
-class ServerThreadingTests: XCTestCase {
-    var server: HttpServer!
-
-    override func setUp() {
-        super.setUp()
-        self.server = HttpServer()
-    }
-
-    override func tearDown() {
-        if self.server.operating {
-            self.server.stop()
-        }
-        self.server = nil
-        super.tearDown()
-    }
-
-    func testShouldHandleTheRequestInDifferentTimeIntervals() {
+@Suite struct ServerThreadingTests {
+    @Test func shouldHandleTheRequestInDifferentTimeIntervals() async throws {
         let path = "/a/:b/c"
-        let queue = DispatchQueue(label: "com.swifter.threading")
+        let server = HttpServer()
+        defer { stop(server) }
+        server.get[path] = { request, _ in .ok(.html("You asked for " + request.path)) }
 
-        self.server.get[path] = { request, _ in .ok(.html("You asked for " + request.path)) }
+        let binding = ServerBinding.make()
+        try server.start(binding.port)
 
-        do {
-            let binding = ServerBinding.make()
-            try self.server.start(binding.port)
+        async let first = self.delayedStatus(seconds: 1, hostURL: binding.host, path: path)
+        async let second = self.delayedStatus(seconds: 2, hostURL: binding.host, path: path)
+        async let third = self.delayedStatus(seconds: 3, hostURL: binding.host, path: path)
+        let statusCodes = try await [first, second, third]
+        #expect(statusCodes == [200, 200, 200])
+    }
 
-            let requestGroup = DispatchGroup()
-            let statusCodes = LockedValues<Int>()
+    @Test func shouldHandleTheSameRequestConcurrently() async throws {
+        let path = "/a/:b/c"
+        let server = HttpServer()
+        defer { stop(server) }
+        server.get[path] = { request, _ in .ok(.html("You asked for " + request.path)) }
 
-            (1...3).forEach { index in
-                requestGroup.enter()
-                queue.asyncAfter(deadline: .now() + .seconds(index)) {
-                    let task = URLSession.shared.executeAsyncTask(hostURL: binding.host, path: path) { _, response, _ in
-                        let statusCode = (response as? HTTPURLResponse)?.statusCode
-                        statusCodes.append(statusCode ?? -1)
-                        requestGroup.leave()
-                    }
+        let binding = ServerBinding.make()
+        try server.start(binding.port)
 
-                    task.resume()
+        let statusCodes = try await withThrowingTaskGroup(of: Int.self) { group in
+            for _ in 0..<3 {
+                group.addTask {
+                    try await URLSession.shared.httpStatus(hostURL: binding.host, path: path, timeout: 15)
                 }
             }
-
-            XCTAssertEqual(requestGroup.wait(timeout: .now() + 10), .success)
-            XCTAssertEqual(statusCodes.values, [200, 200, 200], "\(binding.host)")
-
-        } catch {
-            XCTFail("\(error)")
-        }
-    }
-
-    func testShouldHandleTheSameRequestConcurrently() {
-        let path = "/a/:b/c"
-        self.server.get[path] = { request, _ in .ok(.html("You asked for " + request.path)) }
-
-        do {
-            let binding = ServerBinding.make()
-            try self.server.start(binding.port)
-            let downloadGroup = DispatchGroup()
-            let statusCodes = LockedValues<Int>()
-
-            (0..<3).forEach { _ in
-                downloadGroup.enter()
-                DispatchQueue.global().async {
-                    let task = URLSession.shared.executeAsyncTask(hostURL: binding.host, path: path) { _, response, _ in
-                        let statusCode = (response as? HTTPURLResponse)?.statusCode
-                        statusCodes.append(statusCode ?? -1)
-                        downloadGroup.leave()
-                    }
-
-                    task.resume()
-                }
+            var values: [Int] = []
+            for try await value in group {
+                values.append(value)
             }
-
-            XCTAssertEqual(downloadGroup.wait(timeout: .now() + 15), .success)
-            XCTAssertEqual(statusCodes.values.sorted(), [200, 200, 200])
-
-        } catch {
-            XCTFail("\(error)")
+            return values
         }
-    }
-}
-
-private final class LockedValues<Value>: @unchecked Sendable {
-    private let lock = NSLock()
-    private var storage: [Value] = []
-
-    var values: [Value] {
-        self.lock.lock()
-        defer { self.lock.unlock() }
-        return self.storage
+        #expect(statusCodes.sorted() == [200, 200, 200])
     }
 
-    func append(_ value: Value) {
-        self.lock.lock()
-        self.storage.append(value)
-        self.lock.unlock()
+    private func delayedStatus(seconds: UInt64, hostURL: URL, path: String) async throws -> Int {
+        try await Task.sleep(nanoseconds: seconds * 1_000_000_000)
+        return try await URLSession.shared.httpStatus(hostURL: hostURL, path: path)
     }
 }
 

@@ -6,54 +6,36 @@
 //  Copyright © 2016 Damian Kołakowski. All rights reserved.
 //
 
-import XCTest
+import Foundation
 #if os(Linux)
 import FoundationNetworking
 #endif
+import Testing
 @testable import Swifter
 
-class IOSafetyTests: XCTestCase {
-    var server: HttpServer!
-    var urlSession: URLSession!
-
-    override func setUp() {
-        super.setUp()
-        self.server = HttpServer.pingServer()
-        self.urlSession = URLSession(configuration: .default)
-    }
-
-    override func tearDown() {
-        if self.server.operating {
-            self.server.stop()
-        }
-
-        self.urlSession = nil
-        self.server = nil
-
-        super.tearDown()
-    }
-
+@Suite struct IOSafetyTests {
     #if os(Linux)
-    func testStopWithActiveConnectionsIsSkippedOnLinux() {}
+    @Test func stopWithActiveConnectionsIsSkippedOnLinux() {}
     #else
-    func testStopWithActiveConnections() {
+    @Test func stopWithActiveConnections() async throws {
         let binding = ServerBinding.make()
-        (0...8).forEach { cpt in
-            self.server = HttpServer.pingServer()
+        let urlSession = URLSession(configuration: .default)
+        for cpt in 0...8 {
+            let server = HttpServer.pingServer()
             do {
-                try self.server.start(binding.port)
-                XCTAssertFalse(self.urlSession.retryPing(hostURL: binding.host))
+                try server.start(binding.port)
+                #expect(try await urlSession.ping(hostURL: binding.host) == true)
                 (0...100).forEach { _ in
                     DispatchQueue.global(qos: DispatchQoS.default.qosClass).sync {
-                        self.urlSession.pingTask(hostURL: binding.host) { _, _, _ in }.resume()
+                        urlSession.pingTask(hostURL: binding.host) { _, _, _ in }.resume()
                     }
                 }
-                self.server.stop()
+                server.stop()
 
                 sleep(1)
 
             } catch {
-                XCTFail("\(cpt): \(error)")
+                Issue.record("\(cpt): \(error)")
             }
         }
     }

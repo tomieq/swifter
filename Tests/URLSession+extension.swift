@@ -10,7 +10,7 @@ import Foundation
 import FoundationNetworking
 #endif
 
-class DefaultSession {
+final class DefaultSession: @unchecked Sendable {
     let instance: URLSession
 
     init() {
@@ -27,15 +27,6 @@ class DefaultSession {
         return self.instance.dataTask(with: request, completionHandler: handler)
     }
 
-    /*
-     usage:
-     let expectation = expectation(description: "description")
-     URLSession.default.runRequest(url: defaultLocalhost.appendingPathComponent("users/5")) { body in
-         XCTAssertEqual(body, "5")
-         expectation.fulfill()
-     }
-     wait(for: [expectation], timeout: 1)
-     */
     func runRequest(url: URL, method: String = "GET", body: (@Sendable (Int, String?) -> Void)? = nil) {
         self.runTask(hostURL: url, method: method) { data, response, error in
             guard error == nil else {

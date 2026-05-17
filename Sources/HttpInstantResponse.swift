@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct HttpInstantResponse: Error {
+public struct HttpInstantResponse: Error, @unchecked Sendable {
     let response: HttpResponse
     let headers: HttpResponseHeaders
 

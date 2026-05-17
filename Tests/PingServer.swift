@@ -29,14 +29,22 @@ struct ServerBinding {
     let host: URL
 
     static func make() -> ServerBinding {
-        self.queue.sync {
-            ServerBinding.nextPort += 1
-            return ServerBinding(port: ServerBinding.nextPort, host: URL(string: "http://127.0.0.1:\(ServerBinding.nextPort)")!)
-        }
+        Self.portAllocator.next()
     }
 
-    private static var nextPort: UInt16 = 9080
-    private static let queue = DispatchQueue(label: "serverbinding.init")
+    private static let portAllocator = ServerBindingPortAllocator()
+}
+
+private final class ServerBindingPortAllocator: @unchecked Sendable {
+    private var nextPort: UInt16 = 9080
+    private let queue = DispatchQueue(label: "serverbinding.init")
+
+    func next() -> ServerBinding {
+        self.queue.sync {
+            self.nextPort += 1
+            return ServerBinding(port: self.nextPort, host: URL(string: "http://127.0.0.1:\(self.nextPort)")!)
+        }
+    }
 }
 
 // Client

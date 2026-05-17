@@ -5,10 +5,15 @@
 //  Copyright © 2016 Damian Kołakowski. All rights reserved.
 //
 
-import XCTest
+import Testing
+#if os(Linux)
+import Glibc
+#else
+import Darwin
+#endif
 @testable import Swifter
 
-class SwifterTestsHttpParser: XCTestCase {
+@Suite struct SwifterTestsHttpParser {
     /// A specialized Socket which creates a linked socket pair with a pipe, and
     /// immediately writes in fixed data. This enables tests to static fixture
     /// data into the regular Socket flow.
@@ -50,73 +55,73 @@ class SwifterTestsHttpParser: XCTestCase {
     }
 
     // swiftlint:disable function_body_length
-    func testParser() {
+    @Test func parser() {
         let parser = HttpParser(bodyLimit: .unlimited)
 
         do {
             _ = try parser.readHttpRequest(TestSocket(""))
-            XCTAssert(false, "Parser should throw an error if socket is empty.")
+            Issue.record("Parser should throw an error if socket is empty.")
         } catch { }
 
         do {
             _ = try parser.readHttpRequest(TestSocket("12345678"))
-            XCTAssert(false, "Parser should throw an error if status line has single token.")
+            Issue.record("Parser should throw an error if status line has single token.")
         } catch { }
 
         do {
             _ = try parser.readHttpRequest(TestSocket("GET HTTP/1.0"))
-            XCTAssert(false, "Parser should throw an error if status line has not enough tokens.")
+            Issue.record("Parser should throw an error if status line has not enough tokens.")
         } catch { }
 
         do {
             _ = try parser.readHttpRequest(TestSocket("GET / HTTP/1.0"))
-            XCTAssert(false, "Parser should throw an error if there is no next line symbol.")
+            Issue.record("Parser should throw an error if there is no next line symbol.")
         } catch { }
 
         do {
             _ = try parser.readHttpRequest(TestSocket("GET / HTTP/1.0"))
-            XCTAssert(false, "Parser should throw an error if there is no next line symbol.")
+            Issue.record("Parser should throw an error if there is no next line symbol.")
         } catch { }
 
         do {
             _ = try parser.readHttpRequest(TestSocket("GET / HTTP/1.0\r"))
-            XCTAssert(false, "Parser should throw an error if there is no next line symbol.")
+            Issue.record("Parser should throw an error if there is no next line symbol.")
         } catch { }
 
         do {
             _ = try parser.readHttpRequest(TestSocket("GET / HTTP/1.0\n"))
-            XCTAssert(false, "Parser should throw an error if there is no 'Content-Length' header.")
+            Issue.record("Parser should throw an error if there is no 'Content-Length' header.")
         } catch { }
 
         do {
             _ = try parser.readHttpRequest(TestSocket("GET / HTTP/1.0\r\nContent-Length: 0\r\n\r\n"))
         } catch {
-            XCTAssert(false, "Parser should not throw any errors if there is a valid 'Content-Length' header.")
+            Issue.record("Parser should not throw any errors if there is a valid 'Content-Length' header.")
         }
 
         do {
             _ = try parser.readHttpRequest(TestSocket("GET / HTTP/1.0\nContent-Length: 0\r\n\n"))
         } catch {
-            XCTAssert(false, "Parser should not throw any errors if there is a valid 'Content-Length' header.")
+            Issue.record("Parser should not throw any errors if there is a valid 'Content-Length' header.")
         }
 
         do {
             _ = try parser.readHttpRequest(TestSocket("GET / HTTP/1.0\r\nContent-Length: -1\r\n\r\n"))
         } catch {
             let error = error as? HttpParserError
-            XCTAssertNotNil(error)
-            XCTAssertEqual(error!, HttpParserError.negativeContentLength)
+            #expect(error != nil)
+            #expect(error == HttpParserError.negativeContentLength)
         }
 
         do {
             _ = try parser.readHttpRequest(TestSocket("GET / HTTP/1.0\nContent-Length: 5\n\n12345"))
         } catch {
-            XCTAssert(false, "Parser should not throw any errors if there is a valid 'Content-Length' header.")
+            Issue.record("Parser should not throw any errors if there is a valid 'Content-Length' header.")
         }
 
         do {
             _ = try parser.readHttpRequest(TestSocket("GET / HTTP/1.0\nContent-Length: 10\r\n\n"))
-            XCTAssert(false, "Parser should throw an error if request' body is too short.")
+            Issue.record("Parser should throw an error if request' body is too short.")
         } catch { }
 
         do { // test payload less than 1 read segmant
@@ -126,10 +131,10 @@ class SwifterTestsHttpParser: XCTestCase {
             let payload = "GET / HTTP/1.0\nContent-Length: \(contentLength)\n\n".appending(bodyString)
             let request = try parser.readHttpRequest(TestSocket(payload))
 
-            XCTAssert(bodyString.lengthOfBytes(using: .utf8) == contentLength, "Has correct request size")
+            #expect(bodyString.lengthOfBytes(using: .utf8) == contentLength)
 
             let unicodeBytes = bodyString.utf8.map { return $0 }
-            XCTAssert(request.body.raw == unicodeBytes, "Request body must be correct")
+            #expect(request.body.raw == unicodeBytes)
         } catch { }
 
         do { // test payload equal to 1 read segmant
@@ -138,11 +143,11 @@ class SwifterTestsHttpParser: XCTestCase {
             let payload = "GET / HTTP/1.0\nContent-Length: \(contentLength)\n\n".appending(bodyString)
             let request = try parser.readHttpRequest(TestSocket(payload))
 
-            XCTAssert(bodyString.lengthOfBytes(using: .utf8) == contentLength, "Has correct request size")
+            #expect(bodyString.lengthOfBytes(using: .utf8) == contentLength)
 
             let unicodeBytes = bodyString.utf8.map { return $0 }
-            XCTAssert(request.body.raw == unicodeBytes, "Request body must be correct")
-            XCTAssert(request.body.string == bodyString, "Request body must be correct")
+            #expect(request.body.raw == unicodeBytes)
+            #expect(request.body.string == bodyString)
         } catch { }
 
         do { // test very large multi-segment payload
@@ -151,54 +156,54 @@ class SwifterTestsHttpParser: XCTestCase {
             let payload = "GET / HTTP/1.0\nContent-Length: \(contentLength)\n\n".appending(bodyString)
             let request = try parser.readHttpRequest(TestSocket(payload))
 
-            XCTAssert(bodyString.lengthOfBytes(using: .utf8) == contentLength, "Has correct request size")
+            #expect(bodyString.lengthOfBytes(using: .utf8) == contentLength)
 
             let unicodeBytes = bodyString.utf8.map { return $0 }
-            XCTAssert(request.body.raw == unicodeBytes, "Request body must be correct")
-            XCTAssert(request.body.string == bodyString, "Request body must be correct")
+            #expect(request.body.raw == unicodeBytes)
+            #expect(request.body.string == bodyString)
         } catch { }
 
         var resp = try? parser.readHttpRequest(TestSocket("GET /open?link=https://www.youtube.com/watch?v=D2cUBG4PnOA HTTP/1.0\nContent-Length: 10\n\n1234567890"))
 
-        XCTAssertEqual(resp?.queryParams.get("link"), "https://www.youtube.com/watch?v=D2cUBG4PnOA")
-        XCTAssertEqual(resp?.method, .GET, "Parser should extract HTTP method name from the status line.")
-        XCTAssertEqual(resp?.path, "/open", "Parser should extract HTTP path value from the status line.")
-        XCTAssertEqual(resp?.headers["content-length"], "10", "Parser should extract Content-Length header value.")
+        #expect(resp?.queryParams.get("link") == "https://www.youtube.com/watch?v=D2cUBG4PnOA")
+        #expect(resp?.method == .GET)
+        #expect(resp?.path == "/open")
+        #expect(resp?.headers["content-length"] == "10")
 
         resp = try? parser.readHttpRequest(TestSocket("POST / HTTP/1.0\nContent-Length: 10\n\n1234567890"))
-        XCTAssertEqual(resp?.method, .POST, "Parser should extract HTTP method name from the status line.")
+        #expect(resp?.method == .POST)
 
         resp = try? parser.readHttpRequest(TestSocket("GET / HTTP/1.0\nHeader1: 1:1:34\nHeader2: 12345\nContent-Length: 0\n\n"))
-        XCTAssertEqual(resp?.headers["header1"], "1:1:34", "Parser should properly extract header name and value in case the value has ':' character.")
+        #expect(resp?.headers["header1"] == "1:1:34")
 
         resp = try? parser.readHttpRequest(TestSocket("GET / HTTP/1.0\nHeader1: 1\nHeader2: 2\nContent-Length: 0\n\n"))
-        XCTAssertEqual(resp?.headers["header1"], "1", "Parser should extract multiple headers from the request.")
-        XCTAssertEqual(resp?.headers["header2"], "2", "Parser should extract multiple headers from the request.")
+        #expect(resp?.headers["header1"] == "1")
+        #expect(resp?.headers["header2"] == "2")
 
         resp = try? parser.readHttpRequest(TestSocket("GET /some/path?subscript_query[]=1&subscript_query[]=2 HTTP/1.0\nContent-Length: 10\n\n1234567890"))
         var queryPairs = resp?.queryParams.list ?? []
-        XCTAssertEqual(queryPairs.count, 2)
-        XCTAssertEqual(queryPairs.first?.0, "subscript_query[]")
-        XCTAssertEqual(queryPairs.first?.1, "1")
-        XCTAssertEqual(queryPairs.last?.0, "subscript_query[]")
-        XCTAssertEqual(queryPairs.last?.1, "2")
-        XCTAssertEqual(resp?.method, .GET, "Parser should extract HTTP method name from the status line.")
-        XCTAssertEqual(resp?.path, "/some/path", "Parser should extract HTTP path value from the status line.")
-        XCTAssertEqual(resp?.headers["content-length"], "10", "Parser should extract Content-Length header value.")
+        #expect(queryPairs.count == 2)
+        #expect(queryPairs.first?.0 == "subscript_query[]")
+        #expect(queryPairs.first?.1 == "1")
+        #expect(queryPairs.last?.0 == "subscript_query[]")
+        #expect(queryPairs.last?.1 == "2")
+        #expect(resp?.method == .GET)
+        #expect(resp?.path == "/some/path")
+        #expect(resp?.headers["content-length"] == "10")
 
         resp = try? parser.readHttpRequest(TestSocket("GET /path[]/param?a[]=1&a[]=2&b=%20 HTTP/1.0\r\nContent-Length: 0\r\n\r\n"))
         queryPairs = resp?.queryParams.list ?? []
 
-        XCTAssertEqual(resp?.path, "/path[]/param")
+        #expect(resp?.path == "/path[]/param")
         if queryPairs.count == 3 {
-            XCTAssertEqual(queryPairs[0].0, "a[]")
-            XCTAssertEqual(queryPairs[0].1, "1")
-            XCTAssertEqual(queryPairs[1].0, "a[]")
-            XCTAssertEqual(queryPairs[1].1, "2")
-            XCTAssertEqual(queryPairs[2].0, "b")
-            XCTAssertEqual(queryPairs[2].1, " ")
+            #expect(queryPairs[0].0 == "a[]")
+            #expect(queryPairs[0].1 == "1")
+            #expect(queryPairs[1].0 == "a[]")
+            #expect(queryPairs[1].1 == "2")
+            #expect(queryPairs[2].0 == "b")
+            #expect(queryPairs[2].1 == " ")
         } else {
-            XCTFail("queryPairs count should be 3")
+            Issue.record("queryPairs count should be 3")
         }
     }
 }

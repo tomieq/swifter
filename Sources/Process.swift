@@ -8,6 +8,28 @@
 import Foundation
 
 public class Process {
+    private final class SignalState: @unchecked Sendable {
+        private let lock = NSLock()
+        private var watchers = [(Int32) -> Void]()
+        private var observed = false
+
+        func register(_ callback: @escaping (Int32) -> Void) -> Bool {
+            self.lock.lock()
+            defer { self.lock.unlock() }
+            let shouldInstallHandlers = !self.observed
+            self.observed = true
+            self.watchers.append(callback)
+            return shouldInstallHandlers
+        }
+
+        func notify(_ signum: Int32) {
+            self.lock.lock()
+            let watchers = self.watchers
+            self.lock.unlock()
+            watchers.forEach { $0(signum) }
+        }
+    }
+
     public static var pid: Int {
         return Int(getpid())
     }
@@ -22,18 +44,15 @@ public class Process {
         #endif
     }
 
-    private static var signalsWatchers = [(Int32) -> Void]()
-    private static var signalsObserved = false
+    private static let signalState = SignalState()
 
     public static func watchSignals(_ callback: @escaping (Int32) -> Void) {
-        if !self.signalsObserved {
+        if self.signalState.register(callback) {
             [SIGTERM, SIGHUP, SIGSTOP, SIGINT].forEach { item in
                 signal(item) { signum in
-                    Process.signalsWatchers.forEach { $0(signum) }
+                    Process.signalState.notify(signum)
                 }
             }
-            self.signalsObserved = true
         }
-        self.signalsWatchers.append(callback)
     }
 }

@@ -6,35 +6,22 @@
 //
 
 import Foundation
-import XCTest
 #if os(Linux)
 import FoundationNetworking
 #endif
+import Testing
 @testable import Swifter
 
-class HttpServerRoutingTests: XCTestCase {
-    var server: HttpServer!
-
-    override func setUp() {
-        super.setUp()
-        self.server = HttpServer()
-    }
-
-    override func tearDown() {
-        if self.server.operating {
-            self.server.stop()
-        }
-        self.server = nil
-        super.tearDown()
-    }
-
-    func testGroupedRouting() throws {
-        let users = self.server.grouped("users")
+@Suite struct HttpServerRoutingTests {
+    @Test func groupedRouting() async throws {
+        let server = HttpServer()
+        defer { stop(server) }
+        let users = server.grouped("users")
         users.get[":id"] = { request, _ in
             let userID = request.pathParams.get("id") ?? ""
             return .ok(.text(userID))
         }
-        let cars = self.server.grouped("cars")
+        let cars = server.grouped("cars")
         cars.group("bmw") { bmw in
             bmw.get.handler = { _, _ in
                 .ok(.text("mainBMW"))
@@ -44,33 +31,30 @@ class HttpServerRoutingTests: XCTestCase {
             }
         }
         let binding = ServerBinding.make()
-        try self.server.start(binding.port)
-        let requestGroup = DispatchGroup()
-        let responses = RoutingLockedValues<String>()
-        requestGroup.enter()
-        DefaultSession().runRequest(url: binding.host.appendingPathComponent("users/5")) { _, body in
-            responses.append(body ?? "")
-            requestGroup.leave()
+        try server.start(binding.port)
+
+        let responses = try await withThrowingTaskGroup(of: String?.self) { group in
+            group.addTask { try await DefaultSession().request(url: binding.host.appendingPathComponent("users/5")).body }
+            group.addTask { try await DefaultSession().request(url: binding.host.appendingPathComponent("cars/bmw")).body }
+            group.addTask { try await DefaultSession().request(url: binding.host.appendingPathComponent("cars/bmw/z1"), method: "POST").body }
+            var values: [String] = []
+            for try await body in group {
+                if let body {
+                    values.append(body)
+                }
+            }
+            return values.sorted()
         }
-        requestGroup.enter()
-        DefaultSession().runRequest(url: binding.host.appendingPathComponent("cars/bmw")) { _, body in
-            responses.append(body ?? "")
-            requestGroup.leave()
-        }
-        requestGroup.enter()
-        DefaultSession().runRequest(url: binding.host.appendingPathComponent("cars/bmw/z1"), method: "POST") { _, body in
-            responses.append(body ?? "")
-            requestGroup.leave()
-        }
-        XCTAssertEqual(requestGroup.wait(timeout: .now() + 2), .success)
-        XCTAssertEqual(responses.values.sorted(), ["5", "cabrio", "mainBMW"])
+        #expect(responses == ["5", "cabrio", "mainBMW"])
     }
 
-    func testGroupedRoutingByWebPath() throws {
+    @Test func groupedRoutingByWebPath() async throws {
         enum LocalPath: String, WebPath {
             case series1
         }
-        let cars = self.server.grouped("cars")
+        let server = HttpServer()
+        defer { stop(server) }
+        let cars = server.grouped("cars")
         cars.group("bmw") { bmw in
             bmw.get.handler = { _, _ in
                 .ok(.text("mainBMW"))
@@ -83,42 +67,20 @@ class HttpServerRoutingTests: XCTestCase {
             }
         }
         let binding = ServerBinding.make()
-        try self.server.start(binding.port)
-        let requestGroup = DispatchGroup()
-        let responses = RoutingLockedValues<String>()
-        requestGroup.enter()
-        DefaultSession().runRequest(url: binding.host.appendingPathComponent("cars/bmw")) { _, body in
-            responses.append(body ?? "")
-            requestGroup.leave()
-        }
-        requestGroup.enter()
-        DefaultSession().runRequest(url: binding.host.appendingPathComponent("cars/bmw/series1"), method: "POST") { _, body in
-            responses.append(body ?? "")
-            requestGroup.leave()
-        }
-        requestGroup.enter()
-        DefaultSession().runRequest(url: binding.host.appendingPathComponent("cars/bmw/series1"), method: "GET") { _, body in
-            responses.append(body ?? "")
-            requestGroup.leave()
-        }
-        XCTAssertEqual(requestGroup.wait(timeout: .now() + 3), .success)
-        XCTAssertEqual(responses.values.sorted(), ["get", "mainBMW", "post"])
-    }
-}
+        try server.start(binding.port)
 
-private final class RoutingLockedValues<Value>: @unchecked Sendable {
-    private let lock = NSLock()
-    private var storage: [Value] = []
-
-    var values: [Value] {
-        self.lock.lock()
-        defer { self.lock.unlock() }
-        return self.storage
-    }
-
-    func append(_ value: Value) {
-        self.lock.lock()
-        self.storage.append(value)
-        self.lock.unlock()
+        let responses = try await withThrowingTaskGroup(of: String?.self) { group in
+            group.addTask { try await DefaultSession().request(url: binding.host.appendingPathComponent("cars/bmw")).body }
+            group.addTask { try await DefaultSession().request(url: binding.host.appendingPathComponent("cars/bmw/series1"), method: "POST").body }
+            group.addTask { try await DefaultSession().request(url: binding.host.appendingPathComponent("cars/bmw/series1"), method: "GET").body }
+            var values: [String] = []
+            for try await body in group {
+                if let body {
+                    values.append(body)
+                }
+            }
+            return values.sorted()
+        }
+        #expect(responses == ["get", "mainBMW", "post"])
     }
 }

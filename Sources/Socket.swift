@@ -221,7 +221,9 @@ open class Socket: @unchecked Sendable, Hashable, Equatable {
                 getnameinfo($0, addrLen, &hostBuffer, socklen_t(hostBuffer.count), nil, 0, NI_NUMERICHOST)
             }
         }
-        return result == 0 ? String(cString: hostBuffer) : nil
+        let endIndex = hostBuffer.firstIndex(of: 0) ?? hostBuffer.count
+        let bytes = hostBuffer[..<endIndex].map { UInt8(bitPattern: $0) }
+        return result == 0 ? String(decoding: bytes, as: UTF8.self) : nil
     }()
 
     public class func setNoSigPipe(_ socket: Int32) {

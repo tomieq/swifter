@@ -7,7 +7,7 @@
 import Foundation
 import Dispatch
 
-public class ConnectionLifetimeGuard {
+public class ConnectionLifetimeGuard: @unchecked Sendable {
     let server: HttpServer
     let socketLifeTime: TimeInterval
     var socketActivity = ThreadSafeCache<UUID, Date>()

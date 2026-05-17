@@ -5,10 +5,10 @@
 //  Copyright © 2016 Damian Kołakowski. All rights reserved.
 //
 
-import XCTest
+import Testing
 @testable import Swifter
 
-class SwifterTestsWebSocketSession: XCTestCase {
+@Suite struct SwifterTestsWebSocketSession {
     class TestSocket: DefaultSecureSocket {
         var content = [UInt8]()
         var offset = 0
@@ -26,93 +26,94 @@ class SwifterTestsWebSocketSession: XCTestCase {
             }
             throw SocketError.recvFailed("")
         }
+
+        override func writeUInt8(_ data: [UInt8]) throws { }
+        override func writeUInt8(_ data: ArraySlice<UInt8>) throws { }
+        override func close() { }
     }
 
     // swiftlint:disable function_body_length
-    func testParser() {
+    @Test func parser() {
         do {
             let session = WebSocketSession(TestSocket([0]))
             _ = try session.readFrame()
-            XCTAssert(false, "Parser should throw an error if socket has not enough data for a frame.")
+            Issue.record("Parser should throw an error if socket has not enough data for a frame.")
         } catch {
-            XCTAssert(true, "Parser should throw an error if socket has not enough data for a frame.")
         }
 
         do {
             let session = WebSocketSession(TestSocket([0b0000_0001, 0b0000_0000, 0, 0, 0, 0]))
             _ = try session.readFrame()
-            XCTAssert(false, "Parser should not accept unmasked frames.")
+            Issue.record("Parser should not accept unmasked frames.")
         } catch WebSocketSession.WsError.unMaskedFrame {
-            XCTAssert(true, "Parse should throw UnMaskedFrame error for unmasked message.")
         } catch {
-            XCTAssert(false, "Parse should throw UnMaskedFrame error for unmasked message.")
+            Issue.record("Parse should throw UnMaskedFrame error for unmasked message.")
         }
 
         do {
             let session = WebSocketSession(TestSocket([0b1000_0001, 0b1000_0000, 0, 0, 0, 0]))
             let frame = try session.readFrame()
-            XCTAssert(frame.fin, "Parser should detect fin flag set.")
+            #expect(frame.fin)
         } catch {
-            XCTAssert(false, "Parser should not throw an error for a frame with fin flag set (\(error)")
+            Issue.record("Parser should not throw an error for a frame with fin flag set (\(error)")
         }
 
         do {
             let session = WebSocketSession(TestSocket([0b0000_0000, 0b1000_0000, 0, 0, 0, 0]))
             let frame = try session.readFrame()
-            XCTAssertEqual(frame.opcode, WebSocketSession.OpCode.continue, "Parser should accept Continue opcode.")
+            #expect(frame.opcode == WebSocketSession.OpCode.continue)
         } catch {
-            XCTAssertTrue(true, "Parser should accept Continue opcode without any errors.")
+            Issue.record("Parser should accept Continue opcode without any errors.")
         }
 
         do {
             let session = WebSocketSession(TestSocket([0b0000_0001, 0b1000_0000, 0, 0, 0, 0]))
             let frame = try session.readFrame()
-            XCTAssertEqual(frame.opcode, WebSocketSession.OpCode.text, "Parser should accept Text opcode.")
+            #expect(frame.opcode == WebSocketSession.OpCode.text)
         } catch {
-            XCTAssert(false, "Parser should accept Text opcode without any errors.")
+            Issue.record("Parser should accept Text opcode without any errors.")
         }
 
         do {
             let session = WebSocketSession(TestSocket([0b0000_0010, 0b1000_0000, 0, 0, 0, 0]))
             let frame = try session.readFrame()
-            XCTAssertEqual(frame.opcode, WebSocketSession.OpCode.binary, "Parser should accept Binary opcode.")
+            #expect(frame.opcode == WebSocketSession.OpCode.binary)
         } catch {
-            XCTAssert(false, "Parser should accept Binary opcode without any errors.")
+            Issue.record("Parser should accept Binary opcode without any errors.")
         }
 
         do {
             let session = WebSocketSession(TestSocket([0b1000_1000, 0b1000_0000, 0, 0, 0, 0]))
             let frame = try session.readFrame()
-            XCTAssertEqual(frame.opcode, WebSocketSession.OpCode.close, "Parser should accept Close opcode.")
+            #expect(frame.opcode == WebSocketSession.OpCode.close)
         } catch {
-            XCTAssert(false, "Parser should accept Close opcode without any errors. \(error)")
+            Issue.record("Parser should accept Close opcode without any errors. \(error)")
         }
 
         do {
             let session = WebSocketSession(TestSocket([0b1000_1001, 0b1000_0000, 0, 0, 0, 0]))
             let frame = try session.readFrame()
-            XCTAssertEqual(frame.opcode, WebSocketSession.OpCode.ping, "Parser should accept Ping opcode.")
+            #expect(frame.opcode == WebSocketSession.OpCode.ping)
         } catch {
-            XCTAssert(false, "Parser should accept Ping opcode without any errors. \(error)")
+            Issue.record("Parser should accept Ping opcode without any errors. \(error)")
         }
 
         do {
             let session = WebSocketSession(TestSocket([0b1000_1010, 0b1000_0000, 0, 0, 0, 0]))
             let frame = try session.readFrame()
-            XCTAssertEqual(frame.opcode, WebSocketSession.OpCode.pong, "Parser should accept Pong opcode.")
+            #expect(frame.opcode == WebSocketSession.OpCode.pong)
         } catch {
-            XCTAssert(false, "Parser should accept Pong opcode without any errors. \(error)")
+            Issue.record("Parser should accept Pong opcode without any errors. \(error)")
         }
 
         for opcode in [3, 4, 5, 6, 7, 11, 12, 13, 14, 15] {
             do {
                 let session = WebSocketSession(TestSocket([UInt8(opcode), 0b1000_0000, 0, 0, 0, 0]))
                 _ = try session.readFrame()
-                XCTAssert(false, "Parse should throw an error for unknown opcode: \(opcode)")
+                Issue.record("Parse should throw an error for unknown opcode: \(opcode)")
             } catch WebSocketSession.WsError.unknownOpCode(_) {
-                XCTAssert(true, "Parse should throw UnknownOpCode error for unknown opcode.")
             } catch {
-                XCTAssert(false, "Parse should throw UnknownOpCode error for unknown opcode (was \(error)).")
+                Issue.record("Parse should throw UnknownOpCode error for unknown opcode (was \(error)).")
             }
         }
     }
