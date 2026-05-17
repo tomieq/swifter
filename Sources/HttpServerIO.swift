@@ -137,7 +137,7 @@ open class HttpServerIO: @unchecked Sendable {
         self.state = .stopped
     }
 
-    open func dispatch(_ request: HttpRequest, _ responseHeaders: HttpResponseHeaders) -> ([String: String], HttpRequestHandler) {
+    open func dispatch(_ request: HttpRequest, _ responseHeaders: HttpResponseHeaders) async -> ([String: String], HttpRequestHandler) {
         return ([:], { _, _ in HttpResponse.notFound() })
     }
 
@@ -153,9 +153,7 @@ open class HttpServerIO: @unchecked Sendable {
             self.metrics.notify(.traffic(socketID: socket.id))
             let request = request
             let responseHeaders = HttpResponseHeaders()
-            let (params, handler) = self.dispatch(request, responseHeaders)
-            request.pathParams = HttpRequestParams(params)
-            let response = self.executeHandler(request, responseHeaders, handler)
+            let response = self.executeHandler(request, responseHeaders)
             request.partialSummary.responseCode = response.statusCode
             var keepConnection = false
             do {
@@ -181,14 +179,12 @@ open class HttpServerIO: @unchecked Sendable {
     }
 
     private func executeHandler(_ request: HttpRequest,
-                                _ headers: HttpResponseHeaders,
-                                _ handler: @escaping HttpRequestHandler) -> HttpResponse {
+                                _ headers: HttpResponseHeaders) -> HttpResponse {
         let semaphore = DispatchSemaphore(value: 0)
         let responseStore = HandlerResponseStore()
-        let context = HandlerExecutionContext(instantRequestHandler: self.instantRequestHandler,
+        let context = HandlerExecutionContext(server: self,
                                               request: request,
                                               headers: headers,
-                                              handler: handler,
                                               responseStore: responseStore,
                                               semaphore: semaphore)
         Task.detached {
@@ -199,29 +195,28 @@ open class HttpServerIO: @unchecked Sendable {
     }
 
     private final class HandlerExecutionContext: @unchecked Sendable {
-        let instantRequestHandler: HttpInstantResponseHandler
+        let server: HttpServerIO
         let request: HttpRequest
         let headers: HttpResponseHeaders
-        let handler: HttpRequestHandler
         let responseStore: HandlerResponseStore
         let semaphore: DispatchSemaphore
 
-        init(instantRequestHandler: HttpInstantResponseHandler,
+        init(server: HttpServerIO,
              request: HttpRequest,
              headers: HttpResponseHeaders,
-             handler: @escaping HttpRequestHandler,
              responseStore: HandlerResponseStore,
              semaphore: DispatchSemaphore) {
-            self.instantRequestHandler = instantRequestHandler
+            self.server = server
             self.request = request
             self.headers = headers
-            self.handler = handler
             self.responseStore = responseStore
             self.semaphore = semaphore
         }
 
         func execute() async {
-            let response = await self.instantRequestHandler.watch(self.request, self.headers, self.handler)
+            let (params, handler) = await self.server.dispatch(self.request, self.headers)
+            self.request.pathParams = HttpRequestParams(params)
+            let response = await self.server.instantRequestHandler.watch(self.request, self.headers, handler)
             self.responseStore.store(response)
             self.semaphore.signal()
         }

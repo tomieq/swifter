@@ -31,9 +31,9 @@ class HttpInstantResponseHandler {
         }
     }
 
-    func watch(_ request: HttpRequest, _ headers: HttpResponseHeaders, _ handler: HttpMiddlewareHandler) -> HttpResponse? {
+    func watch(_ request: HttpRequest, _ headers: HttpResponseHeaders, _ handler: HttpMiddlewareHandler) async -> HttpResponse? {
         do {
-            return try handler(request, headers)
+            return try await handler(request, headers)
         } catch {
             if let instantResponse = error as? HttpInstantResponse {
                 headers.merge(instantResponse.headers)

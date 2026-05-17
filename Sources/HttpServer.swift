@@ -46,9 +46,9 @@ open class HttpServer: HttpServerIO, @unchecked Sendable {
 
     public var middleware = Middleware()
 
-    override open func dispatch(_ request: HttpRequest, _ responseHeaders: HttpResponseHeaders) -> ([String: String], HttpRequestHandler) {
+    override open func dispatch(_ request: HttpRequest, _ responseHeaders: HttpResponseHeaders) async -> ([String: String], HttpRequestHandler) {
         for layer in self.middleware.general + self.middleware.router.layers(path: request.path) {
-            if let response = self.instantRequestHandler.watch(request, responseHeaders, layer) {
+            if let response = await self.instantRequestHandler.watch(request, responseHeaders, layer) {
                 return ([:], { _, _ in response })
             }
         }
@@ -58,7 +58,7 @@ open class HttpServer: HttpServerIO, @unchecked Sendable {
         if let notFoundHandler = self.notFoundHandler {
             return ([:], notFoundHandler)
         }
-        return super.dispatch(request, responseHeaders)
+        return await super.dispatch(request, responseHeaders)
     }
 
     public struct MethodRoute {

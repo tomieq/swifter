@@ -10,39 +10,39 @@ import Testing
 @testable import Swifter
 
 @Suite struct MiddlewareRouterTests {
-    @Test func routerForExactPath() {
+    @Test func routerForExactPath() async {
         let fixture = MiddlewareRouterFixture()
         fixture.router.register(path: "admin", handler: fixture.makeHandler(id: "A"))
-        fixture.invokeHandlers(path: "admin")
+        await fixture.invokeHandlers(path: "admin")
         #expect(fixture.invokedHandlers == ["A"])
     }
 
-    @Test func routerSingleWildcard() {
+    @Test func routerSingleWildcard() async {
         let fixture = MiddlewareRouterFixture()
         fixture.router.register(path: "admin/*", handler: fixture.makeHandler(id: "A"))
         fixture.router.register(path: "admin/script.js", handler: fixture.makeHandler(id: "B"))
 
-        fixture.invokeHandlers(path: "admin")
+        await fixture.invokeHandlers(path: "admin")
         #expect(fixture.invokedHandlers.isEmpty)
 
         fixture.resetInvocations()
-        fixture.invokeHandlers(path: "admin/index.html")
+        await fixture.invokeHandlers(path: "admin/index.html")
         #expect(fixture.invokedHandlers == ["A"])
 
         fixture.resetInvocations()
-        fixture.invokeHandlers(path: "admin/script.js")
+        await fixture.invokeHandlers(path: "admin/script.js")
         #expect(fixture.invokedHandlers == ["A", "B"])
 
         fixture.resetInvocations()
-        fixture.invokeHandlers(path: "admin/nested/script.js")
+        await fixture.invokeHandlers(path: "admin/nested/script.js")
         #expect(fixture.invokedHandlers.isEmpty)
 
         fixture.resetInvocations()
-        fixture.invokeHandlers(path: "admin/nested/even/more/load.js")
+        await fixture.invokeHandlers(path: "admin/nested/even/more/load.js")
         #expect(fixture.invokedHandlers.isEmpty)
     }
 
-    @Test func routerGreedyWildcard() {
+    @Test func routerGreedyWildcard() async {
         let fixture = MiddlewareRouterFixture()
         fixture.router.register(path: "admin/*", handler: fixture.makeHandler(id: "A"))
         fixture.router.register(path: "admin/**", handler: fixture.makeHandler(id: "B"))
@@ -52,27 +52,27 @@ import Testing
         fixture.router.register(path: "admin/nested", handler: fixture.makeHandler(id: "F"))
 
         fixture.resetInvocations()
-        fixture.invokeHandlers(path: "admin")
+        await fixture.invokeHandlers(path: "admin")
         #expect(fixture.invokedHandlers == ["D"])
 
         fixture.resetInvocations()
-        fixture.invokeHandlers(path: "/admin/index.html")
+        await fixture.invokeHandlers(path: "/admin/index.html")
         #expect(fixture.invokedHandlers == ["B", "A"])
 
         fixture.resetInvocations()
-        fixture.invokeHandlers(path: "admin/script.js")
+        await fixture.invokeHandlers(path: "admin/script.js")
         #expect(fixture.invokedHandlers == ["B", "A", "C"])
 
         fixture.resetInvocations()
-        fixture.invokeHandlers(path: "admin/nested/script.js")
+        await fixture.invokeHandlers(path: "admin/nested/script.js")
         #expect(fixture.invokedHandlers == ["B"])
 
         fixture.resetInvocations()
-        fixture.invokeHandlers(path: "admin/nested/even/more/load.js")
+        await fixture.invokeHandlers(path: "admin/nested/even/more/load.js")
         #expect(fixture.invokedHandlers == ["B", "E"])
     }
 
-    @Test func mixedIssue() {
+    @Test func mixedIssue() async {
         let fixture = MiddlewareRouterFixture()
         fixture.router.register(path: "/**", handler: fixture.makeHandler(id: "0"))
         fixture.router.register(path: "admin/**", handler: fixture.makeHandler(id: "A"))
@@ -81,7 +81,7 @@ import Testing
         fixture.router.register(path: "admin/**/file.js", handler: fixture.makeHandler(id: "D"))
 
         fixture.resetInvocations()
-        fixture.invokeHandlers(path: "admin/reset/a/file.js")
+        await fixture.invokeHandlers(path: "admin/reset/a/file.js")
         #expect(fixture.invokedHandlers == ["0", "A", "D"])
     }
 }
@@ -99,9 +99,9 @@ private final class MiddlewareRouterFixture {
         }
     }
 
-    func invokeHandlers(path: String) {
-        self.router.layers(path: path).forEach {
-            _ = try? $0(HttpRequest(socketID: UUID()), HttpResponseHeaders())
+    func invokeHandlers(path: String) async {
+        for layer in self.router.layers(path: path) {
+            _ = try? await layer(HttpRequest(socketID: UUID()), HttpResponseHeaders())
         }
     }
 

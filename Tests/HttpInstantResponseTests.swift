@@ -56,6 +56,23 @@ import Testing
         #expect(response.body == "InstantMiddleware")
     }
 
+    @Test func returningResponseFromAsyncMiddleware() async throws {
+        let server = HttpServer()
+        defer { stop(server) }
+        server.get["api/v1"] = { _, _ in
+            return .ok(.text("OK"))
+        }
+        server.middleware.append { _, _ in
+            await Task.yield()
+            return .accepted(.text("AsyncMiddleware"))
+        }
+        let binding = ServerBinding.make()
+        try server.start(binding.port)
+        let response = try await DefaultSession().request(url: binding.host.appendingPathComponent("api/v1"))
+        #expect(response.statusCode == 202)
+        #expect(response.body == "AsyncMiddleware")
+    }
+
     @Test func globalErrorHandler() async throws {
         enum CustomError: Error {
             case uups

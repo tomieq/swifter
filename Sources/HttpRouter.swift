@@ -8,7 +8,7 @@
 import Foundation
 
 public typealias HttpRequestHandler = (HttpRequest, HttpResponseHeaders) async throws -> HttpResponse
-public typealias HttpMiddlewareHandler = (HttpRequest, HttpResponseHeaders) throws -> HttpResponse?
+public typealias HttpMiddlewareHandler = (HttpRequest, HttpResponseHeaders) async throws -> HttpResponse?
 public typealias HttpGlobalErrorHandler = (Error, HttpRequest, HttpResponseHeaders) -> HttpResponse
 
 open class HttpRouter {
