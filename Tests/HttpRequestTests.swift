@@ -10,14 +10,13 @@ import XCTest
 @testable import Swifter
 
 class HttpRequestTests: XCTestCase {
-    
     func testformData() throws {
         struct FormData: Codable {
             let user: String
             let password: Int
         }
         let request = HttpRequest(socketID: UUID())
-        request.headers = HttpRequestHeaderParams(["content-type":"application/x-www-form-urlencoded"])
+        request.headers = HttpRequestHeaderParams(["content-type": "application/x-www-form-urlencoded"])
         request.body = HttpRequestBody([UInt8]("user=John&password=1234".data(using: .utf8)!))
         let formData: FormData? = try request.formData.decode()
         XCTAssertEqual(formData?.user, "John")

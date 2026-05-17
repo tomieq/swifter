@@ -7,25 +7,24 @@ import XCTest
 @testable import Swifter
 
 class SwifterTestsHttpResponseBody: XCTestCase {
-
     func testDictionaryAsJSONPayload() {
-        verify(input: ["key": "value"], output: "{\"key\":\"value\"}")
-        verify(input: ["key": ["value1", "value2", "value3"]], output: "{\"key\":[\"value1\",\"value2\",\"value3\"]}")
+        self.verify(input: ["key": "value"], output: "{\"key\":\"value\"}")
+        self.verify(input: ["key": ["value1", "value2", "value3"]], output: "{\"key\":[\"value1\",\"value2\",\"value3\"]}")
     }
 
     func testArrayAsJSONPayload() {
-        verify(input: ["key", "value"], output: "[\"key\",\"value\"]")
-        verify(input: ["value1", "value2", "value3"], output: "[\"value1\",\"value2\",\"value3\"]")
+        self.verify(input: ["key", "value"], output: "[\"key\",\"value\"]")
+        self.verify(input: ["value1", "value2", "value3"], output: "[\"value1\",\"value2\",\"value3\"]")
     }
 
     func testNSDictionaryAsJSONPayload() {
-        verify(input: ["key": "value"], output: "{\"key\":\"value\"}")
-        verify(input: ["key": ["value1", "value2", "value3"]], output: "{\"key\":[\"value1\",\"value2\",\"value3\"]}")
+        self.verify(input: ["key": "value"], output: "{\"key\":\"value\"}")
+        self.verify(input: ["key": ["value1", "value2", "value3"]], output: "{\"key\":[\"value1\",\"value2\",\"value3\"]}")
     }
 
     func testNSArrayAsJSONPayload() {
-        verify(input: ["key", "value"], output: "[\"key\",\"value\"]")
-        verify(input: ["value1", "value2", "value3"], output: "[\"value1\",\"value2\",\"value3\"]")
+        self.verify(input: ["key", "value"], output: "[\"key\",\"value\"]")
+        self.verify(input: ["value1", "value2", "value3"], output: "[\"value1\",\"value2\",\"value3\"]")
     }
 
     private func verify(input: Encodable, output expectedOutput: String, line: UInt = #line) {

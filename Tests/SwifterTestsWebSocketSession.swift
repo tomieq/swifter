@@ -9,7 +9,6 @@ import XCTest
 @testable import Swifter
 
 class SwifterTestsWebSocketSession: XCTestCase {
-
     class TestSocket: DefaultSecureSocket {
         var content = [UInt8]()
         var offset = 0
@@ -18,11 +17,11 @@ class SwifterTestsWebSocketSession: XCTestCase {
             super.init(Socket(socketFileDescriptor: -1))
             self.content.append(contentsOf: content)
         }
-        
+
         override func read() throws -> UInt8 {
-            if offset < content.count {
-                let value = self.content[offset]
-                offset += 1
+            if self.offset < self.content.count {
+                let value = self.content[self.offset]
+                self.offset += 1
                 return value
             }
             throw SocketError.recvFailed("")
@@ -31,7 +30,6 @@ class SwifterTestsWebSocketSession: XCTestCase {
 
     // swiftlint:disable function_body_length
     func testParser() {
-
         do {
             let session = WebSocketSession(TestSocket([0]))
             _ = try session.readFrame()
@@ -86,7 +84,7 @@ class SwifterTestsWebSocketSession: XCTestCase {
             let session = WebSocketSession(TestSocket([0b1000_1000, 0b1000_0000, 0, 0, 0, 0]))
             let frame = try session.readFrame()
             XCTAssertEqual(frame.opcode, WebSocketSession.OpCode.close, "Parser should accept Close opcode.")
-        } catch let error {
+        } catch {
             XCTAssert(false, "Parser should accept Close opcode without any errors. \(error)")
         }
 
@@ -94,7 +92,7 @@ class SwifterTestsWebSocketSession: XCTestCase {
             let session = WebSocketSession(TestSocket([0b1000_1001, 0b1000_0000, 0, 0, 0, 0]))
             let frame = try session.readFrame()
             XCTAssertEqual(frame.opcode, WebSocketSession.OpCode.ping, "Parser should accept Ping opcode.")
-        } catch let error {
+        } catch {
             XCTAssert(false, "Parser should accept Ping opcode without any errors. \(error)")
         }
 
@@ -102,7 +100,7 @@ class SwifterTestsWebSocketSession: XCTestCase {
             let session = WebSocketSession(TestSocket([0b1000_1010, 0b1000_0000, 0, 0, 0, 0]))
             let frame = try session.readFrame()
             XCTAssertEqual(frame.opcode, WebSocketSession.OpCode.pong, "Parser should accept Pong opcode.")
-        } catch let error {
+        } catch {
             XCTAssert(false, "Parser should accept Pong opcode without any errors. \(error)")
         }
 

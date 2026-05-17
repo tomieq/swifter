@@ -27,16 +27,18 @@ extension HttpServer {
 struct ServerBinding {
     let port: UInt16
     let host: URL
-    
+
     static func make() -> ServerBinding {
-        queue.sync {
+        self.queue.sync {
             ServerBinding.nextPort += 1
             return ServerBinding(port: ServerBinding.nextPort, host: URL(string: "http://127.0.0.1:\(ServerBinding.nextPort)")!)
         }
     }
+
     private static var nextPort: UInt16 = 9080
     private static let queue = DispatchQueue(label: "serverbinding.init")
 }
+
 // Client
 extension URLSession {
     func pingTask(
@@ -52,7 +54,7 @@ extension URLSession {
     ) -> Bool {
         let semaphore = DispatchSemaphore(value: 0)
         self.signalIfPongReceived(semaphore, hostURL: hostURL)
-        
+
         let result = semaphore.wait(timeout: .now() + timeout)
         switch result {
         case .success:
@@ -63,7 +65,7 @@ extension URLSession {
     }
 
     func signalIfPongReceived(_ semaphore: DispatchSemaphore, hostURL: URL) {
-        pingTask(hostURL: hostURL) { _, response, _ in
+        self.pingTask(hostURL: hostURL) { _, response, _ in
             if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 {
                 semaphore.signal()
             } else {

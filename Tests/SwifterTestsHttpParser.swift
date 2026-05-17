@@ -9,7 +9,6 @@ import XCTest
 @testable import Swifter
 
 class SwifterTestsHttpParser: XCTestCase {
-
     /// A specialized Socket which creates a linked socket pair with a pipe, and
     /// immediately writes in fixed data. This enables tests to static fixture
     /// data into the regular Socket flow.
@@ -103,7 +102,7 @@ class SwifterTestsHttpParser: XCTestCase {
 
         do {
             _ = try parser.readHttpRequest(TestSocket("GET / HTTP/1.0\r\nContent-Length: -1\r\n\r\n"))
-        } catch let error {
+        } catch {
             let error = error as? HttpParserError
             XCTAssertNotNil(error)
             XCTAssertEqual(error!, HttpParserError.negativeContentLength)
@@ -186,7 +185,7 @@ class SwifterTestsHttpParser: XCTestCase {
         XCTAssertEqual(resp?.method, .GET, "Parser should extract HTTP method name from the status line.")
         XCTAssertEqual(resp?.path, "/some/path", "Parser should extract HTTP path value from the status line.")
         XCTAssertEqual(resp?.headers["content-length"], "10", "Parser should extract Content-Length header value.")
-        
+
         resp = try? parser.readHttpRequest(TestSocket("GET /path[]/param?a[]=1&a[]=2&b=%20 HTTP/1.0\r\nContent-Length: 0\r\n\r\n"))
         queryPairs = resp?.queryParams.list ?? []
 

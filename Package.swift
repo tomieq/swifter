@@ -3,35 +3,35 @@
 import PackageDescription
 
 let package = Package(
-  name: "Swifter",
+    name: "Swifter",
 
-  products: [
-    .library(name: "Swifter", targets: ["Swifter"]),
-    .executable(name: "Example", targets: ["Example"])
-  ],
+    products: [
+        .library(name: "Swifter", targets: ["Swifter"]),
+        .executable(name: "Example", targets: ["Example"])
+    ],
 
-  dependencies: [],
+    dependencies: [],
 
-  targets: [
-    .target(
-      name: "Swifter", 
-      dependencies: [], 
-      path: "Sources"
-      ),
+    targets: [
+        .target(
+            name: "Swifter",
+            dependencies: [],
+            path: "Sources"
+        ),
 
-    .executableTarget(
-      name: "Example",
-      dependencies: [
-        "Swifter"
-      ], 
-      path: "Example"),
+        .executableTarget(
+            name: "Example",
+            dependencies: [
+                "Swifter"
+            ],
+            path: "Example"),
 
-    .testTarget(
-      name: "SwifterTests", 
-      dependencies: [
-        "Swifter"
-      ], 
-      path: "Tests"
-    )
-  ]
+        .testTarget(
+            name: "SwifterTests",
+            dependencies: [
+                "Swifter"
+            ],
+            path: "Tests"
+        )
+    ]
 )

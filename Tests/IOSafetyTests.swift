@@ -18,17 +18,17 @@ class IOSafetyTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        server = HttpServer.pingServer()
-        urlSession = URLSession(configuration: .default)
+        self.server = HttpServer.pingServer()
+        self.urlSession = URLSession(configuration: .default)
     }
 
     override func tearDown() {
-        if server.operating {
-            server.stop()
+        if self.server.operating {
+            self.server.stop()
         }
 
-        urlSession = nil
-        server = nil
+        self.urlSession = nil
+        self.server = nil
 
         super.tearDown()
     }
@@ -38,20 +38,20 @@ class IOSafetyTests: XCTestCase {
     func testStopWithActiveConnections() {
         let binding = ServerBinding.make()
         (0...8).forEach { cpt in
-            server = HttpServer.pingServer()
+            self.server = HttpServer.pingServer()
             do {
-                try server.start(binding.port)
-                XCTAssertFalse(urlSession.retryPing(hostURL: binding.host))
+                try self.server.start(binding.port)
+                XCTAssertFalse(self.urlSession.retryPing(hostURL: binding.host))
                 (0...100).forEach { _ in
                     DispatchQueue.global(qos: DispatchQoS.default.qosClass).sync {
-                        urlSession.pingTask(hostURL: binding.host) { _, _, _ in }.resume()
+                        self.urlSession.pingTask(hostURL: binding.host) { _, _, _ in }.resume()
                     }
                 }
-                server.stop()
-                
-                    sleep(1)
-                
-            } catch let error {
+                self.server.stop()
+
+                sleep(1)
+
+            } catch {
                 XCTFail("\(cpt): \(error)")
             }
         }

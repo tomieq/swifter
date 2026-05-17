@@ -8,7 +8,6 @@ import XCTest
 import Swifter
 
 class DataSizeTests: XCTestCase {
-    
     func test_initFromDouble() {
         XCTAssertEqual(DataSize(578), .B(578))
         XCTAssertEqual(DataSize(999), .B(999))
@@ -17,7 +16,7 @@ class DataSizeTests: XCTestCase {
         XCTAssertEqual(DataSize(73_000_000), .MB(73))
         XCTAssertEqual(DataSize(21_000_000_000), .GB(21))
     }
-    
+
     func test_count() {
         XCTAssertEqual(DataSize.B(578).count, 578)
         XCTAssertEqual(DataSize.KB(243).count, 243_000)
@@ -38,7 +37,7 @@ class DataSizeTests: XCTestCase {
         XCTAssertTrue(DataSize.B(23) < DataSize.B(27))
         XCTAssertTrue(DataSize.B(23) < DataSize.MB(12))
         XCTAssertTrue(DataSize.MB(23) < DataSize.GB(4))
-        
+
         XCTAssertFalse(DataSize.TB(8) < DataSize.GB(4))
     }
 }

@@ -12,11 +12,11 @@ import FoundationNetworking
 
 class DefaultSession {
     let instance: URLSession
-    
+
     init() {
         self.instance = URLSession(configuration: .default)
     }
-    
+
     private func runTask(
         hostURL: URL,
         method: String = "GET",
@@ -24,7 +24,7 @@ class DefaultSession {
     ) -> URLSessionDataTask {
         var request = URLRequest(url: hostURL)
         request.httpMethod = method
-        return instance.dataTask(with: request, completionHandler: handler)
+        return self.instance.dataTask(with: request, completionHandler: handler)
     }
 
     /*
@@ -37,7 +37,7 @@ class DefaultSession {
      wait(for: [expectation], timeout: 1)
      */
     func runRequest(url: URL, method: String = "GET", body: ((Int, String?) -> Void)? = nil) {
-        runTask(hostURL: url, method: method) { data, response, error in
+        self.runTask(hostURL: url, method: method) { data, response, error in
             guard error == nil else {
                 print("runRequest error: \(error.debugDescription)")
                 return
@@ -47,7 +47,6 @@ class DefaultSession {
             }
         }.resume()
     }
-
 }
 
 extension Data {

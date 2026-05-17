@@ -13,29 +13,28 @@ import FoundationNetworking
 @testable import Swifter
 
 class HttpServerRoutingTests: XCTestCase {
-    
     var server: HttpServer!
-    
+
     override func setUp() {
         super.setUp()
-        server = HttpServer()
+        self.server = HttpServer()
     }
-    
+
     override func tearDown() {
-        if server.operating {
-            server.stop()
+        if self.server.operating {
+            self.server.stop()
         }
-        server = nil
+        self.server = nil
         super.tearDown()
     }
-    
+
     func testGroupedRouting() throws {
-        let users = server.grouped("users")
+        let users = self.server.grouped("users")
         users.get[":id"] = { request, _ in
             let userID = request.pathParams.get("id") ?? ""
             return .ok(.text(userID))
         }
-        let cars = server.grouped("cars")
+        let cars = self.server.grouped("cars")
         cars.group("bmw") { bmw in
             bmw.get.handler = { _, _ in
                 .ok(.text("mainBMW"))
@@ -45,7 +44,7 @@ class HttpServerRoutingTests: XCTestCase {
             }
         }
         let binding = ServerBinding.make()
-        try server.start(binding.port)
+        try self.server.start(binding.port)
         let expectation1 = expectation(description: "")
         DefaultSession().runRequest(url: binding.host.appendingPathComponent("users/5")) { _, body in
             XCTAssertEqual(body, "5")
@@ -63,12 +62,12 @@ class HttpServerRoutingTests: XCTestCase {
         }
         wait(for: [expectation1, expectation2, expectation3], timeout: 2)
     }
-    
+
     func testGroupedRoutingByWebPath() throws {
         enum LocalPath: String, WebPath {
             case series1
         }
-        let cars = server.grouped("cars")
+        let cars = self.server.grouped("cars")
         cars.group("bmw") { bmw in
             bmw.get.handler = { _, _ in
                 .ok(.text("mainBMW"))
@@ -81,7 +80,7 @@ class HttpServerRoutingTests: XCTestCase {
             }
         }
         let binding = ServerBinding.make()
-        try server.start(binding.port)
+        try self.server.start(binding.port)
         let expectation1 = expectation(description: "")
         DefaultSession().runRequest(url: binding.host.appendingPathComponent("cars/bmw")) { _, body in
             XCTAssertEqual(body, "mainBMW")

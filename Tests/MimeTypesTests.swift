@@ -9,7 +9,6 @@
 import XCTest
 
 class MimeTypeTests: XCTestCase {
-
     func testDefaultValue() {
         XCTAssertEqual("file.null".mimeType, "application/octet-stream")
     }
@@ -29,5 +28,4 @@ class MimeTypeTests: XCTestCase {
         XCTAssertEqual("file.PPTX".mimeType, "application/vnd.openxmlformats-officedocument.presentationml.presentation")
         XCTAssertEqual("FILE.WAR".mimeType, "application/java-archive")
     }
-
 }

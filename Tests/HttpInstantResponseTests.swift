@@ -13,31 +13,30 @@ import FoundationNetworking
 @testable import Swifter
 
 class HttpInstantResponseTests: XCTestCase {
-    
     var server: HttpServer!
-    
+
     override func setUp() {
         super.setUp()
-        server = HttpServer()
+        self.server = HttpServer()
     }
-    
+
     override func tearDown() {
-        if server.operating {
-            server.stop()
+        if self.server.operating {
+            self.server.stop()
         }
-        server = nil
+        self.server = nil
         super.tearDown()
     }
-    
+
     func testReturningResponseFromHandler() throws {
-        server.get["api/:version"] = { request, _ in
+        self.server.get["api/:version"] = { request, _ in
             if request.pathParams.get("version") == "v1" {
                 throw HttpInstantResponse(response: .ok(.text("InvalidVersion")))
             }
             return .ok(.text("OK"))
         }
         let binding = ServerBinding.make()
-        try server.start(binding.port)
+        try self.server.start(binding.port)
         let expectation = expectation(description: "")
         DefaultSession().runRequest(url: binding.host.appendingPathComponent("api/v1")) { _, body in
             XCTAssertEqual(body, "InvalidVersion")
@@ -45,16 +44,16 @@ class HttpInstantResponseTests: XCTestCase {
         }
         wait(for: [expectation], timeout: 1)
     }
-    
+
     func testReturningResponseFromMiddleware() throws {
-        server.get["api/v1"] = { _, _ in
+        self.server.get["api/v1"] = { _, _ in
             return .ok(.text("OK"))
         }
-        server.middleware.append({ _, _ in
+        self.server.middleware.append({ _, _ in
             throw HttpInstantResponse(response: .badRequest(.text("InstantMiddleware")))
         })
         let binding = ServerBinding.make()
-        try server.start(binding.port)
+        try self.server.start(binding.port)
         let expectation = expectation(description: "")
         DefaultSession().runRequest(url: binding.host.appendingPathComponent("api/v1")) { code, body in
             XCTAssertEqual(code, 400)
@@ -63,19 +62,19 @@ class HttpInstantResponseTests: XCTestCase {
         }
         wait(for: [expectation], timeout: 1)
     }
-    
+
     func testGlobalErrorHandler() throws {
         enum CustomError: Error {
             case uups
         }
-        server.get["api/v1"] = { _, _ in
+        self.server.get["api/v1"] = { _, _ in
             throw CustomError.uups
         }
-        server.globalErrorHandler = { error, request, headers in
+        self.server.globalErrorHandler = { error, request, headers in
             return .badRequest(.text("repacked"))
         }
         let binding = ServerBinding.make()
-        try server.start(binding.port)
+        try self.server.start(binding.port)
         let expectation = expectation(description: "")
         DefaultSession().runRequest(url: binding.host.appendingPathComponent("api/v1")) { code, body in
             expectation.fulfill()

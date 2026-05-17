@@ -13,40 +13,38 @@ import FoundationNetworking
 @testable import Swifter
 
 class ServerThreadingTests: XCTestCase {
-
     var server: HttpServer!
 
     override func setUp() {
         super.setUp()
-        server = HttpServer()
+        self.server = HttpServer()
     }
 
     override func tearDown() {
-        if server.operating {
-            server.stop()
+        if self.server.operating {
+            self.server.stop()
         }
-        server = nil
+        self.server = nil
         super.tearDown()
     }
 
     func testShouldHandleTheRequestInDifferentTimeIntervals() {
-
         let path = "/a/:b/c"
         let queue = DispatchQueue(label: "com.swifter.threading")
         let hostURL: URL
 
-        server.get[path] = { request, _ in .ok(.html("You asked for " + request.path)) }
+        self.server.get[path] = { request, _ in .ok(.html("You asked for " + request.path)) }
 
         do {
             let binding = ServerBinding.make()
-            try server.start(binding.port)
+            try self.server.start(binding.port)
 
             let requestExpectation = expectation(description: "Request should finish.")
             requestExpectation.expectedFulfillmentCount = 3
 
             (1...3).forEach { index in
                 queue.asyncAfter(deadline: .now() + .seconds(index)) {
-                    let task = URLSession.shared.executeAsyncTask(hostURL: binding.host, path: path) { (_, response, _ ) in
+                    let task = URLSession.shared.executeAsyncTask(hostURL: binding.host, path: path) { _, response, _ in
                         requestExpectation.fulfill()
                         let statusCode = (response as? HTTPURLResponse)?.statusCode
                         XCTAssertNotNil(statusCode)
@@ -57,7 +55,7 @@ class ServerThreadingTests: XCTestCase {
                 }
             }
 
-        } catch let error {
+        } catch {
             XCTFail("\(error)")
         }
 
@@ -65,22 +63,20 @@ class ServerThreadingTests: XCTestCase {
     }
 
     func testShouldHandleTheSameRequestConcurrently() {
-
         let path = "/a/:b/c"
-        server.get[path] = { request, _ in .ok(.html("You asked for " + request.path)) }
+        self.server.get[path] = { request, _ in .ok(.html("You asked for " + request.path)) }
 
         var requestExpectation: XCTestExpectation? = expectation(description: "Should handle the request concurrently")
 
         do {
             let binding = ServerBinding.make()
-            try server.start(binding.port)
+            try self.server.start(binding.port)
             let downloadGroup = DispatchGroup()
 
             DispatchQueue.concurrentPerform(iterations: 3) { _ in
                 downloadGroup.enter()
 
-                let task = URLSession.shared.executeAsyncTask(hostURL: binding.host, path: path) { (_, response, _ ) in
-
+                let task = URLSession.shared.executeAsyncTask(hostURL: binding.host, path: path) { _, response, _ in
                     let statusCode = (response as? HTTPURLResponse)?.statusCode
                     XCTAssertNotNil(statusCode)
                     XCTAssertEqual(statusCode, 200)
@@ -92,7 +88,7 @@ class ServerThreadingTests: XCTestCase {
                 task.resume()
             }
 
-        } catch let error {
+        } catch {
             XCTFail("\(error)")
         }
 
@@ -101,12 +97,11 @@ class ServerThreadingTests: XCTestCase {
 }
 
 extension URLSession {
-
     func executeAsyncTask(
         hostURL: URL,
         path: String,
         completionHandler handler: @escaping (Data?, URLResponse?, Error?) -> Void
-        ) -> URLSessionDataTask {
+    ) -> URLSessionDataTask {
         return self.dataTask(with: hostURL.appendingPathComponent(path), completionHandler: handler)
     }
 }
