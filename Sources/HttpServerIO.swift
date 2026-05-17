@@ -178,51 +178,42 @@ open class HttpServerIO: @unchecked Sendable {
         tlsSocket.close()
     }
 
+    /// Bridges the synchronous, blocking connection loop into the async handler pipeline.
+    ///
+    /// The connection loop runs on a dedicated `DispatchQueue.global` worker which performs
+    /// blocking socket I/O. User handlers, however, are `async`. We launch a detached Task on
+    /// the cooperative pool, then block the dispatch worker on a semaphore until the async
+    /// pipeline completes. This avoids polluting the cooperative pool with blocking I/O while
+    /// still allowing handlers to suspend freely.
     private func executeHandler(_ request: HttpRequest,
                                 _ headers: HttpResponseHeaders) -> HttpResponse {
         let semaphore = DispatchSemaphore(value: 0)
-        let responseStore = HandlerResponseStore()
-        let context = HandlerExecutionContext(server: self,
-                                              request: request,
-                                              headers: headers,
-                                              responseStore: responseStore,
-                                              semaphore: semaphore)
-        Task.detached {
-            await context.execute()
+        let box = HandlerResponseBox()
+        // `HttpRequest` and `HttpResponseHeaders` are reference types not declared `Sendable`,
+        // but each request flows through exactly one handler chain at a time. The semaphore
+        // establishes a happens-before relationship between the writes inside the detached
+        // task and the read on the connection thread, so transferring them across the
+        // boundary inside `UnsafeTransfer` is safe in practice.
+        let transfer = UnsafeTransfer(request: request, headers: headers)
+        Task.detached(priority: .userInitiated) { [self] in
+            defer { semaphore.signal() }
+            let request = transfer.request
+            let headers = transfer.headers
+            let (params, handler) = await self.dispatch(request, headers)
+            request.pathParams = HttpRequestParams(params)
+            let response = await self.instantRequestHandler.watch(request, headers, handler)
+            box.store(response)
         }
         semaphore.wait()
-        return responseStore.load() ?? .internalServerError(.text("Unexpected handler execution failure"))
+        return box.load() ?? .internalServerError(.text("Unexpected handler execution failure"))
     }
 
-    private final class HandlerExecutionContext: @unchecked Sendable {
-        let server: HttpServerIO
+    private struct UnsafeTransfer: @unchecked Sendable {
         let request: HttpRequest
         let headers: HttpResponseHeaders
-        let responseStore: HandlerResponseStore
-        let semaphore: DispatchSemaphore
-
-        init(server: HttpServerIO,
-             request: HttpRequest,
-             headers: HttpResponseHeaders,
-             responseStore: HandlerResponseStore,
-             semaphore: DispatchSemaphore) {
-            self.server = server
-            self.request = request
-            self.headers = headers
-            self.responseStore = responseStore
-            self.semaphore = semaphore
-        }
-
-        func execute() async {
-            let (params, handler) = await self.server.dispatch(self.request, self.headers)
-            self.request.pathParams = HttpRequestParams(params)
-            let response = await self.server.instantRequestHandler.watch(self.request, self.headers, handler)
-            self.responseStore.store(response)
-            self.semaphore.signal()
-        }
     }
 
-    private final class HandlerResponseStore: @unchecked Sendable {
+    private final class HandlerResponseBox: @unchecked Sendable {
         private let lock = NSLock()
         private var response: HttpResponse?
 
