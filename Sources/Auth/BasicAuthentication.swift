@@ -16,17 +16,25 @@ public class BasicAuthentication {
     }
 
     public func authorizedUser(_ request: HttpRequest) -> String? {
-        if let authorization = request.headers[.authorization], authorization.starts(with: "Basic") {
-            guard let data = authorization.trimming("Basic ").data(using: .utf8),
-                  let decoded = Data(base64Encoded: data),
-                  let value = String(data: decoded, encoding: .utf8),
-                  let colonIndex = value.firstIndex(of: ":") else {
+        if let authorization = request.headers[.authorization] {
+            // Expect header like: Basic base64(username:password)
+            let header = authorization.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard header.count > 6 else { return nil }
+            let prefix = String(header.prefix(6))
+            guard prefix.lowercased() == "basic " else { return nil }
+
+            let base64Part = header.dropFirst(6).trimmingCharacters(in: .whitespacesAndNewlines)
+            guard let decodedData = Data(base64Encoded: String(base64Part)),
+                  let credentials = String(data: decodedData, encoding: .utf8) else {
                 return nil
             }
-            let username = String(value.prefix(upTo: colonIndex)).trimmed
-            let password = String(value.suffix(from: colonIndex).dropFirst())
 
-            if self.credentialsProvider(username) == password {
+            let parts = credentials.split(separator: ":", maxSplits: 1, omittingEmptySubsequences: false)
+            guard parts.count == 2 else { return nil }
+            let username = String(parts[0]).trimmed
+            let password = String(parts[1])
+
+            if let expected = self.credentialsProvider(username), timingSafeEqual(expected, password) {
                 return username
             }
         }

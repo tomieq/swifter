@@ -109,6 +109,19 @@ extension Socket {
             throw SocketError.acceptFailed(Errno.description())
         }
         Socket.setNoSigPipe(clientSocket)
+        // Set reasonable defaults for client sockets to reduce blocking risks
+        // Disable Nagle for lower latency on all platforms
+        var noDelay: Int32 = 1
+        #if os(Linux)
+        // Linux toolchains sometimes expect different C typedefs; cast constants explicitly
+        _ = setsockopt(clientSocket, Int32(IPPROTO_TCP), Int32(TCP_NODELAY), &noDelay, socklen_t(MemoryLayout<Int32>.size))
+        #else
+        _ = setsockopt(clientSocket, IPPROTO_TCP, TCP_NODELAY, &noDelay, socklen_t(MemoryLayout<Int32>.size))
+        #endif
+        // Set send/recv timeouts (60s)
+        var tv = timeval(tv_sec: 60, tv_usec: 0)
+        setsockopt(clientSocket, SOL_SOCKET, SO_RCVTIMEO, &tv, socklen_t(MemoryLayout<timeval>.size))
+        setsockopt(clientSocket, SOL_SOCKET, SO_SNDTIMEO, &tv, socklen_t(MemoryLayout<timeval>.size))
         return Socket(socketFileDescriptor: clientSocket)
     }
 }

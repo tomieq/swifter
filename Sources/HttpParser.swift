@@ -10,6 +10,9 @@ import Foundation
 enum HttpParserError: Error, Equatable {
     case invalidStatusLine(String)
     case negativeContentLength
+    case unsupportedTransferEncoding
+    case uriTooLong
+    case headersTooLarge
 }
 
 public enum RequestBodyLimit {
@@ -19,13 +22,20 @@ public enum RequestBodyLimit {
 
 public class HttpParser {
     private let bodyLimit: RequestBodyLimit
+    private let maxHeadersCount: Int
 
-    public init(bodyLimit: RequestBodyLimit) {
+    public init(bodyLimit: RequestBodyLimit, maxHeadersCount: Int = 100) {
         self.bodyLimit = bodyLimit
+        self.maxHeadersCount = maxHeadersCount
     }
 
     public func readHttpRequest(_ socket: SecureSocket) throws -> HttpRequest {
-        let statusLine = try socket.readLine()
+        let statusLine: String
+        do {
+            statusLine = try socket.readLine()
+        } catch SocketError.lineTooLong {
+            throw HttpParserError.uriTooLong
+        }
         let statusLineTokens = statusLine.components(separatedBy: " ")
         if statusLineTokens.count < 3 {
             throw HttpParserError.invalidStatusLine(statusLine)
@@ -38,6 +48,14 @@ public class HttpParser {
         request.path = urlComponents?.path ?? ""
         request.queryParams = HttpRequestParams(urlComponents?.queryItems?.map { ($0.name, $0.value ?? "") })
         request.headers = HttpRequestHeaderParams(try self.readHeaders(socket))
+        // Reject requests that use chunked transfer-encoding — Swifter does not
+        // implement chunked body parsing. Explicitly failing here lets the
+        // server surface a clear 501 response instead of silently closing the
+        // connection later.
+        if let transferEncoding = request.headers["transfer-encoding"],
+           transferEncoding.lowercased().contains("chunked") {
+            throw HttpParserError.unsupportedTransferEncoding
+        }
         request.headers["cookie"]?.split(";")
             .map{ $0.trimmingCharacters(in: .whitespaces) }
             .map { $0.split("=") }
@@ -75,7 +93,19 @@ public class HttpParser {
 
     private func readHeaders(_ socket: SecureSocket) throws -> [String: String] {
         var headers = [String: String]()
-        while case let headerLine = try socket.readLine(), !headerLine.isEmpty {
+        var headerCount = 0
+        while true {
+            let headerLine: String
+            do {
+                headerLine = try socket.readLine()
+            } catch SocketError.lineTooLong {
+                throw HttpParserError.headersTooLarge
+            }
+            headerCount += 1
+            if headerCount > self.maxHeadersCount {
+                throw HttpParserError.headersTooLarge
+            }
+            if headerLine.isEmpty { break }
             let headerTokens = headerLine.split(separator: ":", maxSplits: 1, omittingEmptySubsequences: true).map(String.init)
             if let name = headerTokens.first, let value = headerTokens.last {
                 headers[name.lowercased()] = value.trimmingCharacters(in: .whitespaces)

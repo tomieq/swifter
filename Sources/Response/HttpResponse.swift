@@ -29,6 +29,8 @@ public enum HttpResponse {
     case notFound(HttpResponseBody? = nil)
     case methodNotAllowed(HttpResponseBody? = nil)
     case notAcceptable(HttpResponseBody? = nil)
+    case uriTooLong(HttpResponseBody? = nil)
+    case requestHeaderFieldsTooLarge(HttpResponseBody? = nil)
     case conflict(HttpResponseBody? = nil)
     case contentTooLarge(HttpResponseBody? = nil)
     case iAmTeapot(HttpResponseBody? = nil)
@@ -61,6 +63,8 @@ public enum HttpResponse {
         case .notFound: return 404
         case .methodNotAllowed: return 405
         case .notAcceptable: return 406
+        case .uriTooLong: return 414
+        case .requestHeaderFieldsTooLarge: return 431
         case .conflict: return 409
         case .contentTooLarge: return 413
         case .iAmTeapot: return 418
@@ -98,7 +102,7 @@ public enum HttpResponse {
              .contentTooLarge(let body), .iAmTeapot(let body), .locked(let body),
              .tooEarly(let body), .tooManyRequests(let body), .internalServerError(let body),
              .notImplemented(let body), .badGateway(let body), .serviceUnavailable(let body),
-             .gatewayTimeout(let body):
+             .gatewayTimeout(let body), .uriTooLong(let body), .requestHeaderFieldsTooLarge(let body):
             body?.addHeader(to: headers)
         case .movedPermanently(let location), .movedTemporarily(let location), .found(let location):
             headers.addHeader(.location, location)
@@ -123,7 +127,7 @@ public enum HttpResponse {
 
         case .badRequest(let body), .forbidden(let body), .notAcceptable(let body),
              .tooManyRequests(let body), .contentTooLarge(let body), .iAmTeapot(let body),
-             .serviceUnavailable(let body), .gatewayTimeout(let body):
+             .serviceUnavailable(let body), .gatewayTimeout(let body), .uriTooLong(let body), .requestHeaderFieldsTooLarge(let body):
             return HttpResponsePacket(rawBody: body?.raw, connection: .closeConection)
 
         case .raw(_, _, let writer):

@@ -18,6 +18,7 @@ public enum SocketError: Error {
     case getNameInfoFailed(String)
     case acceptFailed(String)
     case recvFailed(String)
+    case lineTooLong
     case getSockNameFailed(String)
 }
 
@@ -46,6 +47,13 @@ open class Socket: @unchecked Sendable, Hashable, Equatable {
         }
         self.shutdown = true
         Socket.close(self.socketFileDescriptor)
+    }
+
+    /// Set send/receive timeouts (in seconds) on this socket.
+    public func setTimeouts(seconds: Int) {
+        var tv = timeval(tv_sec: seconds, tv_usec: 0)
+        setsockopt(self.socketFileDescriptor, SOL_SOCKET, SO_RCVTIMEO, &tv, socklen_t(MemoryLayout<timeval>.size))
+        setsockopt(self.socketFileDescriptor, SOL_SOCKET, SO_SNDTIMEO, &tv, socklen_t(MemoryLayout<timeval>.size))
     }
 
     public var port: in_port_t {
@@ -194,13 +202,20 @@ open class Socket: @unchecked Sendable, Hashable, Equatable {
 
     private static let CR: UInt8 = 13
     private static let NL: UInt8 = 10
+    /// Maximum allowed length for a single incoming header/status line. Protects
+    /// against extremely long lines used to exhaust memory.
+    private static let maxLineLength = 8192
 
     public func readLine() throws -> String {
         var characters: String = ""
         var index: UInt8 = 0
         repeat {
             index = try self.read()
-            if index > Socket.CR { characters.append(Character(UnicodeScalar(index))) }
+            if index > Socket.CR {
+                // Enforce a maximum line length
+                guard characters.utf8.count < Socket.maxLineLength else { throw SocketError.lineTooLong }
+                characters.append(Character(UnicodeScalar(index)))
+            }
         } while index != Socket.NL
         return characters
     }

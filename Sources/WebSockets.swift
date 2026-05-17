@@ -25,7 +25,8 @@ public func websocket(
             return .badRequest(.text("Invalid value of 'Sec-Websocket-Key' header: \(request.headers["sec-websocket-key"] ?? "unknown")"))
         }
         let protocolSessionClosure: ((SecureSocket) -> Void) = { socket in
-            let session = WebSocketSession(socket)
+            let configuredMax: DataSize = request.serverMaxWebSocketFrameSize ?? WebSocketSession.defaultMaxFrameSize
+            let session = WebSocketSession(socket, maxFrameSize: configuredMax)
             var fragmentedOpCode = WebSocketSession.OpCode.close
             var payload = [UInt8]() // Used for fragmented frames.
 
@@ -140,6 +141,8 @@ public func websocket(
 }
 
 public class WebSocketSession: Hashable, Equatable {
+    /// Default maximum allowed frame payload size to protect against OOM/DoS.
+    public static var defaultMaxFrameSize: DataSize { .MB(16) } // 16 MB
     public enum WsError: Error { case unknownOpCode(String), unMaskedFrame(String), protocolError(String), invalidUTF8(String) }
     public enum OpCode: UInt8 { case `continue` = 0x00, close = 0x08, ping = 0x09, pong = 0x0A, text = 0x01, binary = 0x02 }
     public enum Control: Error { case close }
@@ -154,9 +157,17 @@ public class WebSocketSession: Hashable, Equatable {
     }
 
     public let socket: SecureSocket
+    /// Per-session maximum frame size. Set at construction time to avoid global mutable state.
+    public let maxFrameSize: DataSize
 
     public init(_ socket: SecureSocket) {
         self.socket = socket
+        self.maxFrameSize = WebSocketSession.defaultMaxFrameSize
+    }
+
+    public init(_ socket: SecureSocket, maxFrameSize: DataSize) {
+        self.socket = socket
+        self.maxFrameSize = maxFrameSize
     }
 
     deinit {
@@ -253,11 +264,13 @@ public class WebSocketSession: Hashable, Equatable {
         }
         var len = UInt64(sec & 0x7F)
         if len == 0x7E {
+            // 16-bit unsigned length (network byte order)
             let b0 = UInt64(try socket.read()) << 8
             let b1 = UInt64(try socket.read())
-            len = UInt64(littleEndian: b0 | b1)
+            len = b0 | b1
         } else if len == 0x7F {
-            let b0 = UInt64(try socket.read()) << 54
+            // 64-bit unsigned length (network byte order)
+            let b0 = UInt64(try socket.read()) << 56
             let b1 = UInt64(try socket.read()) << 48
             let b2 = UInt64(try socket.read()) << 40
             let b3 = UInt64(try socket.read()) << 32
@@ -265,14 +278,27 @@ public class WebSocketSession: Hashable, Equatable {
             let b5 = UInt64(try socket.read()) << 16
             let b6 = UInt64(try socket.read()) << 8
             let b7 = UInt64(try socket.read())
-            len = UInt64(littleEndian: b0 | b1 | b2 | b3 | b4 | b5 | b6 | b7)
+            len = b0 | b1 | b2 | b3 | b4 | b5 | b6 | b7
         }
 
-        let mask = [try socket.read(), try self.socket.read(), try self.socket.read(), try self.socket.read()]
-        // Read payload all at once, then apply mask (calling `socket.read` byte-by-byte is super slow).
-        frm.payload = try self.socket.read(length: Int(len))
-        for index in 0..<len {
-            frm.payload[Int(index)] ^= mask[Int(index % 4)]
+        // Protect against extremely large frames (DoS/OOM)
+        if len > UInt64(self.maxFrameSize.count) {
+            throw WsError.protocolError("Frame payload too large: \(len) bytes")
+        }
+
+        // Read mask bytes (client-to-server frames MUST be masked)
+        var mask = [UInt8](repeating: 0, count: 4)
+        for i in 0..<4 {
+            mask[i] = try self.socket.read()
+        }
+
+        // Read payload all at once, then apply mask (calling `socket.read` byte-by-byte is slow).
+        guard len <= UInt64(Int.max) else { throw WsError.protocolError("Frame too large") }
+        let payload = try self.socket.read(length: Int(len))
+        for index in 0..<Int(len) {
+            let m = mask[index % 4]
+            // XOR in place
+            frm.payload.append(payload[index] ^ m)
         }
         return frm
     }

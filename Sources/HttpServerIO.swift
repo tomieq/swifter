@@ -19,6 +19,13 @@ open class HttpServerIO: @unchecked Sendable {
     public var requestBodyLimit: RequestBodyLimit = .unlimited
     public let metrics = ConnectionMetrics()
     public var secureSocketFactory: ((Socket) -> SecureSocket?) = { DefaultSecureSocket($0) }
+    /// Per-server configuration: default max WebSocket frame size.
+    public var maxWebSocketFrameSize: DataSize = WebSocketSession.defaultMaxFrameSize
+    /// Per-server socket send/receive timeout (seconds).
+    public var socketTimeoutSeconds: Int = 60
+    /// Maximum number of request headers allowed per request. Protects against
+    /// header-flood attacks. Default: 100.
+    public var maxRequestHeaderCount: Int = 100
     let instantRequestHandler = HttpInstantResponseHandler()
     public var globalErrorHandler: HttpGlobalErrorHandler? {
         set {
@@ -142,16 +149,40 @@ open class HttpServerIO: @unchecked Sendable {
     }
 
     private func handleConnection(_ socket: Socket) {
+        // Apply per-server socket timeouts before wrapping the socket.
+        socket.setTimeouts(seconds: self.socketTimeoutSeconds)
+
         guard let tlsSocket = secureSocketFactory(socket) else {
             print("Closing connection. SecureSocket in nil")
             socket.close()
             return
         }
 
-        let parser = HttpParser(bodyLimit: requestBodyLimit)
-        while self.operating, let request = try? parser.readHttpRequest(tlsSocket) {
+        let parser = HttpParser(bodyLimit: requestBodyLimit, maxHeadersCount: self.maxRequestHeaderCount)
+        while self.operating {
+            var request: HttpRequest
+            do {
+                request = try parser.readHttpRequest(tlsSocket)
+            } catch HttpParserError.unsupportedTransferEncoding {
+                self.sendErrorAndClose(tlsSocket, .notImplemented())
+                break
+            } catch HttpParserError.uriTooLong {
+                self.sendErrorAndClose(tlsSocket, .uriTooLong())
+                break
+            } catch HttpParserError.headersTooLarge {
+                self.sendErrorAndClose(tlsSocket, .requestHeaderFieldsTooLarge())
+                break
+            } catch HttpParserError.negativeContentLength {
+                self.sendErrorAndClose(tlsSocket, .badRequest())
+                break
+            } catch {
+                // Any other parse error: close the connection silently.
+                break
+            }
+
+            // Provide server config to handlers (so websocket() can pick up config)
+            request.serverMaxWebSocketFrameSize = self.maxWebSocketFrameSize
             self.metrics.notify(.traffic(socketID: socket.id))
-            let request = request
             let responseHeaders = HttpResponseHeaders()
             let response = self.executeHandler(request, responseHeaders)
             request.partialSummary.responseCode = response.statusCode
@@ -176,6 +207,15 @@ open class HttpServerIO: @unchecked Sendable {
             if !keepConnection { break }
         }
         tlsSocket.close()
+    }
+
+    private func sendErrorAndClose(_ socket: SecureSocket, _ response: HttpResponse) {
+        let fakeReq = HttpRequest(socketID: socket.id)
+        fakeReq.connectionStrategy = .forceCloseOnFinish
+        _ = try? self.respond(socket,
+                              request: fakeReq,
+                              response: response,
+                              customHeaders: HttpResponseHeaders())
     }
 
     /// Bridges the synchronous, blocking connection loop into the async handler pipeline.

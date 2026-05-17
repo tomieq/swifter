@@ -39,6 +39,8 @@ public class HttpRequest {
     private var onFinishedClosures: [(HttpRequestSummary) -> Void] = []
     public var session: HttpSession?
     let partialSummary = HttpRequestPartialSummary()
+    /// Server-provided per-request configuration: maximum WebSocket frame size.
+    public var serverMaxWebSocketFrameSize: DataSize?
     private let creationTime = DispatchTime.now()
 
     public init(socketID: UUID) {

@@ -398,6 +398,38 @@ If you want to initialize some data in middleware that should be shared with end
 class SessionData: HttpSession {
     var username: String
     
+
+**Server Configuration Options**
+- `maxWebSocketFrameSize`: `DataSize` — maximum allowed WebSocket frame payload per session. Defaults to 16 MB to mitigate large-frame DoS vectors. Example:
+
+```swift
+var server = HttpServer()
+// limit per-WebSocket-session frame size to 8 MiB
+server.maxWebSocketFrameSize = .MB(8)
+```
+
+- `socketTimeoutSeconds`: `Int` — seconds applied as `SO_RCVTIMEO` / `SO_SNDTIMEO` on accepted sockets. Default: `60`. Use this to bound idle sockets and reduce resource exhaustion:
+
+```swift
+server.socketTimeoutSeconds = 30 // 30 seconds for recv/send timeouts
+```
+
+- `request.serverMaxWebSocketFrameSize`: available on `HttpRequest` instances (optional `DataSize`). When a WebSocket session is created for a request, the server sets this value from `server.maxWebSocketFrameSize` so handlers can read or forward the configured limit.
+
+- `secureSocketFactory`: TLS is intentionally delegated to an external implementation (for example a separate `swifterTLS` package) — Swifter exposes the hook so you plug your secure socket factory implementation; Swifter does not ship TLS internals.
+
+Notes:
+- These options are intended to be configured before calling `server.start(...)`.
+- Increasing `socketTimeoutSeconds` or `maxWebSocketFrameSize` may be necessary for high-latency networks or large binary workloads, but increasing them also increases resource exposure — choose conservative defaults for public-facing servers.
+
+You can run the package test suite inside official Swift Docker images. From the repository root run:
+
+```bash
+docker run --rm -v "$PWD":/workspace -w /workspace swift:6.0 bash -lc "swift test"
+docker run --rm -v "$PWD":/workspace -w /workspace swift:6.1 bash -lc "swift test"
+docker run --rm -v "$PWD":/workspace -w /workspace swift:6.2 bash -lc "swift test"
+```
+
     init(username: String) {
         self.username = username
     }
