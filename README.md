@@ -41,7 +41,7 @@ RunLoop.main.run()
 ### How to share files?
 ```swift
 let server = HttpServer()
-server.get["/desktop/:path"] = shareFilesFromDirectory("/Users/me/Desktop")
+server.get["/static/:path"] = StaticFiles.from(folder: "/Users/me/Desktop")
 server.start()
 ```
 ### How to redirect?
