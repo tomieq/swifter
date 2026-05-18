@@ -5,7 +5,7 @@
 
 ### Why this fork?
 
-I forked this repo to adjust the library to my needs. I refactored a little, removed linux incompatible classes and added some features I found useful (like cookie handling & setting).
+I forked this repo to adjust the library to my needs. Then the project started evolving and left the original one behind. Currently this swifter supports structured concurrency, Swift 6, TLS 1.3. From functionality perspective it supports smooth Decodable conversion from body, headers, path and query parameters, cookie handling, limits for incomming body size, basic and digest authentication, usage metrics, selective middleware.
 
 ### What is Swifter?
 
@@ -394,6 +394,26 @@ If you want to initialize some data in middleware that should be shared with end
 class SessionData: HttpSession {
     var username: String
     
+    init(username: String) {
+        self.username = username
+    }
+}
+
+extension HttpRequest {
+    var sessionData: SessionData? {
+        self.session as? SessionData
+    }
+}
+
+server.middleware.append( { request, _ in
+    request.session = SessionData(username: "Admin")
+    return nil
+})
+
+server.get["test"] = { request, _ in
+    .ok(.text(request.sessionData?.username ?? "Not allowed"))
+}
+```
 
 **Server Configuration Options**
 - `maxWebSocketFrameSize`: `DataSize` — maximum allowed WebSocket frame payload per session. Defaults to 16 MB to mitigate large-frame DoS vectors. Example:
@@ -426,26 +446,6 @@ docker run --rm -v "$PWD":/workspace -w /workspace swift:6.1 bash -lc "swift tes
 docker run --rm -v "$PWD":/workspace -w /workspace swift:6.2 bash -lc "swift test"
 ```
 
-    init(username: String) {
-        self.username = username
-    }
-}
-
-extension HttpRequest {
-    var sessionData: SessionData? {
-        self.session as? SessionData
-    }
-}
-
-server.middleware.append( { request, _ in
-    request.session = SessionData(username: "Admin")
-    return nil
-})
-
-server.get["test"] = { request, _ in
-    .ok(.text(request.sessionData?.username ?? "Not allowed"))
-}
-```
 ### Global error mapping
 As your request handlers are allowed to throw Errors, you might register you error mapper:
 ```swift
