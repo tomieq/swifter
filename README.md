@@ -1,5 +1,8 @@
 ![Platform](https://img.shields.io/badge/Platform-iOS,%20MacOS,%20Linux-blue.svg?style=flat)
 ![Swift](https://img.shields.io/badge/Swift-6.0-4BC51D.svg?style=flat)
+![Swift](https://img.shields.io/badge/Swift-6.1-4BC51D.svg?style=flat)
+![Swift](https://img.shields.io/badge/Swift-6.2-4BC51D.svg?style=flat)
+![Swift](https://img.shields.io/badge/Swift-6.3-4BC51D.svg?style=flat)
 ![Protocols](https://img.shields.io/badge/Protocols-HTTP%201.1%20&%20WebSockets-4BC51D.svg?style=flat)
 
 
