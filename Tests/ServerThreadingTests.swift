@@ -66,6 +66,8 @@ extension URLSession {
         path: String,
         completionHandler handler: @escaping @Sendable (Data?, URLResponse?, Error?) -> Void
     ) -> URLSessionDataTask {
-        return self.dataTask(with: hostURL.appendingPathComponent(path), completionHandler: handler)
+        var request = URLRequest(url: hostURL.appendingPathComponent(path))
+        request.setValue("close", forHTTPHeaderField: "Connection")
+        return self.dataTask(with: request, completionHandler: handler)
     }
 }

@@ -14,7 +14,7 @@ public enum SerializationError: Error {
 
 // swiftlint:disable cyclomatic_complexity
 public enum HttpResponse {
-    case switchProtocols(HttpResponseHeaders, (SecureSocket) -> Void)
+    case switchProtocols(HttpResponseHeaders, (SecureSocket) async -> Void)
     case processing(HttpResponseBody?)
     case ok(HttpResponseBody)
     case created(HttpResponseBody? = nil)
@@ -43,7 +43,8 @@ public enum HttpResponse {
     case badGateway(HttpResponseBody? = nil)
     case serviceUnavailable(HttpResponseBody? = nil)
     case gatewayTimeout(HttpResponseBody? = nil)
-    case raw(Int, String, ((HttpResponseBodyWriter) throws -> Void)?)
+    case raw(Int, String, ((HttpResponseBodyWriter) async throws -> Void)?)
+    case rawAsync(Int, String, ((HttpResponseBodyWriter) async throws -> Void)?)
 
     public var statusCode: Int {
         switch self {
@@ -76,13 +77,13 @@ public enum HttpResponse {
         case .badGateway: return 502
         case .serviceUnavailable: return 503
         case .gatewayTimeout: return 504
-        case .raw(let code, _, _): return code
+        case .raw(let code, _, _), .rawAsync(let code, _, _): return code
         }
     }
 
     public var reasonPhrase: String {
         switch self {
-        case .raw(_, let phrase, _): return phrase
+        case .raw(_, let phrase, _), .rawAsync(_, let phrase, _): return phrase
         default: return HttpCode.description(for: self.statusCode) ?? "fatal error"
         }
     }
@@ -106,7 +107,7 @@ public enum HttpResponse {
             body?.addHeader(to: headers)
         case .movedPermanently(let location), .movedTemporarily(let location), .found(let location):
             headers.addHeader(.location, location)
-        case .notModified, .noContent, .raw:
+        case .notModified, .noContent, .raw, .rawAsync:
             break
         }
         return headers
@@ -133,6 +134,9 @@ public enum HttpResponse {
         case .raw(_, _, let writer):
             return HttpResponsePacket(rawBody: HttpResponseBodyRaw(.unknown, writer), connection: .keepAlive)
 
+        case .rawAsync(_, _, let writer):
+            return HttpResponsePacket(rawBody: HttpResponseBodyRaw(.unknown, writer), connection: .keepAlive)
+
         case .movedPermanently, .movedTemporarily, .noContent:
             return HttpResponsePacket(rawBody: nil, connection: .closeConection)
 
@@ -141,7 +145,7 @@ public enum HttpResponse {
         }
     }
 
-    func socketSession() -> ((SecureSocket) -> Void)? {
+    func socketSession() -> ((SecureSocket) async -> Void)? {
         switch self {
         case .switchProtocols(_, let handler): return handler
         default: return nil

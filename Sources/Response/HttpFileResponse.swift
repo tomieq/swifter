@@ -25,8 +25,8 @@ public enum HttpFileResponse {
            let fileSize = attr[FileAttributeKey.size] as? UInt64 {
             headers.addHeader(.contentLength, String(fileSize))
         }
-        throw HttpInstantResponse(response: .raw(200, "OK", { writer in
-            try writer.write(file)
+        throw HttpInstantResponse(response: .rawAsync(200, "OK", { writer in
+            try await writer.write(file)
             file.close()
         }), headers: headers)
     }

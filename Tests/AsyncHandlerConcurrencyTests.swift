@@ -173,11 +173,27 @@ import Testing
     }
 }
 
-private func fetch(url: URL, timeout: UInt64 = 5) async throws -> (Data, URLResponse) {
+private func fetch(url: URL, timeout: UInt64 = 5, retries: Int = 3) async throws -> (Data, URLResponse) {
+    var lastError: Error?
+    for attempt in 0...retries {
+        do {
+            return try await fetchOnce(url: url, timeout: timeout)
+        } catch {
+            lastError = error
+            guard attempt < retries, error.isTransientURLSessionConnectionError else { throw error }
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+    }
+    throw lastError ?? TestTimeoutError.timedOut
+}
+
+private func fetchOnce(url: URL, timeout: UInt64) async throws -> (Data, URLResponse) {
     try await withTimeout(seconds: timeout) {
         try await withCheckedThrowingContinuation { continuation in
-            URLSession(configuration: .default)
-                .dataTask(with: url) { data, response, error in
+            var request = URLRequest(url: url)
+            request.setValue("close", forHTTPHeaderField: "Connection")
+            DefaultSession().instance
+                .dataTask(with: request) { data, response, error in
                     if let error {
                         continuation.resume(throwing: error)
                     } else if let data, let response {

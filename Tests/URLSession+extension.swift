@@ -11,10 +11,12 @@ import FoundationNetworking
 #endif
 
 final class DefaultSession: @unchecked Sendable {
+    private static let shared = URLSession(configuration: .default)
+
     let instance: URLSession
 
     init() {
-        self.instance = URLSession(configuration: .default)
+        self.instance = Self.shared
     }
 
     private func runTask(
@@ -24,18 +26,17 @@ final class DefaultSession: @unchecked Sendable {
     ) -> URLSessionDataTask {
         var request = URLRequest(url: hostURL)
         request.httpMethod = method
+        request.setValue("close", forHTTPHeaderField: "Connection")
         return self.instance.dataTask(with: request, completionHandler: handler)
     }
 
-    func runRequest(url: URL, method: String = "GET", body: (@Sendable (Int, String?) -> Void)? = nil) {
+    func runRequest(
+        url: URL,
+        method: String = "GET",
+        completion: (@Sendable (Data?, URLResponse?, Error?) -> Void)? = nil
+    ) {
         self.runTask(hostURL: url, method: method) { data, response, error in
-            guard error == nil else {
-                print("runRequest error: \(error.debugDescription)")
-                return
-            }
-            if let httpResponse = response as? HTTPURLResponse {
-                body?(httpResponse.statusCode, data?.asString)
-            }
+            completion?(data, response, error)
         }.resume()
     }
 }

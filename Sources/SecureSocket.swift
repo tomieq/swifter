@@ -9,15 +9,15 @@ import Foundation
 public protocol SecureSocket {
     var id: UUID { get }
     var raw: Socket { get }
-    func readLine() throws -> String
-    func read() throws -> UInt8
-    func read(length: Int) throws -> [UInt8]
-    func writeUTF8(_ string: String) throws
-    func writeUInt8(_ data: [UInt8]) throws
-    func writeUInt8(_ data: ArraySlice<UInt8>) throws
-    func writeData(_ data: Data) throws
-    func writeData(_ data: NSData) throws
-    func writeFile(_ file: String.File) throws
+    func readLine() async throws -> String
+    func read() async throws -> UInt8
+    func read(length: Int) async throws -> [UInt8]
+    func writeUTF8(_ string: String) async throws
+    func writeUInt8(_ data: [UInt8]) async throws
+    func writeUInt8(_ data: ArraySlice<UInt8>) async throws
+    func writeData(_ data: Data) async throws
+    func writeData(_ data: NSData) async throws
+    func writeFile(_ file: String.File) async throws
     func close()
     var peerIP: String? { get }
 }
@@ -34,40 +34,40 @@ class DefaultSecureSocket: SecureSocket {
         self.socket = socket
     }
 
-    func read() throws -> UInt8 {
-        try self.socket.read()
+    func read() async throws -> UInt8 {
+        try await self.socket.readAsync()
     }
 
-    func readLine() throws -> String {
-        try self.socket.readLine()
+    func readLine() async throws -> String {
+        try await self.socket.readLineAsync()
     }
 
-    func read(length: Int) throws -> [UInt8] {
-        try self.socket.read(length: length)
+    func read(length: Int) async throws -> [UInt8] {
+        try await self.socket.readAsync(length: length)
     }
 
-    func writeUTF8(_ string: String) throws {
-        try self.socket.writeUTF8(string)
+    func writeUTF8(_ string: String) async throws {
+        try await self.socket.writeUTF8Async(string)
     }
 
-    func writeUInt8(_ data: [UInt8]) throws {
-        try self.socket.writeUInt8(data)
+    func writeUInt8(_ data: [UInt8]) async throws {
+        try await self.socket.writeUInt8Async(data)
     }
 
-    func writeUInt8(_ data: ArraySlice<UInt8>) throws {
-        try self.socket.writeUInt8(data)
+    func writeUInt8(_ data: ArraySlice<UInt8>) async throws {
+        try await self.socket.writeUInt8Async(data)
     }
 
-    func writeData(_ data: Data) throws {
-        try self.socket.writeData(data)
+    func writeData(_ data: Data) async throws {
+        try await self.socket.writeDataAsync(data)
     }
 
-    func writeData(_ data: NSData) throws {
-        try self.socket.writeData(data)
+    func writeData(_ data: NSData) async throws {
+        try await self.socket.writeDataAsync(data)
     }
 
-    func writeFile(_ file: String.File) throws {
-        try self.socket.writeFile(file)
+    func writeFile(_ file: String.File) async throws {
+        try await self.socket.writeFileAsync(file)
     }
 
     func close() {

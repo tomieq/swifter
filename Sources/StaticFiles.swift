@@ -16,8 +16,8 @@ public enum StaticFiles {
             if fileRelativePath.isEmpty {
                 for path in defaults {
                     if let file = try? (folderPath + String.pathSeparator + path).openForReading() {
-                        return .raw(200, "OK", { writer in
-                            try? writer.write(file)
+                        return .rawAsync(200, "OK", { writer in
+                            try? await writer.write(file)
                             file.close()
                         })
                     }

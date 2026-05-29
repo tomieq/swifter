@@ -24,7 +24,7 @@ public func websocket(
         guard let secWebSocketKey = request.headers[.secWebSocketKey] else {
             return .badRequest(.text("Invalid value of 'Sec-Websocket-Key' header: \(request.headers[.secWebSocketKey] ?? "unknown")"))
         }
-        let protocolSessionClosure: ((SecureSocket) -> Void) = { socket in
+        let protocolSessionClosure: ((SecureSocket) async -> Void) = { socket in
             let configuredMax: DataSize = request.serverMaxWebSocketFrameSize ?? WebSocketSession.defaultMaxFrameSize
             let session = WebSocketSession(socket, maxFrameSize: configuredMax)
             var fragmentedOpCode = WebSocketSession.OpCode.close
@@ -62,7 +62,7 @@ public func websocket(
                 }
             }
 
-            func handleOperationCode(_ frame: WebSocketSession.Frame) throws {
+            func handleOperationCode(_ frame: WebSocketSession.Frame) async throws {
                 switch frame.opcode {
                 case .continue:
                     // There is no message to continue, failed immediatelly.
@@ -78,7 +78,7 @@ public func websocket(
                         // Reset the OpCode.
                         fragmentedOpCode = WebSocketSession.OpCode.close
                     }
-                    try handleOperationCode(frame)
+                    try await handleOperationCode(frame)
                 case .text:
                     try handleTextPayload(frame)
                 case .binary:
@@ -89,7 +89,7 @@ public func websocket(
                     if frame.payload.count > 125 {
                         throw WebSocketSession.WsError.protocolError("Payload gretter than 125 octets.")
                     } else {
-                        session.writeFrame(ArraySlice(frame.payload), .pong)
+                        await session.writeFrame(ArraySlice(frame.payload), .pong)
                     }
                 case .pong:
                     if let handlePong = pong {
@@ -98,17 +98,17 @@ public func websocket(
                 }
             }
 
-            func read() throws {
+            func read() async throws {
                 while true {
-                    let frame = try session.readFrame()
-                    try handleOperationCode(frame)
+                    let frame = try await session.readFrame()
+                    try await handleOperationCode(frame)
                 }
             }
 
             connected?(session)
 
             do {
-                try read()
+                try await read()
             } catch {
                 switch error {
                 case WebSocketSession.Control.close:
@@ -126,7 +126,7 @@ public func websocket(
                     print("Unkown error \(error)")
                 }
                 // If an error occurs, send the close handshake.
-                session.writeCloseFrame()
+                await session.writeCloseFrame()
             }
 
             disconnected?(session)
@@ -171,36 +171,35 @@ public class WebSocketSession: Hashable, Equatable {
     }
 
     deinit {
-        writeCloseFrame()
         socket.close()
     }
 
-    public func writeText(_ text: String) {
-        self.writeFrame(ArraySlice(text.utf8), OpCode.text)
+    public func writeText(_ text: String) async {
+        await self.writeFrame(ArraySlice(text.utf8), OpCode.text)
     }
 
-    public func writeBinary(_ binary: [UInt8]) {
-        self.writeBinary(ArraySlice(binary))
+    public func writeBinary(_ binary: [UInt8]) async {
+        await self.writeBinary(ArraySlice(binary))
     }
 
-    public func writeBinary(_ binary: ArraySlice<UInt8>) {
-        self.writeFrame(binary, OpCode.binary)
+    public func writeBinary(_ binary: ArraySlice<UInt8>) async {
+        await self.writeFrame(binary, OpCode.binary)
     }
 
-    public func writeFrame(_ data: ArraySlice<UInt8>, _ op: OpCode, _ fin: Bool = true) {
+    public func writeFrame(_ data: ArraySlice<UInt8>, _ op: OpCode, _ fin: Bool = true) async {
         let finAndOpCode = UInt8(fin ? 0x80 : 0x00) | op.rawValue
         let maskAndLngth = self.encodeLengthAndMaskFlag(UInt64(data.count), false)
         do {
-            try self.socket.writeUInt8([finAndOpCode])
-            try self.socket.writeUInt8(maskAndLngth)
-            try self.socket.writeUInt8(data)
+            try await self.socket.writeUInt8([finAndOpCode])
+            try await self.socket.writeUInt8(maskAndLngth)
+            try await self.socket.writeUInt8(data)
         } catch {
             print(error)
         }
     }
 
-    public func writeCloseFrame() {
-        self.writeFrame(ArraySlice("".utf8), .close)
+    public func writeCloseFrame() async {
+        await self.writeFrame(ArraySlice("".utf8), .close)
     }
 
     private func encodeLengthAndMaskFlag(_ len: UInt64, _ masked: Bool) -> [UInt8] {
@@ -228,9 +227,9 @@ public class WebSocketSession: Hashable, Equatable {
     }
 
     // swiftlint:disable function_body_length
-    public func readFrame() throws -> Frame {
+    public func readFrame() async throws -> Frame {
         let frm = Frame()
-        let fst = try socket.read()
+        let fst = try await socket.read()
         frm.fin = fst & 0x80 != 0
         frm.rsv1 = fst & 0x40
         frm.rsv2 = fst & 0x20
@@ -255,7 +254,7 @@ public class WebSocketSession: Hashable, Equatable {
             }
         }
         frm.opcode = opcode
-        let sec = try socket.read()
+        let sec = try await socket.read()
         let msk = sec & 0x80 != 0
         guard msk else {
             // "...a client MUST mask all frames that it sends to the server."
@@ -265,19 +264,19 @@ public class WebSocketSession: Hashable, Equatable {
         var len = UInt64(sec & 0x7F)
         if len == 0x7E {
             // 16-bit unsigned length (network byte order)
-            let b0 = UInt64(try socket.read()) << 8
-            let b1 = UInt64(try socket.read())
+            let b0 = UInt64(try await socket.read()) << 8
+            let b1 = UInt64(try await socket.read())
             len = b0 | b1
         } else if len == 0x7F {
             // 64-bit unsigned length (network byte order)
-            let b0 = UInt64(try socket.read()) << 56
-            let b1 = UInt64(try socket.read()) << 48
-            let b2 = UInt64(try socket.read()) << 40
-            let b3 = UInt64(try socket.read()) << 32
-            let b4 = UInt64(try socket.read()) << 24
-            let b5 = UInt64(try socket.read()) << 16
-            let b6 = UInt64(try socket.read()) << 8
-            let b7 = UInt64(try socket.read())
+            let b0 = UInt64(try await socket.read()) << 56
+            let b1 = UInt64(try await socket.read()) << 48
+            let b2 = UInt64(try await socket.read()) << 40
+            let b3 = UInt64(try await socket.read()) << 32
+            let b4 = UInt64(try await socket.read()) << 24
+            let b5 = UInt64(try await socket.read()) << 16
+            let b6 = UInt64(try await socket.read()) << 8
+            let b7 = UInt64(try await socket.read())
             len = b0 | b1 | b2 | b3 | b4 | b5 | b6 | b7
         }
 
@@ -289,12 +288,12 @@ public class WebSocketSession: Hashable, Equatable {
         // Read mask bytes (client-to-server frames MUST be masked)
         var mask = [UInt8](repeating: 0, count: 4)
         for i in 0..<4 {
-            mask[i] = try self.socket.read()
+            mask[i] = try await self.socket.read()
         }
 
         // Read payload all at once, then apply mask (calling `socket.read` byte-by-byte is slow).
         guard len <= UInt64(Int.max) else { throw WsError.protocolError("Frame too large") }
-        let payload = try self.socket.read(length: Int(len))
+        let payload = try await self.socket.read(length: Int(len))
         for index in 0..<Int(len) {
             let m = mask[index % 4]
             // XOR in place

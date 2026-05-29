@@ -44,18 +44,19 @@ open class HttpServerIO: @unchecked Sendable {
         case stopped
     }
 
+    private let stateLock = NSLock()
     private var stateValue: Int32 = HttpServerIOState.stopped.rawValue
 
     public private(set) var state: HttpServerIOState {
         get {
+            self.stateLock.lock()
+            defer { self.stateLock.unlock() }
             return HttpServerIOState(rawValue: self.stateValue)!
         }
         set(state) {
-            #if !os(Linux)
-            OSAtomicCompareAndSwapInt(self.state.rawValue, state.rawValue, &self.stateValue)
-            #else
+            self.stateLock.lock()
             self.stateValue = state.rawValue
-            #endif
+            self.stateLock.unlock()
         }
     }
 
@@ -99,23 +100,35 @@ open class HttpServerIO: @unchecked Sendable {
         self.state = .starting
         let address = forceIPv4 ? self.listenAddressIPv4 : self.listenAddressIPv6
         self.socket = try Socket.tcpSocketForListen(port, forceIPv4, SOMAXCONN, address)
+        try self.socket.setNonBlocking()
         self.state = .running
-        DispatchQueue.global(qos: queuePriority.value).async { [weak self] in
+        Task.detached(priority: queuePriority.taskPriority) { [weak self] in
             guard let strongSelf = self else { return }
             guard strongSelf.operating else { return }
-            while let socket = try? strongSelf.socket.acceptClientSocket() {
-                DispatchQueue.global(qos: queuePriority.value).async { [weak self] in
+            while strongSelf.operating {
+                do {
+                    let socket = try await strongSelf.socket.acceptClientSocketAsync()
+                    Task.detached(priority: queuePriority.taskPriority) { [weak self] in
+                        guard let strongSelf = self else { return }
+                        guard strongSelf.operating else { return }
+                        strongSelf.queue.sync {
+                            _ = strongSelf.sockets.insert(socket)
+                        }
+                        strongSelf.metrics.notify(.connected(socketID: socket.id))
+                        await strongSelf.handleConnectionAsync(socket)
+                        strongSelf.metrics.notify(.disconnected(socketID: socket.id))
+                        strongSelf.queue.sync {
+                            _ = strongSelf.sockets.remove(socket)
+                        }
+                    }
+                } catch {
                     guard let strongSelf = self else { return }
-                    guard strongSelf.operating else { return }
-                    strongSelf.queue.sync {
-                        _ = strongSelf.sockets.insert(socket)
+                    if strongSelf.operating {
+                        print("Failed to accept client socket: \(error)")
+                        try? await Task.sleep(nanoseconds: 1_000_000)
+                        continue
                     }
-                    strongSelf.metrics.notify(.connected(socketID: socket.id))
-                    strongSelf.handleConnection(socket)
-                    strongSelf.metrics.notify(.disconnected(socketID: socket.id))
-                    strongSelf.queue.sync {
-                        _ = strongSelf.sockets.remove(socket)
-                    }
+                    break
                 }
             }
             strongSelf.stop()
@@ -127,6 +140,17 @@ open class HttpServerIO: @unchecked Sendable {
 
         init(_ value: DispatchQoS.QoSClass) {
             self.value = value
+        }
+
+        var taskPriority: TaskPriority {
+            switch self.value {
+            case .background, .utility:
+                return .medium
+            case .userInitiated, .userInteractive:
+                return .high
+            default:
+                return .medium
+            }
         }
     }
 
@@ -148,8 +172,7 @@ open class HttpServerIO: @unchecked Sendable {
         return ([:], { _, _ in HttpResponse.notFound() })
     }
 
-    private func handleConnection(_ socket: Socket) {
-        // Apply per-server socket timeouts before wrapping the socket.
+    private func handleConnectionAsync(_ socket: Socket) async {
         socket.setTimeouts(seconds: self.socketTimeoutSeconds)
 
         guard let tlsSocket = secureSocketFactory(socket) else {
@@ -162,37 +185,35 @@ open class HttpServerIO: @unchecked Sendable {
         while self.operating {
             var request: HttpRequest
             do {
-                request = try parser.readHttpRequest(tlsSocket)
+                request = try await parser.readHttpRequest(tlsSocket)
             } catch HttpParserError.uriTooLong {
-                self.sendErrorAndClose(tlsSocket, .uriTooLong())
+                await self.sendErrorAndCloseAsync(tlsSocket, .uriTooLong())
                 break
             } catch HttpParserError.headersTooLarge {
-                self.sendErrorAndClose(tlsSocket, .requestHeaderFieldsTooLarge())
+                await self.sendErrorAndCloseAsync(tlsSocket, .requestHeaderFieldsTooLarge())
                 break
             } catch HttpParserError.negativeContentLength {
-                self.sendErrorAndClose(tlsSocket, .badRequest())
+                await self.sendErrorAndCloseAsync(tlsSocket, .badRequest())
                 break
             } catch HttpParserError.invalidChunkSize, HttpParserError.unsupportedTransferEncoding {
-                self.sendErrorAndClose(tlsSocket, .badRequest())
+                await self.sendErrorAndCloseAsync(tlsSocket, .badRequest())
                 break
             } catch {
-                // Any other parse error: close the connection silently.
                 break
             }
 
-            // Provide server config to handlers (so websocket() can pick up config)
             request.serverMaxWebSocketFrameSize = self.maxWebSocketFrameSize
             self.metrics.notify(.traffic(socketID: socket.id))
             let responseHeaders = HttpResponseHeaders()
-            let response = self.executeHandler(request, responseHeaders)
+            let response = await self.executeHandlerAsync(request, responseHeaders)
             request.partialSummary.responseCode = response.statusCode
             var keepConnection = false
             do {
                 if self.operating {
-                    keepConnection = try self.respond(tlsSocket,
-                                                      request: request,
-                                                      response: response,
-                                                      customHeaders: responseHeaders)
+                    keepConnection = try await self.respondAsync(tlsSocket,
+                                                                 request: request,
+                                                                 response: response,
+                                                                 customHeaders: responseHeaders)
                 }
             } catch {
                 print("Failed to send response: \(error)")
@@ -201,7 +222,7 @@ open class HttpServerIO: @unchecked Sendable {
             if let session = response.socketSession() {
                 self.delegate?.socketConnectionReceived(tlsSocket)
                 self.metrics.notify(.webSocketSessionStarted(socketID: socket.id))
-                session(tlsSocket)
+                await session(tlsSocket)
                 break
             }
             if !keepConnection { break }
@@ -209,99 +230,51 @@ open class HttpServerIO: @unchecked Sendable {
         tlsSocket.close()
     }
 
-    private func sendErrorAndClose(_ socket: SecureSocket, _ response: HttpResponse) {
+    private func sendErrorAndCloseAsync(_ socket: SecureSocket, _ response: HttpResponse) async {
         let fakeReq = HttpRequest(socketID: socket.id)
         fakeReq.connectionStrategy = .forceCloseOnFinish
-        _ = try? self.respond(socket,
-                              request: fakeReq,
-                              response: response,
-                              customHeaders: HttpResponseHeaders())
+        _ = try? await self.respondAsync(socket,
+                                         request: fakeReq,
+                                         response: response,
+                                         customHeaders: HttpResponseHeaders())
     }
 
-    /// Bridges the synchronous, blocking connection loop into the async handler pipeline.
-    ///
-    /// The connection loop runs on a dedicated `DispatchQueue.global` worker which performs
-    /// blocking socket I/O. User handlers, however, are `async`. We launch a detached Task on
-    /// the cooperative pool, then block the dispatch worker on a semaphore until the async
-    /// pipeline completes. This avoids polluting the cooperative pool with blocking I/O while
-    /// still allowing handlers to suspend freely.
-    private func executeHandler(_ request: HttpRequest,
-                                _ headers: HttpResponseHeaders) -> HttpResponse {
-        let semaphore = DispatchSemaphore(value: 0)
-        let box = HandlerResponseBox()
-        // `HttpRequest` and `HttpResponseHeaders` are reference types not declared `Sendable`,
-        // but each request flows through exactly one handler chain at a time. The semaphore
-        // establishes a happens-before relationship between the writes inside the detached
-        // task and the read on the connection thread, so transferring them across the
-        // boundary inside `UnsafeTransfer` is safe in practice.
-        let transfer = UnsafeTransfer(request: request, headers: headers)
-        Task.detached(priority: .userInitiated) { [self] in
-            defer { semaphore.signal() }
-            let request = transfer.request
-            let headers = transfer.headers
-            let (params, handler) = await self.dispatch(request, headers)
-            request.pathParams = HttpRequestParams(params)
-            let response = await self.instantRequestHandler.watch(request, headers, handler)
-            box.store(response)
-        }
-        semaphore.wait()
-        return box.load() ?? .internalServerError(.text("Unexpected handler execution failure"))
-    }
-
-    private struct UnsafeTransfer: @unchecked Sendable {
-        let request: HttpRequest
-        let headers: HttpResponseHeaders
-    }
-
-    private final class HandlerResponseBox: @unchecked Sendable {
-        private let lock = NSLock()
-        private var response: HttpResponse?
-
-        func store(_ response: HttpResponse) {
-            self.lock.lock()
-            self.response = response
-            self.lock.unlock()
-        }
-
-        func load() -> HttpResponse? {
-            self.lock.lock()
-            defer { self.lock.unlock() }
-            return self.response
-        }
+    private func executeHandlerAsync(_ request: HttpRequest,
+                                     _ headers: HttpResponseHeaders) async -> HttpResponse {
+        let (params, handler) = await self.dispatch(request, headers)
+        request.pathParams = HttpRequestParams(params)
+        return await self.instantRequestHandler.watch(request, headers, handler)
     }
 
     private struct InnerWriteContext: HttpResponseBodyWriter {
         let socket: SecureSocket
 
-        func write(_ file: String.File) throws {
-            try self.socket.writeFile(file)
+        func write(_ file: String.File) async throws {
+            try await self.socket.writeFile(file)
         }
 
-        func write(_ data: [UInt8]) throws {
-            try self.write(ArraySlice(data))
+        func write(_ data: [UInt8]) async throws {
+            try await self.write(ArraySlice(data))
         }
 
-        func write(_ data: ArraySlice<UInt8>) throws {
-            try self.socket.writeUInt8(data)
+        func write(_ data: ArraySlice<UInt8>) async throws {
+            try await self.socket.writeUInt8(data)
         }
 
-        func write(_ data: NSData) throws {
-            try self.socket.writeData(data)
+        func write(_ data: NSData) async throws {
+            try await self.socket.writeData(data)
         }
 
-        func write(_ data: Data) throws {
-            try self.socket.writeData(data)
+        func write(_ data: Data) async throws {
+            try await self.socket.writeData(data)
         }
     }
 
-    private func respond(_ socket: SecureSocket,
-                         request: HttpRequest,
-                         response: HttpResponse,
-                         customHeaders: HttpResponseHeaders) throws -> Bool {
+    private func respondAsync(_ socket: SecureSocket,
+                              request: HttpRequest,
+                              response: HttpResponse,
+                              customHeaders: HttpResponseHeaders) async throws -> Bool {
         guard self.operating else { return false }
-
-        // Some web-socket clients (like Jetfire) expects to have header section in a single packet.
-        // We can't promise that but make sure we invoke "write" only once for response header section.
 
         var responseHeader = String()
 
@@ -320,7 +293,6 @@ open class HttpServerIO: @unchecked Sendable {
             responseHeader.append("Connection: close\r\n")
         }
 
-        // combine auto-headers and overwitten by handler
         var sendHeaders = [String]()
         customHeaders.raw.forEach { header in
             responseHeader.append("\(header.name): \(header.value)\r\n")
@@ -345,11 +317,11 @@ open class HttpServerIO: @unchecked Sendable {
         defer {
             request.partialSummary.responseSize = socket.raw.transferCounter.transfer
         }
-        try socket.writeUTF8(responseHeader)
+        try await socket.writeUTF8(responseHeader)
 
         if let writeClosure = packet.rawBody?.write {
             let context = InnerWriteContext(socket: socket)
-            try writeClosure(context)
+            try await writeClosure(context)
         }
         return keepAlive
     }

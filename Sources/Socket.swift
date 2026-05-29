@@ -38,7 +38,7 @@ open class Socket: @unchecked Sendable, Hashable, Equatable {
     }
 
     public func hash(into hasher: inout Hasher) {
-        hasher.combine(self.socketFileDescriptor)
+        hasher.combine(self.id)
     }
 
     public func close() {
@@ -200,11 +200,11 @@ open class Socket: @unchecked Sendable, Hashable, Equatable {
         return offset
     }
 
-    private static let CR: UInt8 = 13
-    private static let NL: UInt8 = 10
+    static let CR: UInt8 = 13
+    static let NL: UInt8 = 10
     /// Maximum allowed length for a single incoming header/status line. Protects
     /// against extremely long lines used to exhaust memory.
-    private static let maxLineLength = 8192
+    static let maxLineLength = 8192
 
     public func readLine() throws -> String {
         var characters: String = ""
@@ -262,5 +262,5 @@ open class Socket: @unchecked Sendable, Hashable, Equatable {
 }
 
 public func == (socket1: Socket, socket2: Socket) -> Bool {
-    return socket1.socketFileDescriptor == socket2.socketFileDescriptor
+    return socket1.id == socket2.id
 }

@@ -67,24 +67,70 @@ final class LockedValue<Value>: @unchecked Sendable {
 }
 
 extension DefaultSession {
-    func request(url: URL, method: String = "GET", timeout: UInt64 = 5) async throws -> HTTPResult {
+    func request(url: URL, method: String = "GET", timeout: UInt64 = 5, retries: Int = 3) async throws -> HTTPResult {
+        var lastError: Error?
+        for attempt in 0...retries {
+            do {
+                return try await self.runRequestOnce(url: url, method: method, timeout: timeout)
+            } catch {
+                lastError = error
+                guard attempt < retries, error.isTransientURLSessionConnectionError else { throw error }
+                try await Task.sleep(nanoseconds: 10_000_000)
+            }
+        }
+        throw lastError ?? TestTimeoutError.timedOut
+    }
+
+    private func runRequestOnce(url: URL, method: String, timeout: UInt64) async throws -> HTTPResult {
         try await withTimeout(seconds: timeout) {
-            await withCheckedContinuation { continuation in
-                self.runRequest(url: url, method: method) { statusCode, body in
-                    continuation.resume(returning: HTTPResult(statusCode: statusCode, body: body))
+            try await withCheckedThrowingContinuation { continuation in
+                self.runRequest(url: url, method: method) { data, response, error in
+                    if let error {
+                        continuation.resume(throwing: error)
+                    } else if let httpResponse = response as? HTTPURLResponse {
+                        continuation.resume(returning: HTTPResult(statusCode: httpResponse.statusCode, body: data?.asString))
+                    } else {
+                        continuation.resume(throwing: TestTimeoutError.timedOut)
+                    }
                 }
             }
         }
     }
 }
 
+extension Error {
+    var isTransientURLSessionConnectionError: Bool {
+        let error = self as NSError
+        return error.domain == NSURLErrorDomain && (error.code == -1005 || error.code == -1011)
+    }
+}
+
 extension URLSession {
-    func httpStatus(hostURL: URL, path: String, timeout: UInt64 = 5) async throws -> Int {
+    func httpStatus(hostURL: URL, path: String, timeout: UInt64 = 5, retries: Int = 3) async throws -> Int {
+        var lastError: Error?
+        for attempt in 0...retries {
+            do {
+                return try await self.httpStatusOnce(hostURL: hostURL, path: path, timeout: timeout)
+            } catch {
+                lastError = error
+                guard attempt < retries, error.isTransientURLSessionConnectionError else { throw error }
+                try await Task.sleep(nanoseconds: 10_000_000)
+            }
+        }
+        throw lastError ?? TestTimeoutError.timedOut
+    }
+
+    private func httpStatusOnce(hostURL: URL, path: String, timeout: UInt64) async throws -> Int {
         try await withTimeout(seconds: timeout) {
-            await withCheckedContinuation { continuation in
-                self.executeAsyncTask(hostURL: hostURL, path: path) { _, response, _ in
-                    let statusCode = (response as? HTTPURLResponse)?.statusCode ?? -1
-                    continuation.resume(returning: statusCode)
+            try await withCheckedThrowingContinuation { continuation in
+                self.executeAsyncTask(hostURL: hostURL, path: path) { _, response, error in
+                    if let error {
+                        continuation.resume(throwing: error)
+                    } else if let statusCode = (response as? HTTPURLResponse)?.statusCode {
+                        continuation.resume(returning: statusCode)
+                    } else {
+                        continuation.resume(throwing: TestTimeoutError.timedOut)
+                    }
                 }.resume()
             }
         }

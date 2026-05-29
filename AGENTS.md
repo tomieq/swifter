@@ -7,10 +7,11 @@ All new classes/structs/enums put in appropriate folder in separate file. Do not
 Run `swift build` to build the project
 
 ## Testing
-Local MacOS machine has docker running with swift:6.1 image
+Local MacOS machine has docker running with swift:6.0, 6.1 and 6.2 image
 
-- Run `swift test` for unit test on local MacOS
-- Run `docker run --rm -t  -v "$PWD":/workspace -w /workspace swift:6.1 swift test  --scratch-path /tmp/swifter-build-6.1 --no-parallel` for unit test on linux
+- Run `swift test --no-parallel` for unit test on local MacOS
+- Run `docker run --rm -t  -v "$PWD":/workspace -w /workspace swift:6.0 timeout 60s swift test  --scratch-path /tmp/swifter-build-6.0 --no-parallel` for unit test on linux with Swift 6.0
+After work is done verify with Swift 6.1 and 6.2 as well.
 
 ## Change commit
 Never commit anything, let user review changes.

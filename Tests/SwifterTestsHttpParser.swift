@@ -55,58 +55,58 @@ import Darwin
     }
 
     // swiftlint:disable function_body_length
-    @Test func parser() {
+    @Test func parser() async {
         let parser = HttpParser(bodyLimit: .unlimited)
 
         do {
-            _ = try parser.readHttpRequest(TestSocket(""))
+            _ = try await parser.readHttpRequest(TestSocket(""))
             Issue.record("Parser should throw an error if socket is empty.")
         } catch { }
 
         do {
-            _ = try parser.readHttpRequest(TestSocket("12345678"))
+            _ = try await parser.readHttpRequest(TestSocket("12345678"))
             Issue.record("Parser should throw an error if status line has single token.")
         } catch { }
 
         do {
-            _ = try parser.readHttpRequest(TestSocket("GET HTTP/1.0"))
+            _ = try await parser.readHttpRequest(TestSocket("GET HTTP/1.0"))
             Issue.record("Parser should throw an error if status line has not enough tokens.")
         } catch { }
 
         do {
-            _ = try parser.readHttpRequest(TestSocket("GET / HTTP/1.0"))
+            _ = try await parser.readHttpRequest(TestSocket("GET / HTTP/1.0"))
             Issue.record("Parser should throw an error if there is no next line symbol.")
         } catch { }
 
         do {
-            _ = try parser.readHttpRequest(TestSocket("GET / HTTP/1.0"))
+            _ = try await parser.readHttpRequest(TestSocket("GET / HTTP/1.0"))
             Issue.record("Parser should throw an error if there is no next line symbol.")
         } catch { }
 
         do {
-            _ = try parser.readHttpRequest(TestSocket("GET / HTTP/1.0\r"))
+            _ = try await parser.readHttpRequest(TestSocket("GET / HTTP/1.0\r"))
             Issue.record("Parser should throw an error if there is no next line symbol.")
         } catch { }
 
         do {
-            _ = try parser.readHttpRequest(TestSocket("GET / HTTP/1.0\n"))
+            _ = try await parser.readHttpRequest(TestSocket("GET / HTTP/1.0\n"))
             Issue.record("Parser should throw an error if there is no 'Content-Length' header.")
         } catch { }
 
         do {
-            _ = try parser.readHttpRequest(TestSocket("GET / HTTP/1.0\r\nContent-Length: 0\r\n\r\n"))
+            _ = try await parser.readHttpRequest(TestSocket("GET / HTTP/1.0\r\nContent-Length: 0\r\n\r\n"))
         } catch {
             Issue.record("Parser should not throw any errors if there is a valid 'Content-Length' header.")
         }
 
         do {
-            _ = try parser.readHttpRequest(TestSocket("GET / HTTP/1.0\nContent-Length: 0\r\n\n"))
+            _ = try await parser.readHttpRequest(TestSocket("GET / HTTP/1.0\nContent-Length: 0\r\n\n"))
         } catch {
             Issue.record("Parser should not throw any errors if there is a valid 'Content-Length' header.")
         }
 
         do {
-            _ = try parser.readHttpRequest(TestSocket("GET / HTTP/1.0\r\nContent-Length: -1\r\n\r\n"))
+            _ = try await parser.readHttpRequest(TestSocket("GET / HTTP/1.0\r\nContent-Length: -1\r\n\r\n"))
         } catch {
             let error = error as? HttpParserError
             #expect(error != nil)
@@ -114,13 +114,13 @@ import Darwin
         }
 
         do {
-            _ = try parser.readHttpRequest(TestSocket("GET / HTTP/1.0\nContent-Length: 5\n\n12345"))
+            _ = try await parser.readHttpRequest(TestSocket("GET / HTTP/1.0\nContent-Length: 5\n\n12345"))
         } catch {
             Issue.record("Parser should not throw any errors if there is a valid 'Content-Length' header.")
         }
 
         do {
-            _ = try parser.readHttpRequest(TestSocket("GET / HTTP/1.0\nContent-Length: 10\r\n\n"))
+            _ = try await parser.readHttpRequest(TestSocket("GET / HTTP/1.0\nContent-Length: 10\r\n\n"))
             Issue.record("Parser should throw an error if request' body is too short.")
         } catch { }
 
@@ -129,7 +129,7 @@ import Darwin
             let bodyString = [String](repeating: "A", count: contentLength).joined(separator: "")
 
             let payload = "GET / HTTP/1.0\nContent-Length: \(contentLength)\n\n".appending(bodyString)
-            let request = try parser.readHttpRequest(TestSocket(payload))
+            let request = try await parser.readHttpRequest(TestSocket(payload))
 
             #expect(bodyString.lengthOfBytes(using: .utf8) == contentLength)
 
@@ -141,7 +141,7 @@ import Darwin
             let contentLength = Socket.kBufferLength
             let bodyString = [String](repeating: "B", count: contentLength).joined(separator: "")
             let payload = "GET / HTTP/1.0\nContent-Length: \(contentLength)\n\n".appending(bodyString)
-            let request = try parser.readHttpRequest(TestSocket(payload))
+            let request = try await parser.readHttpRequest(TestSocket(payload))
 
             #expect(bodyString.lengthOfBytes(using: .utf8) == contentLength)
 
@@ -154,7 +154,7 @@ import Darwin
             let contentLength = Socket.kBufferLength * 4
             let bodyString = [String](repeating: "C", count: contentLength).joined(separator: "")
             let payload = "GET / HTTP/1.0\nContent-Length: \(contentLength)\n\n".appending(bodyString)
-            let request = try parser.readHttpRequest(TestSocket(payload))
+            let request = try await parser.readHttpRequest(TestSocket(payload))
 
             #expect(bodyString.lengthOfBytes(using: .utf8) == contentLength)
 
@@ -163,24 +163,24 @@ import Darwin
             #expect(request.body.string == bodyString)
         } catch { }
 
-        var resp = try? parser.readHttpRequest(TestSocket("GET /open?link=https://www.youtube.com/watch?v=D2cUBG4PnOA HTTP/1.0\nContent-Length: 10\n\n1234567890"))
+        var resp = try? await parser.readHttpRequest(TestSocket("GET /open?link=https://www.youtube.com/watch?v=D2cUBG4PnOA HTTP/1.0\nContent-Length: 10\n\n1234567890"))
 
         #expect(resp?.queryParams.get("link") == "https://www.youtube.com/watch?v=D2cUBG4PnOA")
         #expect(resp?.method == .GET)
         #expect(resp?.path == "/open")
         #expect(resp?.headers["content-length"] == "10")
 
-        resp = try? parser.readHttpRequest(TestSocket("POST / HTTP/1.0\nContent-Length: 10\n\n1234567890"))
+        resp = try? await parser.readHttpRequest(TestSocket("POST / HTTP/1.0\nContent-Length: 10\n\n1234567890"))
         #expect(resp?.method == .POST)
 
-        resp = try? parser.readHttpRequest(TestSocket("GET / HTTP/1.0\nHeader1: 1:1:34\nHeader2: 12345\nContent-Length: 0\n\n"))
+        resp = try? await parser.readHttpRequest(TestSocket("GET / HTTP/1.0\nHeader1: 1:1:34\nHeader2: 12345\nContent-Length: 0\n\n"))
         #expect(resp?.headers["header1"] == "1:1:34")
 
-        resp = try? parser.readHttpRequest(TestSocket("GET / HTTP/1.0\nHeader1: 1\nHeader2: 2\nContent-Length: 0\n\n"))
+        resp = try? await parser.readHttpRequest(TestSocket("GET / HTTP/1.0\nHeader1: 1\nHeader2: 2\nContent-Length: 0\n\n"))
         #expect(resp?.headers["header1"] == "1")
         #expect(resp?.headers["header2"] == "2")
 
-        resp = try? parser.readHttpRequest(TestSocket("GET /some/path?subscript_query[]=1&subscript_query[]=2 HTTP/1.0\nContent-Length: 10\n\n1234567890"))
+        resp = try? await parser.readHttpRequest(TestSocket("GET /some/path?subscript_query[]=1&subscript_query[]=2 HTTP/1.0\nContent-Length: 10\n\n1234567890"))
         var queryPairs = resp?.queryParams.list ?? []
         #expect(queryPairs.count == 2)
         #expect(queryPairs.first?.0 == "subscript_query[]")
@@ -191,7 +191,7 @@ import Darwin
         #expect(resp?.path == "/some/path")
         #expect(resp?.headers["content-length"] == "10")
 
-        resp = try? parser.readHttpRequest(TestSocket("GET /path[]/param?a[]=1&a[]=2&b=%20 HTTP/1.0\r\nContent-Length: 0\r\n\r\n"))
+        resp = try? await parser.readHttpRequest(TestSocket("GET /path[]/param?a[]=1&a[]=2&b=%20 HTTP/1.0\r\nContent-Length: 0\r\n\r\n"))
         queryPairs = resp?.queryParams.list ?? []
 
         #expect(resp?.path == "/path[]/param")

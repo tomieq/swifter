@@ -21,17 +21,17 @@ public enum HttpResponseBody {
         case .json(let object):
             let data = object.toJson() ?? Data()
             return HttpResponseBodyRaw(.fixedSize(data.count), {
-                try $0.write(data)
+                try await $0.write(data)
             })
         case .text(let body), .jsonString(let body), .html(let body),
              .js(let body), .css(let body), .xml(let body):
             let data = [UInt8](body.description.utf8)
             return HttpResponseBodyRaw(.fixedSize(data.count), {
-                try $0.write(data)
+                try await $0.write(data)
             })
         case .data(let data, _):
             return HttpResponseBodyRaw(.fixedSize(data.count), {
-                try $0.write(data)
+                try await $0.write(data)
             })
         }
     }
