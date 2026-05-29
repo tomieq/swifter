@@ -19,21 +19,20 @@ import Testing
         #expect("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq".sha1() ==
             "84983e441c3bd26ebaae4aa1f95129e5e54670f1")
 
-        #expect(
-            ("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq" +
-                "a9993e364706816aba3e25717850c26c9cd0d89d" +
-                "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq" +
-                "a9993e364706816aba3e25717850c26c9cd0d89d" +
-                "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq" +
-                "a9993e364706816aba3e25717850c26c9cd0d89d" +
-                "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq" +
-                "a9993e364706816aba3e25717850c26c9cd0d89d" +
-                "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq" +
-                "a9993e364706816aba3e25717850c26c9cd0d89d" +
-                "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq" +
-                "a9993e364706816aba3e25717850c26c9cd0d89d" +
-                "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq").sha1() ==
-                "a377b0c42d685fdc396e29a9eda7101d900947ca")
+        let longString = "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq" +
+            "a9993e364706816aba3e25717850c26c9cd0d89d" +
+            "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq" +
+            "a9993e364706816aba3e25717850c26c9cd0d89d" +
+            "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq" +
+            "a9993e364706816aba3e25717850c26c9cd0d89d" +
+            "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq" +
+            "a9993e364706816aba3e25717850c26c9cd0d89d" +
+            "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq" +
+            "a9993e364706816aba3e25717850c26c9cd0d89d" +
+            "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq" +
+            "a9993e364706816aba3e25717850c26c9cd0d89d" +
+            "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"
+        #expect(longString.sha1() == "a377b0c42d685fdc396e29a9eda7101d900947ca")
     }
 
     @Test func base64() {
