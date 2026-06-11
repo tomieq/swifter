@@ -313,16 +313,16 @@ open class HttpServerIO: @unchecked Sendable {
             responseHeader.append("Content-Length: \(length)\r\n")
         }
 
-        let keepAlive = self.shouldKeepConnectionAlive(request: request, packet: packet)
-        switch keepAlive {
-        case .some(let keep):
-            if keep {
-                responseHeader.append("Connection: keep-alive\r\n")
-            } else {
-                responseHeader.append("Connection: close\r\n")
-            }
-        default:
-            break
+        var keepAlive: Bool
+        switch self.connectionHeader(request: request, packet: packet) {
+        case .close:
+            responseHeader.append("Connection: close\r\n")
+            keepAlive = false
+        case .keepAlive:
+            responseHeader.append("Connection: keep-alive\r\n")
+            keepAlive = true
+        case .none:
+            keepAlive = true
         }
         // combine auto-headers and overwitten by handler
         var sendHeaders = [String]()
@@ -358,24 +358,30 @@ open class HttpServerIO: @unchecked Sendable {
         return keepAlive ?? true
     }
 
-    private func shouldKeepConnectionAlive(request: HttpRequest, packet: HttpResponsePacket) -> Bool? {
+    enum ConnectionHeader {
+        case close
+        case keepAlive
+        case none
+    }
+
+    private func connectionHeader(request: HttpRequest, packet: HttpResponsePacket) -> ConnectionHeader {
         switch request.connectionStrategy {
         case .forceKeepAlive:
-            return true
+            return .keepAlive
         case .forceCloseOnFinish:
-            return false
+            return .close
         case .auto:
             guard request.clientSupportsKeepAlive else {
-                return false
+                return .close
             }
             switch packet.connection {
             case .keepAlive:
-                return true
+                return .keepAlive
             case .closeConection:
-                return false
+                return .close
             }
         case .webSockets:
-            return nil
+            return .none
         }
     }
 }
