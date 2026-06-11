@@ -314,12 +314,16 @@ open class HttpServerIO: @unchecked Sendable {
         }
 
         let keepAlive = self.shouldKeepConnectionAlive(request: request, packet: packet)
-        if keepAlive {
-            responseHeader.append("Connection: keep-alive\r\n")
-        } else {
-            responseHeader.append("Connection: close\r\n")
+        switch keepAlive {
+        case .some(let keep):
+            if keep {
+                responseHeader.append("Connection: keep-alive\r\n")
+            } else {
+                responseHeader.append("Connection: close\r\n")
+            }
+        default:
+            break
         }
-
         // combine auto-headers and overwitten by handler
         var sendHeaders = [String]()
         customHeaders.raw.forEach { header in
@@ -351,25 +355,27 @@ open class HttpServerIO: @unchecked Sendable {
             let context = InnerWriteContext(socket: socket)
             try writeClosure(context)
         }
-        return keepAlive
+        return keepAlive ?? true
     }
 
-    private func shouldKeepConnectionAlive(request: HttpRequest, packet: HttpResponsePacket) -> Bool {
-        guard request.clientSupportsKeepAlive else {
-            return false
-        }
+    private func shouldKeepConnectionAlive(request: HttpRequest, packet: HttpResponsePacket) -> Bool? {
         switch request.connectionStrategy {
         case .forceKeepAlive:
             return true
         case .forceCloseOnFinish:
             return false
         case .auto:
+            guard request.clientSupportsKeepAlive else {
+                return false
+            }
             switch packet.connection {
             case .keepAlive:
                 return true
             case .closeConection:
                 return false
             }
+        case .webSockets:
+            return nil
         }
     }
 }

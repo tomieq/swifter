@@ -14,6 +14,8 @@ public enum ConnectionStrategy {
     case forceCloseOnFinish
     /// the decision whether to close or keep the socket open will vary depending on the response code
     case auto
+    /// the socket will be open
+    case webSockets
 }
 
 public class HttpRequest {

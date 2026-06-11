@@ -118,7 +118,6 @@ public enum HttpResponse {
             return HttpResponsePacket(rawBody: body.raw, connection: .keepAlive)
 
         case .processing(let body),
-
              .created(let body), .accepted(let body), .unauthorized(let body),
              .notFound(let body), .methodNotAllowed(let body), .conflict(let body),
              .locked(let body), .tooEarly(let body), .internalServerError(let body),

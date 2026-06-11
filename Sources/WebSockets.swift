@@ -24,6 +24,7 @@ public func websocket(
         guard let secWebSocketKey = request.headers[.secWebSocketKey] else {
             return .badRequest(.text("Invalid value of 'Sec-Websocket-Key' header: \(request.headers[.secWebSocketKey] ?? "unknown")"))
         }
+        request.connectionStrategy = .webSockets
         let protocolSessionClosure: ((SecureSocket) -> Void) = { socket in
             let configuredMax: DataSize = request.serverMaxWebSocketFrameSize ?? WebSocketSession.defaultMaxFrameSize
             let session = WebSocketSession(socket, maxFrameSize: configuredMax)
