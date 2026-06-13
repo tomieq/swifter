@@ -12,7 +12,7 @@ public func websocket(
     text: ((WebSocketSession, String) -> Void)? = nil,
     binary: ((WebSocketSession, [UInt8]) -> Void)? = nil,
     pong: ((WebSocketSession, [UInt8]) -> Void)? = nil,
-    connected: ((WebSocketSession) -> Void)? = nil,
+    connected: ((WebSocketSession, HttpRequest) -> Void)? = nil,
     disconnected: ((WebSocketSession) -> Void)? = nil) -> HttpRequestHandler {
     return { request, _ in
         guard request.hasTokenForHeader(.upgrade, token: "websocket") else {
@@ -106,7 +106,7 @@ public func websocket(
                 }
             }
 
-            connected?(session)
+            connected?(session, request)
 
             do {
                 try read()

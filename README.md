@@ -61,7 +61,7 @@ server.get["/websocket-echo"] = websocket(text: { (session, text) in
     session.writeBinary(binary)
 }, pong: { (_, _) in
     // Got a pong frame
-}, connected: { _ in
+}, connected: { _, request in
     // New client connected
 }, disconnected: { _ in
     // Client disconnected
