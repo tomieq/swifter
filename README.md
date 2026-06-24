@@ -68,6 +68,23 @@ server.get["/websocket-echo"] = websocket(text: { (session, text) in
 })
 try server.start()
 ```
+### How to set handler on HTTP method directly
+You can set a handler directly on an HTTP method without a subpath — it will match the method's root path:
+```swift
+server.get.handler = { _, _ in
+    .ok(.text("GET /"))
+}
+server.post.handler = { _, _ in
+    .ok(.text("POST /"))
+}
+```
+This works on grouped routes too:
+```swift
+let users = server.grouped("users")
+users.get.handler = { _, _ in
+    .ok(.text("GET /users"))
+}
+```
 ### How to add routing with enum
 ```swift
 enum RestApi: String, WebPath {
@@ -138,6 +155,17 @@ server.post["uploadForm"] = { request, _ in
     return .ok(.text("Uploaded for \(user.name)"))
 }
 ```
+### How to handle file uploads (multipart form data)
+You can access uploaded files and fields via `request.multiPart`:
+```swift
+server.post["upload"] = { request, _ in
+    for part in request.multiPart {
+        print("Field: \(part.name ?? "unnamed"), file: \(part.fileName ?? "none"), size: \(part.body.count)")
+    }
+    return .ok(.text("Uploaded \(request.multiPart.count) parts"))
+}
+```
+Each `HttpMultiPart` has `headers`, `body`, `name` and `fileName` properties.
 ### How to make object from query params
 `GET /search?start=10limit=50&query=SELECT`
 ```swift
@@ -207,6 +235,21 @@ server.post["restricted/user/changepassword"] = { request, _ in
     return .ok(.text("Password changed"))
 }
 ```
+### How to return additional HTTP response codes
+Swifter supports all standard HTTP status codes. Common additional ones:
+```swift
+return .created(.json(newUser))    // 201
+return .accepted(.text("queued"))  // 202
+return .forbidden(.text("nope"))   // 403
+return .conflict()                 // 409
+return .tooManyRequests(.text("rate limit"))  // 429
+return .notImplemented()          // 501
+return .badGateway()              // 502
+return .serviceUnavailable()      // 503
+return .gatewayTimeout()          // 504
+return .notModified               // 304 (empty body)
+return .noContent                 // 204 (empty body)
+```
 ### How to send custom Server header for every response
 ```swift
 var server = HttpServer()
@@ -216,6 +259,17 @@ You can even set global headers that are send with every response until specific
 ```swift
 server.globalHeaders.addHeader("X-Docker-Instance", UUID().uuidString)
 ```
+### How to set cookies and cache control
+Use `responseHeaders` to set or unset cookies and control client-side caching:
+```swift
+server.get["login"] = { _, headers in
+    headers.setCookie(name: "session", value: token, path: "/", cache: .hours(2))
+    headers.unsetCookie(name: "old_session")
+    headers.setClientCache(.days(30))   // Cache-Control: max-age=2592000
+    return .ok(.text("Cookie set"))
+}
+```
+Available cache times: `.noCache`, `.seconds(Int)`, `.minutes(Int)`, `.hours(Int)`, `.days(Int)`.
 ### How to set limit for incomming body size
 If somehow the server will be exposed online, it is worth to set some reasonable limit for incoming data size.
 By default it is set to `.unlimited`, but you can change it to any value:
@@ -235,6 +289,12 @@ server.post["api/upload"] = { request, _ in
         return .contentTooLarge(.text("Uploaded file \(bodySize) exceeded the limit"))
     }
 }
+```
+`DataSize` can be constructed from raw bytes too — it auto-converts to a human-friendly unit:
+```swift
+let size = DataSize(1_500_000)   // "1.5 MB", count == 1_500_000
+let fromData = DataSize(responseData)
+let fromInt = DataSize(2048)      // "2 KB"
 ```
 ### How to stream data
 ```swift
@@ -256,6 +316,21 @@ server.get["bot_trap"] = { _, _ in
             }
         }
     })
+}
+```
+### How to control connection keep-alive behavior
+Override the automatic connection strategy per-request:
+```swift
+server.get["stream"] = { request, _ in
+    request.connectionStrategy = .forceCloseOnFinish  // close after response
+    return .raw(200, "OK", { writer in ... })
+}
+```
+Options: `.forceKeepAlive`, `.forceCloseOnFinish`, `.auto` (default), `.webSockets`.
+You can also inspect the client preference:
+```swift
+if request.clientSupportsKeepAlive {
+    // client sent Connection: keep-alive
 }
 ```
 ### How to serve static files
@@ -300,6 +375,20 @@ server.get["restricted"] = { request, _ in
 }
 ```
 `DigestAuthentication` creates a proper challenge response, so it is a throwing function (throws proper `HttpInstantResponse`).
+### How to check header values for tokens
+Use `hasTokenForHeader` to safely check if a specific token exists in a header value:
+```swift
+server.get["admin"] = { request, _ in
+    if request.hasTokenForHeader(.authorization, token: "admin-token") {
+        return .ok(.text("Welcome admin"))
+    }
+    return .unauthorized()
+}
+```
+Supports both `HttpHeader` enum and raw header name strings:
+```swift
+request.hasTokenForHeader("X-API-Key", token: "abc123")
+```
 ### Enable CORS
 Cross domain access is controlled by proper headers:
 ```swift
@@ -319,6 +408,15 @@ server.get["hls/:segment"] = { request, responseHeaders in
     ... serve the files
 }
 ```
+### How to use URLFormDecoder standalone
+You can decode URL-encoded data into any `Decodable` type without going through a request:
+```swift
+let decoder = URLFormDecoder()
+struct Filter: Codable { let page: Int; let sort: String }
+let data = "page=2&sort=name".data(using: .utf8)!
+let filter = try decoder.decode(Filter.self, from: data)
+```
+Options: `omitEmptyValues` and `omitFlags` control how empty strings and flag-only keys are handled.
 ### How to add metric tracking
 `HttpRequest` has `onFinished` closure that will be executed after request is finished
 ```swift
@@ -380,6 +478,13 @@ sockets manually. You can e.g. detect inactivity on a socket and close after som
     })
 ``` 
 If you want to link socket with client's IP (for example to know whether one client opened too many sockets), the best way is to do so by filtering incoming request by socketID and then use either `peerIP` or `xForwardedFor` header when server is behind Application Proxy.
+### Thread-safe cache
+A generic concurrent dictionary backed by a dispatch barrier for safe access across handlers:
+```swift
+let cache = ThreadSafeCache<String, UserSession>()
+cache["user_1"] = session
+let all = cache.all
+```
 ### Automatic socket closing due to inactivity
 ```swift
     let server = HttpServer()
@@ -413,6 +518,39 @@ server.middleware.append( { request, _ in
 server.get["test"] = { request, _ in
     .ok(.text(request.sessionData?.username ?? "Not allowed"))
 }
+```
+
+### Timing-safe comparison
+Use `timingSafeEqual` to compare secrets (tokens, passwords) without leaking timing information:
+```swift
+if timingSafeEqual(providedToken, storedToken) {
+    // secure comparison, no timing side-channel
+}
+```
+Works with both `String` and `[UInt8]`.
+
+### Server state and route inspection
+You can inspect the server at runtime:
+```swift
+print(server.state)             // .running, .stopped, .stopping, .started
+print(server.operating)         // Bool
+print(try server.port)          // actual listening port
+print(server.routes)            // ["GET /api", "POST /users", ...]
+server.stop()                   // gracefully close all sockets
+```
+
+### Binding to a specific network interface
+By default the server listens on all interfaces. To bind to a specific address:
+```swift
+server.listenAddressIPv4 = "127.0.0.1"  // localhost only
+server.listenAddressIPv6 = "::1"
+try server.start(8080, forceIPv4: true)
+```
+
+### Limiting request header count
+Protect against header-flood attacks by capping the maximum number of headers:
+```swift
+server.maxRequestHeaderCount = 50  // default is 100; extra headers are rejected
 ```
 
 **Server Configuration Options**
@@ -470,6 +608,45 @@ With package https://github.com/tomieq/swifterTLS you can add TLS 1.3 support
 let server = HttpServer()
 server.secureSocketFactory = { socket in
     TLSSocket(socket, tlsConfiguration: tlsConfiguration)
+}
+```
+
+### String utilities
+SHA-1 hashing:
+```swift
+let hash: [UInt8] = "password".sha1()
+let hashString: String = "password".sha1()
+```
+BASE64 encoding:
+```swift
+let b64 = String.toBase64([UInt8](data))
+```
+MIME type detection:
+```swift
+let mime = "photo.jpg".mimeType  // "image/jpeg"
+let mime = "style.css".mimeType  // "text/css"
+```
+File operations on paths:
+```swift
+let file = try "/path/to/file".openForReading()
+let exists = try "/path/to/file".exists()
+let isDir = try "/path/to/file".directory()
+let files = try "/path/to/dir".files()
+```
+Camel case conversion (handy for Decodable key mapping):
+```swift
+let key = "content_type".camelCased  // "contentType"
+```
+
+### Process information
+```swift
+print("PID: \(Process.pid), TID: \(Process.tid)")
+```
+Watch OS signals for graceful shutdown:
+```swift
+Process.watchSignals { signum in
+    print("Received signal \(signum)")
+    server.stop()
 }
 ```
 
